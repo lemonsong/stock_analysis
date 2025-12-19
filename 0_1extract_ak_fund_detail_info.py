@@ -31,13 +31,16 @@ for fund in fetch_fund_li:
     logging.info(f"Fetching detailed info of {fund}")
     path_to_fund = f'{PROGRAM_PATH}/{fund}.csv'
     if os.path.isfile(path_to_fund):
-        logging.info(f"Balance sheet of {fund} existed")
+        logging.info(f"Detailed info of {fund} existed")
         continue
     else:
-        fund_individual_detail_info_xq_df = ak.fund_individual_detail_info_xq(symbol=f"{fund}")
-        fund_individual_detail_info_xq_df.to_csv(path_to_fund,
-                                                   encoding='utf-8',
-                                                   index=False)
-        logging.info(f"Detailed info of {fund} saved. Sleep for {random_sleep_time}s ...")
+        try:
+            fund_individual_detail_info_xq_df = ak.fund_individual_detail_info_xq(symbol=f"{fund}")
+            fund_individual_detail_info_xq_df.to_csv(path_to_fund,
+                                                       encoding='utf-8',
+                                                       index=False)
+            logging.info(f"Detailed info of {fund} saved. Sleep for {random_sleep_time}s ...")
+        except KeyError:
+            logging.info(f"Failed to get info of {fund}. Sleep for {random_sleep_time}s ...")
     time.sleep(random_sleep_time)
 
