@@ -67,7 +67,7 @@ def clean_daily_by_dates(stock_kline_df,
     # only keep the rows in date before must_end_date
     if must_end_date:
         stock_kline_df = stock_kline_df.loc[stock_kline_df['date'] <= must_end_date]
-    stock_kline_df = stock_kline_df.drop_duplicates()
+    stock_kline_df = stock_kline_df.drop_duplicates().sort_values('date', ascending=True)
     # make sure the df returned outside of the if statement, as no matter what we'll return the df
     return stock_kline_df
 

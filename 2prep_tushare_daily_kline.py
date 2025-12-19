@@ -37,7 +37,7 @@ PROGRAM_PATH = f'{PROJECT_PATH}/data_tushare'
 # this is the end date of single stock kline files.
 # It should be the last date of signle stock kline file.
 # Or else the kline after this date will be removed in the clean_daily_by_dates() step
-end_date_str = '2025-11-25' # TODO:
+end_date_str = '2025-12-17' # TODO:
 end_date_d = datetime.strptime(end_date_str, '%Y-%m-%d').date()
 write_log_file_path = f'{PROGRAM_PATH}/0daily_data_write_log.csv'
 # TODO: automate this step

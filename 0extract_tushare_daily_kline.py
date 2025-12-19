@@ -22,8 +22,8 @@ import exchange_calendars as xcals
 
 PROGRAM_PATH = f'{PROJECT_PATH}/data_tushare'
 
-start_date = "2025-11-14" # TODO
-end_date = '2025-11-25' # TODO
+start_date = "2025-12-16" # TODO
+end_date = '2025-12-17' # TODO
 kline_file_path = f'{PROGRAM_PATH}/0kline_{start_date}_to_{end_date}.csv'
 write_log_file_path = f'{PROGRAM_PATH}/0daily_data_write_log.csv'
 is_test = False # TODO

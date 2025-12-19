@@ -25,7 +25,7 @@ import pytz
 # path_to_stock_csv = '/Users/yilin/Documents/Projects/stock_analysis/data_dolt/daily'
 # check TUSHARE data
 path_to_stock_csv = '/Users/yilin/Documents/Projects/stock_analysis/data_tushare/daily'
-end_date_str = '2025-11-25' # TODO:
+end_date_str = '2025-12-17' # TODO:
 
 
 print('start')
