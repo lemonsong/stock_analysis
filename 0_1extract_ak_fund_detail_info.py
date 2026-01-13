@@ -1,3 +1,6 @@
+'''
+Save individual fund info as CSV one by one to data_ak_fund_detail_info_xq folder
+'''
 import os, random, time
 import logging
 
@@ -17,10 +20,14 @@ all_fund_df = pd.read_csv(f'{PROJECT_PATH}/0_all_fund.csv',
                           dtype={'基金代码': str} # read fund symbol as string
                           )
 # subset of funds to fetch info
-## TODO: change when needed
+## TODO: change when needed ##
 fetch_fund_df = all_fund_df.loc[(all_fund_df['基金类型'].str.contains('债券'))
                         & (all_fund_df['基金简称'].str.contains("易方达|南方|招商"))
-                        & (all_fund_df['基金简称'].str.contains("A"))]
+                        & (all_fund_df['基金简称'].str.contains("A"))
+# extra filter to complete one category comparison
+& (all_fund_df['基金类型']!='债券型-中短债')
+]
+############
 fetch_fund_li = fetch_fund_df['基金代码'].unique().tolist()
 logging.info(f"Funds to fetch: {fetch_fund_li=}")
 
@@ -42,5 +49,5 @@ for fund in fetch_fund_li:
             logging.info(f"Detailed info of {fund} saved. Sleep for {random_sleep_time}s ...")
         except KeyError:
             logging.info(f"Failed to get info of {fund}. Sleep for {random_sleep_time}s ...")
-    time.sleep(random_sleep_time)
+        time.sleep(random_sleep_time)
 

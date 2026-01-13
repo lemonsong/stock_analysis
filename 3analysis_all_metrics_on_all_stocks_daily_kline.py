@@ -91,4 +91,11 @@ all_stock_metrics['overall_signal_count'] = all_stock_metrics['buy_signal_count'
 
 
 all_stock_metrics = all_stock_metrics.sort_values('overall_signal_count', ascending=False)
+# read alltick_A_stock_symbol.csv to map symbol to company
+symbol_to_company_df = pd.read_csv("/Users/yilin/Documents/Projects/stock_analysis/data/alltick_A_stock_symbol.csv")[['symbol','company']]
+all_stock_metrics =all_stock_metrics.merge(symbol_to_company_df, how='left',on='symbol')
+col = all_stock_metrics.pop('company')
+all_stock_metrics.insert(1, 'company', col)
+
+
 all_stock_metrics.to_csv('/Users/yilin/Documents/Projects/stock_analysis/0decision.csv', index=False, encoding='utf-8')

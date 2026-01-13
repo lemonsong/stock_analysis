@@ -1,9 +1,7 @@
 ## Pipeline
 
 ### Fundamentals
-1. *Extract Step*[0extract_ak_fundamental_by_yearly.py](0extract_ak_fundam
-2. ental_by_yearly.py): fetch fundamental data according to the critical stock symbols in 0decision.csv
-
+1. *Extract Step*[0extract_ak_fundamental_by_yearly.py](0extract_ak_fundamental_by_yearly.py): fetch fundamental data according to the critical stock symbols in 0decision.csv
 
 
 ### Daily kline

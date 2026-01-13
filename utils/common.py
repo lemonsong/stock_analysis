@@ -60,13 +60,17 @@ def format_stock_symbol(symbol_name, from_format, to_format):
         else:
             print('The to_format input does not exist')
             sys.exit()
+
     else:
         print('The from_format input does not exist')
         sys.exit()
 
 def extract_stock_symbol_from_path(file_path, from_format, to_format):
     symbol_name = file_path.split('/')[-1].split('.')[0]
-    return format_stock_symbol(symbol_name, from_format, to_format)
+    if from_format != to_format:
+        return format_stock_symbol(symbol_name, from_format, to_format)
+    else:
+        return symbol_name
 
 # def extract_stock_symbol_from_path(file_path, from_format, to_format):
 #     symbol_name = file_path.split('/')[-1].split('.')[0]
