@@ -3,7 +3,7 @@ from utils.common import format_stock_symbol
 from datetime import datetime
 
 def format_tushare_kline_to_dolt_style(kline_df):
-    # convert kline_df so that it is similar to the data from extracted from dolt
+    # convert kline_df so that it is similar to the data_all_list from extracted from dolt
     kline_df['date'] = kline_df['trade_date'].map(lambda x: datetime.strptime(str(x), '%Y%m%d').strftime('%Y-%m-%d'))
     kline_df = kline_df.rename(columns={'pre_close': 'adjclose',
                                         'vol': 'volume'})

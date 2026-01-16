@@ -22,7 +22,7 @@ decision_df = pd.read_csv(f'{PROJECT_PATH}/0decision.csv')
 # critical_df = decision_df.loc[decision_df.overall_signal_count==0].copy()
 # logging.info(f"{critical_df=}")
 
-# stock list to fetch fundamentals data
+# stock list to fetch fundamentals data_all_list
 stock_li = decision_df.symbol.tolist()
 # stock_li = ['SZ000573']
 if os.path.isfile(PATH_TO_INFO_CSV):

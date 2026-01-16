@@ -1,5 +1,5 @@
 ''''
-Update single stock of ALL stock kline data between start_date and end_date
+Update single stock of ALL stock kline data_all_list between start_date and end_date
 '''
 import sys
 
@@ -22,8 +22,8 @@ import exchange_calendars as xcals
 
 PROGRAM_PATH = f'{PROJECT_PATH}/data_tushare'
 
-start_date = "2026-01-01" # TODO
-end_date = '2026-01-12' # TODO
+start_date = "2026-01-13" # TODO
+end_date = '2026-01-14' # TODO
 kline_file_path = f'{PROGRAM_PATH}/0kline_{start_date}_to_{end_date}.csv'
 write_log_file_path = f'{PROGRAM_PATH}/0daily_data_write_log.csv'
 is_test = False # TODO
@@ -36,7 +36,7 @@ xshg_dates = xshg.sessions_in_range(start_date,end_date)
 xshg_dates_li = xshg_dates.tolist()
 xshg_dates_li_ymd = [i.strftime('%Y%m%d') for i in xshg_dates_li]
 
-### get kline file so that we can append new kline data to the single stock files in the daily folder
+### get kline file so that we can append new kline data_all_list to the single stock files in the daily folder
 if os.path.isfile(kline_file_path):
     kline_df = pd.read_csv(kline_file_path)
 else:
@@ -56,7 +56,7 @@ else:
     # save to CSV
     kline_df.to_csv(kline_file_path, index=False, encoding='utf-8')
     logging.info('Saved CSV before convert kline_df ')
-    # convert kline_df so that it is similar to the data from extracted from dolt
+    # convert kline_df so that it is similar to the data_all_list from extracted from dolt
     kline_df = format_tushare_kline_to_dolt_style(kline_df)
     # save to CSV
     kline_df.to_csv(kline_file_path, index=False, encoding='utf-8')
@@ -65,12 +65,12 @@ logging.info(kline_df.head())
 
 
 ### append new kline to single stock file ###
-# get log data file to record how single stock were changed
+# get log data_all_list file to record how single stock were changed
 if os.path.isfile(write_log_file_path):
     write_log_df = pd.read_csv(write_log_file_path)
 else:
     write_log_df = pd.DataFrame()
-# get list of single stock data
+# get list of single stock data_all_list
 file_list = get_file_paths_pathlib(f'{PROGRAM_PATH}/{daily_folder}')
 for file_path in file_list:
     logging.info(file_path)
@@ -85,7 +85,7 @@ for file_path in file_list:
         'update_time': datetime.now(),
         'method': 'append'
     })
-    # append new kline data to single stock file
+    # append new kline data_all_list to single stock file
     stock_df = pd.concat([stock_df, kline_df_sub], axis=0, ignore_index=True)
     stock_df.to_csv(file_path, index=False, encoding='utf-8')
     # append wrote stock symbol to write_log_df_sub for reference

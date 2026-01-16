@@ -16,7 +16,7 @@ def clean_daily_by_dates(stock_kline_df,
                         must_end_date = None
                            ):
     '''
-    停牌 causes missing rows for DOLT data.
+    停牌 causes missing rows for DOLT data_all_list.
     We get the missing trading dates, and forword fill the missing values.
     Rare stock has rows in non trading dates, then we remove such rows.
 
@@ -29,7 +29,7 @@ def clean_daily_by_dates(stock_kline_df,
     cl = xcals.get_calendar(calendar_name)
     cl_dates = cl.sessions_in_range(calender_start, calendar_end)
     # cl_dates_li = [i.strftime('%Y-%m-%d') for i in cl_dates.tolist()]
-    # dolt data exported from database use date type, so we use the same type for trading dates list
+    # dolt data_all_list exported from database use date type, so we use the same type for trading dates list
     cl_dates_li = [i.date() for i in cl_dates.tolist()]
 
     #
@@ -38,10 +38,10 @@ def clean_daily_by_dates(stock_kline_df,
     extra_dates_li = [i for i in s_dates_li if i not in cl_dates_li]
 
 
-    # ffill rows for the trading dates but no data in the DOLT data
+    # ffill rows for the trading dates but no data_all_list in the DOLT data_all_list
     if missing_dates_li:
         # create dataframe to append
-        logging.info(f"""{stock_symbol} missed data in {str(missing_dates_li)}""")
+        logging.info(f"""{stock_symbol} missed data_all_list in {str(missing_dates_li)}""")
         s_cols = stock_kline_df.columns.tolist()
         s_cols.remove("date")
         missing_dates_data = {'date': missing_dates_li}
@@ -49,7 +49,7 @@ def clean_daily_by_dates(stock_kline_df,
         for col in s_cols:
             missing_dates_data[col] = np.nan
         missing_dates_data_df = pd.DataFrame(missing_dates_data)
-        # concatenate the data of
+        # concatenate the data_all_list of
         logging.debug(stock_kline_df.tail(5))
         logging.debug(stock_kline_df.dtypes)
 
@@ -61,7 +61,7 @@ def clean_daily_by_dates(stock_kline_df,
         stock_kline_df = stock_kline_df.ffill()
         logging.info(f"""{stock_symbol} has {str(len(stock_kline_df))} rows now!""")
 
-    # remove rows for the non trading dates but existed in DOLT data
+    # remove rows for the non trading dates but existed in DOLT data_all_list
     if extra_dates_li:
         stock_kline_df = stock_kline_df.loc[ ~ stock_kline_df['date'].isin(extra_dates_li)]
     # only keep the rows in date before must_end_date

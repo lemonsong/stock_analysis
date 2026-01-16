@@ -1,6 +1,6 @@
 
 '''
-Get tick data with ALLTICK API
+Get tick data_all_list with ALLTICK API
 https://alltick.co/
 '''
 import numpy as np

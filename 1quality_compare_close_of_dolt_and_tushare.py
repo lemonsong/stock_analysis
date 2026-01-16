@@ -1,7 +1,7 @@
 '''
-compare the single stock csv extracted from DOLT data
-to the TUSHARE single date data (having all stock) in certain date
-in order to check DOLT data quality
+compare the single stock csv extracted from DOLT data_all_list
+to the TUSHARE single date data_all_list (having all stock) in certain date
+in order to check DOLT data_all_list quality
 '''
 import pandas as pd
 import tushare as ts
@@ -39,7 +39,7 @@ else:
 
 # TODO
 # exam whether historical 20251030 value is unmatched.
-# If yes, download the stock full data to the f'{PROJECT_PATH}/data_tushare/daily_to_confirm'. Then manually compare and save
+# If yes, download the stock full data_all_list to the f'{PROJECT_PATH}/data_tushare/daily_to_confirm'. Then manually compare and save
 file_list = get_file_paths_pathlib(f'{PROGRAM_PATH}/daily')
 date_to_compare = datetime.strptime(new_kline_trade_date_str, '%Y%m%d').strftime('%Y-%m-%d')
 unmatched_stock_li = []

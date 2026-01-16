@@ -50,7 +50,7 @@ drop_cols_cash_flow = drop_cols + ['MINORITY_INTEREST', 'MINORITY_INTEREST_YOY',
 # merge fundamental files
 fundamental_df = pd.DataFrame()
 for stock_symbol in stock_symbol_li:
-    # read 3 types of fundamental data as balance_df, profit_df and cash_flow_df
+    # read 3 types of fundamental data_all_list as balance_df, profit_df and cash_flow_df
     for sheet in fundamental_types:
         logging.info(f'get {sheet} sheet for {stock_symbol}')
         exec(f"""{sheet}_df = pd.read_csv('{PROGRAM_PATH}/single_file/{stock_symbol}_{sheet}.csv')""")
@@ -61,11 +61,11 @@ for stock_symbol in stock_symbol_li:
         exec(
             f"""{sheet}_df = {sheet}_df[[i for i in {sheet}_df.columns.tolist() if i not in drop_cols_{sheet}]].copy()"""
         )
-    # merge 3 fundamental data into 1
+    # merge 3 fundamental data_all_list into 1
     stock_df = reduce(lambda left, right: pd.merge(left, right, on=AK_FUNDAMENTAL_KEEP_COMMON_COLS, how='inner'), [balance_df, profit_df, cash_flow_df])
     # insert stock symbol to the first column
     stock_df.insert(0, 'symbol', stock_symbol)
-    # concatenate the new stock's fundamental data to the existed fundatmentals data
+    # concatenate the new stock's fundamental data_all_list to the existed fundatmentals data_all_list
     fundamental_df = pd.concat([fundamental_df, stock_df], axis=0, ignore_index=True)
 
 # check whether any column existed in 2 sheets causing the creation of xxx_y columns after merge

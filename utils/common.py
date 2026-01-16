@@ -34,6 +34,8 @@ def format_stock_symbol(symbol_name, from_format, to_format):
             return symbol_name
         elif to_format == 'number.MARKET':
             return symbol_name[-6:]+'.'+symbol_name[:2]
+        elif to_format == 'number':
+            return symbol_name[2:]
         else:
             print('The to_format input does not exist')
             sys.exit()
@@ -100,7 +102,12 @@ def extract_stock_symbol_from_path(file_path, from_format, to_format):
 #         print('The from_format input does not exist')
 #         sys.exit()
 
-
+def basic_formatter(df):
+    # format dataframe collected from akshare API
+    if "序号" in df.columns:
+        df = df.drop("序号", axis=1)
+    return df.rename(columns={"代码":'symbol','名称':'name',
+                             "股票代码":'symbol','股票简称':'name'})
 
 from datetime import datetime
 

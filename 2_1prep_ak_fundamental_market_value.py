@@ -1,6 +1,6 @@
 '''
 get the latest stock close price for each stock and year
-The output is used to join with fundamental data and calculate financial metrics
+The output is used to join with fundamental data_all_list and calculate financial metrics
 '''
 import logging
 logging.basicConfig(
@@ -16,7 +16,7 @@ from config import PROJECT_PATH
 
 PATH_TO_KLINE_CSV = '/Users/yilin/Documents/Projects/stock_analysis/data_tushare/daily'
 PROGRAM_PATH = f'{PROJECT_PATH}/data_ak_fundamental'
-# close_col = 'close' # TODO: close or adjclose. If use this, we need to rename the columns name to close, so that the program can run smoothly when join to fundamental data and calculate financial metrics
+# close_col = 'close' # TODO: close or adjclose. If use this, we need to rename the columns name to close, so that the program can run smoothly when join to fundamental data_all_list and calculate financial metrics
 
 # read kline file list
 file_list = get_file_paths_pathlib(PATH_TO_KLINE_CSV)
@@ -34,7 +34,7 @@ for file_path in file_list:
     # keep the max date for each year
     max_indices = stock_df.groupby(['fiscal_year'])['date'].idxmax()
     stock_df = stock_df.iloc[max_indices, :]
-    # merge the single stock data to all stock data
+    # merge the single stock data_all_list to all stock data_all_list
     all_stock_df = pd.concat([all_stock_df, stock_df], axis=0, ignore_index=True)
 logging.info(f'{len(all_stock_df)} rows')
 # remove the date column

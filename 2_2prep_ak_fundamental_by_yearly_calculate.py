@@ -28,7 +28,7 @@ fundamental_df_cleaned = fundamental_df_cleaned.drop('REPORT_DATE_NAME', axis=1)
 # )
 
 
-# merge yearly stock price data
+# merge yearly stock price data_all_list
 latest_stock_price_by_yearly_df = pd.read_csv(f'{PROGRAM_PATH}/0latest_stock_price_by_yearly.csv')
 fundamental_df_cleaned = fundamental_df_cleaned.merge(latest_stock_price_by_yearly_df, on=['symbol','fiscal_year'], how='left')
 
@@ -88,7 +88,7 @@ fundamental_df_cleaned = (fundamental_df_cleaned
     gross_margin=lambda x: x["gross_profit"] / x["revenue"],
     operating_margin = lambda x: x['net_profit'] / x['revenue'],
     profit_margin=lambda x: x["net_profit"] / x["revenue"],
-    # roe: return on equity: return for normal shareholders, so we need to use Parent-level data.
+    # roe: return on equity: return for normal shareholders, so we need to use Parent-level data_all_list.
     #  PARENT_EQUITY needs to be the average value
     roe=lambda x: x['PARENT_NETPROFIT'] / x['TOTAL_PARENT_EQUITY_avg'],
     roa = lambda x: x['net_profit'] / x['TOTAL_ASSETS_avg'],
@@ -129,7 +129,13 @@ fundamental_df_cleaned = (fundamental_df_cleaned
 fundamental_df_cleaned.to_csv(f'{PROGRAM_PATH}/fundamental_calculated.csv', encoding='utf-8', index=False)
 
 # 定义要展示的指标列
-metrics_to_show_cols = [
+# 1. Liquidity Ratios： current_ratio, quick_ratio, cash_ratio,
+# 2. Leverage Ratios： total_debt,net_debt, debt_to_equity, debt_to_asset, interest_coverage,
+# 3. Efficiency Ratios： revenue,gross_profit,net_profit, asset_turnover, inventory_turnover, receivables_turnover,
+# 4. Profitability Ratios： gross_margin, operating_margin, profit_margin, roe, roa,
+# 5. Cash Flow & Valuation Metrics： netcash_operate_over_net_profit', 'free_cash_flow_conversion_rate,change_in_working_capital,
+#     net_debt_over_ebitda, ev_over_ebitda
+metrics_to_show_cols =[
     'current_ratio', 'quick_ratio', 'cash_ratio',
     'total_debt','net_debt', 'debt_to_equity', 'debt_to_asset', 'interest_coverage',
     'revenue','gross_profit','net_profit', 'asset_turnover', 'inventory_turnover', 'receivables_turnover',

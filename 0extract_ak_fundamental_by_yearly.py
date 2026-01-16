@@ -12,18 +12,18 @@ from config import PROJECT_PATH
 
 PROGRAM_PATH = f'{PROJECT_PATH}/data_ak_fundamental/single_file/'
 
-########### TODO: define stock_li to fetch fundamental data ##########
-decision_df = pd.read_csv(f'{PROJECT_PATH}/0decision.csv')
-critical_df = decision_df.loc[decision_df.overall_signal_count==1].copy()
-# critical_df = decision_df.head(30).copy()
+########### TODO: define stock_li to fetch fundamental data_all_list ##########
+decision_df = pd.read_csv(f'{PROJECT_PATH}/0decision2.csv')
+# critical_df = decision_df.loc[decision_df.overall_signal_count==1].copy()
+critical_df = decision_df.iloc[210:240,:].copy()
 
 logging.info(f"{critical_df=}")
 
-# stock list to fetch fundamentals data
+# stock list to fetch fundamentals data_all_list
 stock_li = critical_df.symbol.tolist()
 # stock_li = ['SZ000573']
 ###########################
-# DONE level 1: get file name all files in the path. only fetch and write data if the symbol_xx_sheet not existed.
+# DONE level 1: get file name all files in the path. only fetch and write data_all_list if the symbol_xx_sheet not existed.
 # TODO level 2(in 2026): get file name all files in the path. if symbol existed, only update the files if the report date is 2 year from April of current year(TBD) .
 for stock_symbol in stock_li:
     random_sleep_time = random.randint(11, 30)
@@ -67,7 +67,7 @@ for stock_symbol in stock_li:
                                                   index=False)
         logging.info(f"Cash flow sheet of {stock_symbol} saved. Sleep for {random_sleep_time}s ...")
     # # Profile
-    # # TODO: profile data is empty. Change to other API
+    # # TODO: profile data_all_list is empty. Change to other API
     # logging.info(f"Fetching profile sheet of {stock_symbol}")
     # path_to_profile = f'{PROGRAM_PATH}/{stock_symbol}_profile.csv'
     # if os.path.isfile(path_to_profile):

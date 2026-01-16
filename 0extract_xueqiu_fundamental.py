@@ -1,6 +1,6 @@
 ''''
 WIP
-extract financial statements data from Xueqiu
+extract financial statements data_all_list from Xueqiu
 '''
 import sys
 

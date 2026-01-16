@@ -1,6 +1,6 @@
 '''
 During building Zipline bundle step, use this script to
-examine who doesn't have data in which trading dates
+examine who doesn't have data_all_list in which trading dates
 '''
 import numpy as np
 import pandas as pd
@@ -23,7 +23,7 @@ import pytz
 # path_to_stock_csv = '/Users/yilin/Documents/Projects/stock_analysis/zipline_data/daily'
 # path_to_stock_csv = '/Users/yilin/Documents/Projects/stock_analysis/zipline_data/daily_test'
 # path_to_stock_csv = '/Users/yilin/Documents/Projects/stock_analysis/data_dolt/daily'
-# check TUSHARE data
+# check TUSHARE data_all_list
 path_to_stock_csv = '/Users/yilin/Documents/Projects/stock_analysis/data_tushare/daily'
 end_date_str = '2026-01-12' # TODO:
 
@@ -54,14 +54,14 @@ for file_path in file_list:
     # stock_df['date'] = stock_df['date'].dt.strftime('%Y-%m-%d')
     s_dates_li = stock_df['date'].tolist()
 
-    # Exam data quality
+    # Exam data_all_list quality
     # need to change calendar's start and end date accordingly to deal with the dates at the beginning/end
 
-    # TYPE 1: missing data for the trading dates
+    # TYPE 1: missing data_all_list for the trading dates
     missing_dates_li = [i for i in xshg_dates_li if i not in s_dates_li]
     if len(missing_dates_li)>0:
         symbol_w_problem_li.append(stock_symbol)
-        print(f"""{stock_symbol} missed data in {','.join(missing_dates_li)}""")
+        print(f"""{stock_symbol} missed data_all_list in {','.join(missing_dates_li)}""")
 
     # TYPE 2: duplicated rows by the date column value
     if len(stock_df['date'].tolist()) > len(stock_df['date'].unique().tolist()):
@@ -69,11 +69,11 @@ for file_path in file_list:
         print(stock_symbol)
         logging.debug(find_duplicates(stock_df['date'].tolist()))
 
-    # TYPE 3: extra data for the non trading dates
+    # TYPE 3: extra data_all_list for the non trading dates
     extra_dates_li = [i for i in s_dates_li if i not in xshg_dates_li]
     if len(extra_dates_li)>0:
         symbol_w_problem_li.append(stock_symbol)
-        print(f"""{stock_symbol} has extra data in {','.join(extra_dates_li)}""")
+        print(f"""{stock_symbol} has extra data_all_list in {','.join(extra_dates_li)}""")
 
 
 print(symbol_w_problem_li)

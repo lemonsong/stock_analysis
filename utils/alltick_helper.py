@@ -23,7 +23,7 @@ def get_single_stock_price_hist(stock_symbol, end_date, num_days):
     # 1. 定义请求参数的Python字典结构
     request_payload = {
         "trace": "my_test_trace_id",
-        "data": {
+        "data_all_list": {
             "code": stock_symbol,
             "kline_type": 8,
             # 1是1分钟K，2是5分钟K，3是15分钟K，4是30分钟K，5是小时K，6是2小时K(股票不支持2小时)，7是4小时K(股票不支持4小时)，8是日K，9是周K，10是月K （注：股票不支持2小时K、4小时K）
@@ -59,7 +59,7 @@ def get_single_stock_price_hist(stock_symbol, end_date, num_days):
 
 
 def process_single_stock_price_hist(stock_symbol_str, alltick_api_result):
-    data_df = pd.DataFrame(alltick_api_result['data']['kline_list'])
+    data_df = pd.DataFrame(alltick_api_result['data_all_list']['kline_list'])
     # convert timestamp to date
     data_df.timestamp = data_df.timestamp.astype(int)
     data_df['date'] = data_df.timestamp.map(lambda x: datetime.fromtimestamp(x))
@@ -77,7 +77,7 @@ def get_batch_kline(stock_symbol, end_date, num_days):
     # 1. 定义请求参数的Python字典结构
     request_payload = {
         "trace": "batch_kline",
-        "data": {
+        "data_all_list": {
             "code": stock_symbol,
             "kline_type": 8,
             # 1是1分钟K，2是5分钟K，3是15分钟K，4是30分钟K，5是小时K，6是2小时K(股票不支持2小时)，7是4小时K(股票不支持4小时)，8是日K，9是周K，10是月K （注：股票不支持2小时K、4小时K）
@@ -117,7 +117,7 @@ def get_all_stock_list():
     :return: list
     '''
     alltick_stock_df = pd.read_excel(
-        '/Users/yilin/Documents/Projects/stock_analysis/data/Alltick Supported products(产品列表).xlsx', header=1,
+        '/Users/yilin/Documents/Projects/stock_analysis/data_all_list/Alltick Supported products(产品列表).xlsx', header=1,
         sheet_name='A股code（China stocks code）')
     alltick_stock_df = alltick_stock_df.loc[
         pd.notna(alltick_stock_df['Code']) & alltick_stock_df['Code'].str.startswith(('3', '0', '6'))].copy()

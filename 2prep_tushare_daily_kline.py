@@ -1,5 +1,5 @@
 '''
-prep Tushare kline data
+prep Tushare kline data_all_list
  by ffill the empty trading date,
  drop duplicated date,x
  and remove date after the end_date_str
@@ -37,7 +37,7 @@ PROGRAM_PATH = f'{PROJECT_PATH}/data_tushare'
 # this is the end date of single stock kline files.
 # It should be the last date of signle stock kline file.
 # Or else the kline after this date will be removed in the clean_daily_by_dates() step
-end_date_str = '2026-01-12' # TODO:
+end_date_str = '2026-01-14' # TODO:
 end_date_d = datetime.strptime(end_date_str, '%Y-%m-%d').date()
 write_log_file_path = f'{PROGRAM_PATH}/0daily_data_write_log.csv'
 # TODO: automate this step
@@ -50,7 +50,7 @@ symbol_li = [extract_stock_symbol_from_path(file_path, from_format='MARKETnumber
                                                   to_format='MARKETnumber') for file_path in file_list]
 
 ### write new kline to single stock file ###
-# get log data file to record how single stock were changed
+# get log data_all_list file to record how single stock were changed
 if os.path.isfile(write_log_file_path):
     write_log_df = pd.read_csv(write_log_file_path)
 else:
@@ -94,7 +94,7 @@ write_log_df.to_csv(write_log_file_path, index=False, encoding='utf-8')
 '''
 The follofwing is
 DEPRECATED
-no data even after we refetched data
+no data_all_list even after we refetched data_all_list
 '''
 
 # ### fetch daily kline of stocks in symbol_li ###
@@ -114,7 +114,7 @@ no data even after we refetched data
 # logging.info(multi_stock_df.head())
 
 # ### write new kline to single stock file ###
-# # get log data file to record how single stock were changed
+# # get log data_all_list file to record how single stock were changed
 # if os.path.isfile(write_log_file_path):
 #     write_log_df = pd.read_csv(write_log_file_path)
 # else:

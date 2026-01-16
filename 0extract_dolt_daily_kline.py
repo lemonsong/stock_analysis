@@ -19,7 +19,7 @@ mydb = mysql.connector.connect(
     password="",
     database="investment_data"  # Optional: specify a database to connect to initially
 )
-# get all symbol to fetch data one by one. This is the list of symbol that we care about.
+# get all symbol to fetch data_all_list one by one. This is the list of symbol that we care about.
 recent_symbol_q = """
     SELECT symbol 
     FROM final_a_stock_eod_price 
