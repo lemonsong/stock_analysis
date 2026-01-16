@@ -63,6 +63,21 @@ def format_stock_symbol(symbol_name, from_format, to_format):
             print('The to_format input does not exist')
             sys.exit()
 
+    elif from_format == 'number':
+        if to_format == 'MARKETnumber':
+            symbol_name = str(symbol_name).split('.')[0].zfill(6)
+            if symbol_name.startswith('6') or symbol_name.startswith('9'):
+                return f"SH{symbol_name}"
+            elif symbol_name.startswith('0') or symbol_name.startswith('3'):
+                return f"SZ{symbol_name}"
+            elif symbol_name.startswith('4') or symbol_name.startswith('8'):
+                return f"BJ{symbol_name}"
+            else:
+                return symbol_name
+        else:
+            print('The to_format input does not exist')
+            sys.exit()
+
     else:
         print('The from_format input does not exist')
         sys.exit()
@@ -102,12 +117,23 @@ def extract_stock_symbol_from_path(file_path, from_format, to_format):
 #         print('The from_format input does not exist')
 #         sys.exit()
 
-def basic_formatter(df):
+def format_df_column_name(df):
     # format dataframe collected from akshare API
     if "序号" in df.columns:
         df = df.drop("序号", axis=1)
-    return df.rename(columns={"代码":'symbol','名称':'name',
-                             "股票代码":'symbol','股票简称':'name'})
+    return df.rename(columns={"代码": 'symbol',
+                              '名称': 'company',
+                             '股票代码': 'symbol',
+                              '股票简称': 'company',
+                              '上市公司代码':'symbol',
+                              '上市公司简称': 'company',
+                              '门类代码': 'industry_category_id',
+                              '门类简称': 'industry_category_name',
+                              '次类代码': 'industry_sub_category_id',
+                              '次类简称': 'industry_sub_category_name',
+                              '大类代码': 'industry_type_id',
+                              '大类简称': 'industry_type_name'
+                              })
 
 from datetime import datetime
 
