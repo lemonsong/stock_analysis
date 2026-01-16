@@ -1,0 +1,44 @@
+import sys
+import logging
+logging.basicConfig(
+    format="{asctime} - {levelname} - {message}",
+    style="{",
+    datefmt="%Y-%m-%d %H:%M",
+    level=logging.INFO, # DEBUG,INFO,WARNING, ERROR, CRITICAL
+)
+import pandas as pd
+from datetime import datetime
+from dateutil.relativedelta import relativedelta
+from utils.common import get_file_paths_pathlib, extract_stock_symbol_from_path
+from config import PROJECT_PATH
+from functools import reduce
+
+# ref: https://www.tidy-finance.org/python/financial-statement-analysis.html#combining-financial-ratios
+
+PROGRAM_PATH = f'{PROJECT_PATH}/data_ak_dividend'
+# get current date as baseline date
+current_date = pd.Timestamp(datetime.now().date())
+# load data
+dividend_df = pd.read_csv(f'{PROGRAM_PATH}/stock_dividend.csv')
+
+# preprocess data
+# 转换日期格式
+dividend_df['execution_date'] = pd.to_datetime(dividend_df['execution_date'])
+
+# define calculation
+def get_total_yield(df, years):
+    start_date = current_date - relativedelta(years=years)
+    # 筛选在时间窗口内的记录
+    mask = (df['execution_date'] >= start_date) & (df['execution_date'] <= current_date)
+    # 按 symbol 分组求和
+    return df[mask].groupby('symbol')['cash_dividend_yield'].sum()
+
+# calcuate
+yield_1y = get_total_yield(dividend_df, 1).rename('Total_Yield_1Y').reset_index()
+yield_3y = get_total_yield(dividend_df, 3).rename('Total_Yield_3Y').reset_index()
+yield_5y = get_total_yield(dividend_df, 5).rename('Total_Yield_5Y').reset_index()
+
+# combine
+result = yield_1y.merge(yield_3y, on=['symbol'], how='outer').merge(yield_5y, on=['symbol'], how='outer')
+# result = pd.concat([yield_1y, yield_3y, yield_5y], axis=1).fillna(0)
+result.to_csv(f'{PROGRAM_PATH}/stock_cash_dividend_yield_by_periods.csv', encoding='utf-8', index=False)

@@ -26,4 +26,9 @@ AK_FUNDAMENTAL_KEEP_COMMON_COLS = ['SECURITY_NAME_ABBR', 'ORG_TYPE', 'REPORT_DAT
 
 
 # buy_sell_signal_column_type
-
+BUY_SIGNAL_COLS = ['rsi_less_than_10','close_less_than_boll_lb',
+                   'ewm_short_term_more_than_long_term', 'macd_buy', 'rsi_plus_macd_buy',
+                   'trix_buy', 'wr_more_than_90']
+SELL_SIGNAL_COLS = ['rsi_more_than_90', 'close_more_than_boll_ub',
+                    'ewm_short_term_less_than_long_term', 'macd_sell', 'rsi_plus_macd_sell',
+                    'trix_sell','wr_less_than_10']
