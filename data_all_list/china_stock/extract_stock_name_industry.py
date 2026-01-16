@@ -31,13 +31,13 @@ method to get the stock&name&industry url:
 ### 下载 PDF 文件 ###
 
 # 如果用url
-# url = "https://capcofile.oss-cn-beijing.aliyuncs.com/2025/file/2025%E5%B9%B4%E4%B8%8A%E5%8D%8A%E5%B9%B4%E4%B8%8A%E5%B8%82%E5%85%AC%E5%8F%B8%E8%A1%8C%E4%B8%9A%E5%88%86%E7%B1%BB%E7%BB%93%E6%9E%9C%EF%BC%88%E6%8C%89%E8%82%A1%E7%A5%A8%E4%BB%A3%E7%A0%81%E6%8E%92%E5%BA%8F%EF%BC%89.pdf"
-# response = requests.get(url)
-# with pdfplumber.open(BytesIO(response.content)) as pdf:
+url = "https://capcofile.oss-cn-beijing.aliyuncs.com/2025/file/2025%E5%B9%B4%E4%B8%8A%E5%8D%8A%E5%B9%B4%E4%B8%8A%E5%B8%82%E5%85%AC%E5%8F%B8%E8%A1%8C%E4%B8%9A%E5%88%86%E7%B1%BB%E7%BB%93%E6%9E%9C%EF%BC%88%E6%8C%89%E8%82%A1%E7%A5%A8%E4%BB%A3%E7%A0%81%E6%8E%92%E5%BA%8F%EF%BC%89.pdf"
+response = requests.get(url)
+with pdfplumber.open(BytesIO(response.content)) as pdf:
 
-# 如果download了文件
-local_pdf_path = f'{PROGRAM_PATH}/2025年上半年上市公司行业分类结果（按股票代码排序）.pdf'
-with pdfplumber.open(local_pdf_path) as pdf:
+# # 如果download了文件
+# local_pdf_path = f'{PROGRAM_PATH}/2025年上半年上市公司行业分类结果（按股票代码排序）.pdf'
+# with pdfplumber.open(local_pdf_path) as pdf:
 
     for page in pdf.pages:
         table = page.extract_table()

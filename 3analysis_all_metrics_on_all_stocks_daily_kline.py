@@ -91,8 +91,8 @@ all_stock_metrics['overall_signal_count'] = all_stock_metrics['buy_signal_count'
 
 
 all_stock_metrics = all_stock_metrics.sort_values('overall_signal_count', ascending=False)
-# read stock_name_industry.csv to map symbol to company
-symbol_to_company_df = pd.read_csv("data_all_list/china_stock/stock_name_industry.csv")[['symbol', 'company','industry_category_name','industry_type_name']]
+# read stock_name_industry.csv to map symbol to company and industry
+symbol_to_company_df = pd.read_csv("data_all_list/china_stock/stock_name_industry.csv")[['symbol', 'company', 'industry_category_name', 'industry_sub_category_id', 'industry_type_name']]
 all_stock_metrics =symbol_to_company_df.merge(all_stock_metrics, how='right',on='symbol')
 
 

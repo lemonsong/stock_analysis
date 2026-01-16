@@ -23,3 +23,7 @@ ALPHAVANTAGE_API_KEY = os.getenv("ALPHAVANTAGE_API_KEY")
 
 # ak_fundamental_by_yearly
 AK_FUNDAMENTAL_KEEP_COMMON_COLS = ['SECURITY_NAME_ABBR', 'ORG_TYPE', 'REPORT_DATE_NAME']
+
+
+# buy_sell_signal_column_type
+

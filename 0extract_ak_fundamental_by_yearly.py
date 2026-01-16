@@ -15,7 +15,7 @@ PROGRAM_PATH = f'{PROJECT_PATH}/data_ak_fundamental/single_file/'
 ########### TODO: define stock_li to fetch fundamental data_all_list ##########
 decision_df = pd.read_csv(f'{PROJECT_PATH}/0decision2.csv')
 # critical_df = decision_df.loc[decision_df.overall_signal_count==1].copy()
-critical_df = decision_df.iloc[260:280,:].copy()
+critical_df = decision_df.iloc[297:310,:].copy()
 
 logging.info(f"{critical_df=}")
 
