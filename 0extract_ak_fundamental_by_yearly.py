@@ -13,15 +13,29 @@ from config import PROJECT_PATH
 PROGRAM_PATH = f'{PROJECT_PATH}/data_ak_fundamental/single_file/'
 
 ########### TODO: define stock_li to fetch fundamental data_all_list ##########
-decision_df = pd.read_csv(f'{PROJECT_PATH}/0decision2.csv')
-# critical_df = decision_df.loc[decision_df.overall_signal_count==1].copy()
-critical_df = decision_df.iloc[316:330,:].copy()
+# decision_df = pd.read_csv(f'{PROJECT_PATH}/0decision.csv')
+critical_df = decision_df.loc[decision_df.overall_signal_count==1].copy()
+
+# OR
+
+# decision_df = pd.read_csv(f'{PROJECT_PATH}/0decision2.csv')
+# critical_df = decision_df.iloc[380:400,:].copy()
 
 logging.info(f"{critical_df=}")
 
 # stock list to fetch fundamentals data_all_list
 stock_li = critical_df.symbol.tolist()
-# stock_li = ['SZ002582','SH603156','SH603886','SZ000895','SH600866']
+# stock_li = ['SZ300377','SZ300468']
+# stock_li = ['SH603309','SZ300097','SZ002209']
+# stock_li = ['SZ000070','SH603042']
+# stock_li = ['SZ002105','SH605001']
+# stock_li = ['SZ002555','SZ002315','SH603444','SZ300533','SH601360']
+# stock_li = ['SH600901','SH601077','SH601318','SZ002142','SH601555']
+
+
+
+
+
 # stock_li = ['SZ000573']
 ###########################
 # DONE level 1: get file name all files in the path. only fetch and write data_all_list if the symbol_xx_sheet not existed.

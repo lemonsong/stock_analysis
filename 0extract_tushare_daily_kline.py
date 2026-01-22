@@ -2,7 +2,6 @@
 Update single stock of ALL stock kline data_all_list between start_date and end_date
 '''
 import sys
-
 import pandas as pd
 import tushare as ts
 from utils.constants import TUSHARE_API_KEY
@@ -19,18 +18,33 @@ logging.basicConfig(
     level=logging.INFO, # DEBUG,INFO,WARNING, ERROR, CRITICAL
 )
 import exchange_calendars as xcals
+import argparse
+
+if len(sys.argv) > 1:
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--start', type=str, required=True)
+    parser.add_argument('--end', type=str, required=True)
+    args = parser.parse_args()
+    start_date = args.start
+    end_date = args.end
+    logging.info(f"Fetching data via sys argument parser: {start_date} to {end_date}")
+    # TODO:add end_date validation step or automate start & end data input to avoid mistakes
+else:
+    start_date = "2026-01-14"  # TODO
+    end_date = '2026-01-20'  # TODO
+    logging.info(f"Fetching data via manual input: {start_date} to {end_date}")
+
 
 PROGRAM_PATH = f'{PROJECT_PATH}/data_tushare'
-
-start_date = "2026-01-13" # TODO
-end_date = '2026-01-14' # TODO
 kline_file_path = f'{PROGRAM_PATH}/0kline_{start_date}_to_{end_date}.csv'
 write_log_file_path = f'{PROGRAM_PATH}/0daily_data_write_log.csv'
+
 is_test = False # TODO
 if is_test:
     daily_folder='daily_test'
 else:
     daily_folder = 'daily'
+
 xshg = xcals.get_calendar("XSHG")
 xshg_dates = xshg.sessions_in_range(start_date,end_date)
 xshg_dates_li = xshg_dates.tolist()

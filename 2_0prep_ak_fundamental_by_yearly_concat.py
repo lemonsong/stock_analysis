@@ -38,11 +38,16 @@ fundamental_types = ['balance', 'profit', 'cash_flow']
 drop_cols = [i for i in all_common_cols if i not in AK_FUNDAMENTAL_KEEP_COMMON_COLS]
 drop_cols_balance = drop_cols + ['UNCONFIRM_INVEST_LOSS', 'UNCONFIRM_INVEST_LOSS_YOY',
                                  'OTHER_COMPRE_INCOME','OTHER_COMPRE_INCOME_YOY',
-                                 'CONVERT_DIFF','CONVERT_DIFF_YOY']
+                                 'CONVERT_DIFF','CONVERT_DIFF_YOY',
+                                 'EXTRACT_INSURANCE_RESERVE','EXTRACT_INSURANCE_RESERVE_YOY',
+                                 'EXTRACT_UNEXPIRE_RESERVE','EXTRACT_UNEXPIRE_RESERVE_YOY']
 drop_cols_profit = drop_cols
 drop_cols_cash_flow = drop_cols + ['MINORITY_INTEREST', 'MINORITY_INTEREST_YOY',
                                    'NETPROFIT','NETPROFIT_YOY',
-                                   'FINANCE_EXPENSE','FINANCE_EXPENSE_YOY']
+                                   'FINANCE_EXPENSE','FINANCE_EXPENSE_YOY',
+                                   'EXTRACT_INSURANCE_RESERVE','EXTRACT_INSURANCE_RESERVE_YOY',
+                                 'EXTRACT_UNEXPIRE_RESERVE','EXTRACT_UNEXPIRE_RESERVE_YOY'
+                                   ]
 
 # "BOND_PAYABLE",  "DEFER_INCOME_1YEAR"
 
@@ -71,6 +76,7 @@ for stock_symbol in stock_symbol_li:
 # check whether any column existed in 2 sheets causing the creation of xxx_y columns after merge
 for col in fundamental_df.columns:
     if '_y' in col:
+        fundamental_df.to_csv(f'{PROGRAM_PATH}/fundamental_cleaned_debug.csv', index=False, encoding='utf-8')
         logging.critical(f'please check which 2 sheets contain {col}, and decide whether need to keep both')
         sys.exit(1)
 

@@ -23,6 +23,22 @@ logging.basicConfig(
     datefmt="%Y-%m-%d %H:%M",
     level=logging.INFO, # DEBUG,INFO,WARNING, ERROR, CRITICAL
 )
+import argparse, sys
+
+# this is the end date of single stock kline files.
+# It should be the last date of signle stock kline file.
+# Or else the kline after this date will be removed in the clean_daily_by_dates() step
+if len(sys.argv) > 1:
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--end', type=str, required=True)
+    args = parser.parse_args()
+    end_date_str = args.end
+    logging.info(f"Fetching data via sys argument parser: {end_date_str}")
+else:
+    end_date_str = '2026-01-21' # TODO:
+    logging.info(f"Fetching data via manual input: {end_date_str}")
+end_date_d = datetime.strptime(end_date_str, '%Y-%m-%d').date()
+
 is_test = False # TODO
 if is_test:
     daily_folder='daily_test'
@@ -31,14 +47,6 @@ else:
 # list of symbol identified having problem based on 1data_quality_dolt_daily_kline_by_stock
 
 PROGRAM_PATH = f'{PROJECT_PATH}/data_tushare'
-# start_date_ymd = '20221201'
-# end_date_ymd = '20251107'
-
-# this is the end date of single stock kline files.
-# It should be the last date of signle stock kline file.
-# Or else the kline after this date will be removed in the clean_daily_by_dates() step
-end_date_str = '2026-01-14' # TODO:
-end_date_d = datetime.strptime(end_date_str, '%Y-%m-%d').date()
 write_log_file_path = f'{PROGRAM_PATH}/0daily_data_write_log.csv'
 # TODO: automate this step
 # symbol_li = ['SZ000430', 'SH000905', 'SH600169', 'SZ002387', 'SH000906', 'SZ300277',
