@@ -365,7 +365,6 @@ def render_comprehensive_tab(df, selected_symbols, stock_names):
                 fig.update_layout(
                     polar=dict(radialaxis=dict(visible=True, range=[0, 100])),
                     showlegend=True,
-                    title="关键财务指标雷达图（归一化到0-100）",
                     height=500
                 )
                 st.plotly_chart(fig, use_container_width=True)
@@ -377,7 +376,7 @@ def render_comprehensive_tab(df, selected_symbols, stock_names):
                 col_idx = i % 4
                 with summary_cols[col_idx]:
                     with st.container(border=True):
-                        st.markdown(f"**{stock_names.get(symbol, symbol)}**")
+                        st.markdown(f"**symbol - {stock_names.get(symbol, symbol)}**")
                         symbol_data = baseline_data[baseline_data['symbol'] == symbol]
                         if not symbol_data.empty:
                             row = symbol_data.iloc[0]
@@ -449,7 +448,6 @@ def render_trends_tab(df, selected_symbols, selected_metrics, stock_names):
         horizontal=True,
         key="compare_mode_select"
     )
-
     if compare_mode == "单指标多股票":
         for metric in selected_metrics:
             if metric not in df.columns: continue

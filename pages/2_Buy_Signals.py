@@ -362,9 +362,10 @@ def display_detailed_data(filtered_df):
             "名称",
             help="company",
         ),
-        "close": st.column_config.Column(
+        "close": st.column_config.NumberColumn(
             "收盘价",
             help="close",
+            format="%.2f"
         ),
         "industry_category_name": st.column_config.Column(
             "行业类型",
@@ -379,7 +380,7 @@ def display_detailed_data(filtered_df):
             help="industry_type_name",
         ),
         "overall_signal_count": st.column_config.Column(
-            "总体信号数",
+            "综合信号数",
             help="买入信号数减卖出信号数",
         ),
         "buy_signal_count": st.column_config.Column(

@@ -64,7 +64,7 @@ if st.button("Run CN Stock - Daily Kline Pipeline", icon="📈", type="primary")
 
             # Run the script and wait for it to finish
 
-            logger = get_logger()
+            logger = get_logger("daily kline")
             logger.handlers.clear()
             handler = StreamlitLogHandler(st.empty().code)
             logger.addHandler(handler)
