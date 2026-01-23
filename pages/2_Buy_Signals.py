@@ -7,23 +7,19 @@ import plotly.express as px
 import plotly.graph_objects as go
 import json
 from pathlib import Path
-
+from utils.streamlit_helper import setup_page_config
 from config import PROJECT_PATH
-
-st.set_page_config(page_title="A股买卖信号", layout="wide")
-
-st.title("📊 A股买卖信号监测")
-
-# 读取数据
-decision_file = Path(PROJECT_PATH) / 'data_app/app_decision.csv'
-
-if not decision_file.exists():
-    st.error(f"未找到数据文件: {decision_file}")
-    st.stop()
+setup_page_config()
 
 @st.cache_data
 def load_decision_data():
     """加载决策数据"""
+    decision_file = Path(PROJECT_PATH) / 'data_app/app_decision.csv'
+
+    if not decision_file.exists():
+        st.error(f"未找到数据文件: {decision_file}")
+        return None
+
     try:
         df = pd.read_csv(decision_file)
         return df
@@ -31,337 +27,319 @@ def load_decision_data():
         st.error(f"读取数据文件失败: {e}")
         return None
 
-df = load_decision_data()
-print(df.head())
-if df is None or df.empty:
-    st.warning("数据文件为空")
-    st.stop()
-
-# 侧边栏：筛选选项
-st.sidebar.header("筛选条件")
-
-# 识别数值列（排除布尔列和文本列）
-numeric_cols = []
-for col in df.columns:
-    if col not in ['symbol', 'company']:
-        if df[col].dtype in ['int64', 'float64']:
-            numeric_cols.append(col)
-        elif df[col].dtype == 'bool':
-            # 布尔列也作为筛选选项
-            pass
-        else:
-            # 尝试转换为数值
-            try:
-                pd.to_numeric(df[col], errors='raise')
+def get_numeric_columns(df):
+    """获取数值类型的列"""
+    numeric_cols = []
+    for col in df.columns:
+        if col not in ['symbol', 'company']:
+            if df[col].dtype in ['int64', 'float64']:
                 numeric_cols.append(col)
-            except:
+            elif df[col].dtype == 'bool':
+                # 布尔列也作为筛选选项
                 pass
+            else:
+                # 尝试转换为数值
+                try:
+                    pd.to_numeric(df[col], errors='raise')
+                    numeric_cols.append(col)
+                except:
+                    pass
+    return numeric_cols
 
-# 符号和公司合并搜索
-st.sidebar.markdown("#### 🔍 股票搜索")
-search_mode = st.sidebar.radio(
-    "搜索模式",
-    options=["分别搜索", "合并搜索"],
-    index=0,
-    help="分别搜索：在symbol或company中搜索；合并搜索：在symbol+company的组合中搜索"
-)
+def setup_sidebar(df):
+    """设置侧边栏筛选条件并返回筛选后的数据"""
+    st.sidebar.header("筛选条件")
 
-if search_mode == "分别搜索":
-    search_term = st.sidebar.text_input("搜索股票代码或名称", "")
-else:
-    search_term = st.sidebar.text_input("搜索股票代码+名称组合", "", 
-                                        help="例如：SH600000平安银行")
+    numeric_cols = get_numeric_columns(df)
 
-# 数值列筛选器 - 使用折叠面板组织
-st.sidebar.markdown("#### 📊 数值列筛选")
-# 获取唯一行业列表，并添加“全部”选项
-# industry_category_name,industry_sub_category_name,industry_type_name
-industry_category_name_list = ["全部"] + list(df['industry_category_name'].unique())
-selected_industry_category_name = st.sidebar.selectbox("industry_category_name", industry_category_name_list)
+    # 1. 股票搜索
+    st.sidebar.markdown("#### 🔍 股票搜索")
+    search_mode = st.sidebar.radio(
+        "搜索模式",
+        options=["分别搜索", "合并搜索"],
+        index=0,
+        help="分别搜索：在symbol或company中搜索；合并搜索：在symbol+company的组合中搜索"
+    )
 
-industry_sub_category_name_list = ["全部"] + list(df['industry_sub_category_name'].unique())
-selected_industry_sub_category_name = st.sidebar.selectbox("industry_sub_category_name", industry_sub_category_name_list)
+    search_term = ""
+    if search_mode == "分别搜索":
+        search_term = st.sidebar.text_input("搜索股票代码或名称", "")
+    else:
+        search_term = st.sidebar.text_input("搜索股票代码+名称组合", "", help="例如：SH600000平安银行")
 
-industry_type_name_list = ["全部"] + list(df['industry_type_name'].unique())
-selected_industry_type_name = st.sidebar.selectbox("industry_type_name", industry_type_name_list)
+    # 2. 行业筛选
+    st.sidebar.markdown("#### 📊 数值列筛选")
 
+    industry_filters = {}
+    for level in ['industry_category_name', 'industry_sub_category_name', 'industry_type_name']:
+        if level in df.columns:
+            options = ["全部"] + list(df[level].unique())
+            industry_filters[level] = st.sidebar.selectbox(level, options)
 
-# 信号相关列
-with st.sidebar.expander("信号指标", expanded=True):
-    signal_cols = [col for col in numeric_cols if 'signal' in col.lower()]
-    for col in signal_cols:
-        if col in df.columns:
-            col_min = float(df[col].min())
-            col_max = float(df[col].max())
-            col_range = st.slider(
-                f"{col}",
-                min_value=col_min,
-                max_value=col_max,
-                value=(col_min, col_max),
-                key=f"filter_{col}"
+    # 3. 信号指标筛选
+    signal_filters = {}
+    with st.sidebar.expander("信号指标", expanded=True):
+        signal_cols = [col for col in numeric_cols if 'signal' in col.lower()]
+        for col in signal_cols:
+            if col in df.columns:
+                col_min = float(df[col].min())
+                col_max = float(df[col].max())
+                signal_filters[col] = st.slider(
+                    f"{col}",
+                    min_value=col_min,
+                    max_value=col_max,
+                    value=(col_min, col_max),
+                    key=f"filter_{col}"
+                )
+
+    # 4. 价格筛选
+    price_range = None
+    if 'close' in numeric_cols:
+        with st.sidebar.expander("价格", expanded=False):
+            price_min = float(df['close'].min())
+            price_max = float(df['close'].max())
+            price_range = st.slider(
+                "价格",
+                min_value=price_min,
+                max_value=price_max,
+                value=(price_min, price_max),
+                key="filter_close"
             )
 
-# # 技术指标列
-# with st.sidebar.expander("技术指标", expanded=False):
-#     tech_cols = [col for col in numeric_cols if col not in signal_cols and col != 'close']
-#     for col in tech_cols[:10]:  # 限制显示前10个，避免界面过长
-#         if col in df.columns:
-#             col_min = float(df[col].min())
-#             col_max = float(df[col].max())
-#             col_range = st.slider(
-#                 f"{col}",
-#                 min_value=col_min,
-#                 max_value=col_max,
-#                 value=(col_min, col_max),
-#                 key=f"filter_{col}"
-#             )
+    # --- 应用筛选 ---
+    filtered_df = df.copy()
 
-# 价格筛选
-if 'close' in numeric_cols:
-    with st.sidebar.expander("价格", expanded=False):
-        price_min = float(df['close'].min())
-        price_max = float(df['close'].max())
-        price_range = st.slider(
-            "价格",
-            min_value=price_min,
-            max_value=price_max,
-            value=(price_min, price_max),
-            key="filter_close"
-        )
+    # 应用行业筛选
+    for col, value in industry_filters.items():
+        if value != "全部":
+            filtered_df = filtered_df[filtered_df[col] == value]
 
-# 应用筛选
-filtered_df = df.copy()
-# 应用行业筛选
-if selected_industry_category_name == "全部":
-    filtered_df = filtered_df
-else:
-    filtered_df = filtered_df[filtered_df['industry_category_name'] == selected_industry_category_name]
-if selected_industry_sub_category_name == "全部":
-    filtered_df = filtered_df
-else:
-    filtered_df = filtered_df[filtered_df['industry_sub_category_name'] == selected_industry_sub_category_name]
-if selected_industry_type_name == "全部":
-    filtered_df = filtered_df
-else:
-    filtered_df = filtered_df[filtered_df['industry_type_name'] == selected_industry_type_name]
+    # 应用信号筛选
+    for col, (min_val, max_val) in signal_filters.items():
+        filtered_df = filtered_df[
+            (filtered_df[col] >= min_val) &
+            (filtered_df[col] <= max_val)
+        ]
 
-# 应用数值列筛选
-for col in numeric_cols:
-    if col in filtered_df.columns:
-        filter_key = f"filter_{col}"
-        if filter_key in st.session_state:
-            col_range = st.session_state[filter_key]
-            # 只有当范围不是全范围时才应用筛选
-            col_min = float(df[col].min())
-            col_max = float(df[col].max())
-            if col_range[0] > col_min or col_range[1] < col_max:
-                filtered_df = filtered_df[
-                    (filtered_df[col] >= col_range[0]) &
-                    (filtered_df[col] <= col_range[1])
-                ]
+    # 应用价格筛选
+    if price_range:
+        filtered_df = filtered_df[
+            (filtered_df['close'] >= price_range[0]) &
+            (filtered_df['close'] <= price_range[1])
+        ]
 
-# 应用搜索筛选
-if search_term:
-    if search_mode == "分别搜索":
-        mask = (
-            filtered_df['symbol'].str.contains(search_term, case=False, na=False) |
-            filtered_df['company'].str.contains(search_term, case=False, na=False)
-        )
-    else:  # 合并搜索
-        # 创建symbol+company的组合列进行搜索
-        combined = (filtered_df['symbol'].astype(str) + filtered_df['company'].astype(str))
-        mask = combined.str.contains(search_term, case=False, na=False)
-    filtered_df = filtered_df[mask]
+    # 应用搜索筛选
+    if search_term:
+        if search_mode == "分别搜索":
+            mask = (
+                filtered_df['symbol'].str.contains(search_term, case=False, na=False) |
+                filtered_df['company'].str.contains(search_term, case=False, na=False)
+            )
+        else:
+            # 创建symbol+company的组合列进行搜索
+            combined = (filtered_df['symbol'].astype(str) + filtered_df['company'].astype(str))
+            mask = combined.str.contains(search_term, case=False, na=False)
+        filtered_df = filtered_df[mask]
 
-# 显示统计信息
-st.markdown("### 📈 信号统计")
+    return filtered_df
 
-col1, col2, col3, col4 = st.columns(4)
+def display_metrics(filtered_df):
+    """显示统计指标"""
+    st.markdown("### 📈 信号统计")
+    col1, col2, col3, col4 = st.columns(4)
 
-with col1:
-    st.metric("总股票数", len(filtered_df))
-with col2:
-    if 'buy_signal_count' in filtered_df.columns:
-        avg_buy = filtered_df['buy_signal_count'].mean()
-        st.metric("平均买入信号", f"{avg_buy:.1f}")
-with col3:
-    if 'sell_signal_count' in filtered_df.columns:
-        avg_sell = filtered_df['sell_signal_count'].mean()
-        st.metric("平均卖出信号", f"{avg_sell:.1f}")
-with col4:
+    with col1:
+        st.metric("总股票数", len(filtered_df))
+    with col2:
+        if 'buy_signal_count' in filtered_df.columns:
+            avg_buy = filtered_df['buy_signal_count'].mean()
+            st.metric("平均买入信号", f"{avg_buy:.1f}")
+    with col3:
+        if 'sell_signal_count' in filtered_df.columns:
+            avg_sell = filtered_df['sell_signal_count'].mean()
+            st.metric("平均卖出信号", f"{avg_sell:.1f}")
+    with col4:
+        if 'overall_signal_count' in filtered_df.columns:
+            avg_overall = filtered_df['overall_signal_count'].mean()
+            st.metric("平均综合信号", f"{avg_overall:.1f}")
+
+def display_charts(filtered_df):
+    """显示图表"""
+    st.markdown("### 📊 信号分布")
+    # with st.container(height=500):
+    col1, col2 = st.columns(2)
+
+    # 1. 综合信号数量分布
     if 'overall_signal_count' in filtered_df.columns:
-        avg_overall = filtered_df['overall_signal_count'].mean()
-        st.metric("平均综合信号", f"{avg_overall:.1f}")
+        with col1:
+            fig_overall = px.histogram(
+                filtered_df,
+                x='overall_signal_count',
+                height=600,
+                nbins=9,
+                title='综合信号数量分布',
+                labels={'overall_signal_count': '综合信号数量', 'count': '股票数量'}
+            )
+            st.plotly_chart(fig_overall, use_container_width=True)
 
-# 可视化
-st.markdown("### 📊 信号分布")
+        # 2. 各行业综合信号分布
+        if 'industry_category_name' in filtered_df.columns:
+            with col2:
+                # 确保overall_signal_count作为分类变量进行堆叠
+                chart_df = filtered_df.copy()
+                chart_df['overall_signal_str'] = chart_df['overall_signal_count'].astype(str)
 
-log_path = '/Users/yilin/Documents/Projects/stock_analysis/.cursor/debug.log'
+                # 为了图例排序，我们可以指定category_orders
+                sorted_signals = sorted(filtered_df['overall_signal_count'].unique())
+                sorted_signals_str = [str(x) for x in sorted_signals]
 
-# #region agent log
-try:
-    with open(log_path, 'a', encoding='utf-8') as f:
-        f.write(json.dumps({"sessionId":"debug-session","runId":"pre-fix","hypothesisId":"A","location":"pages/2_Buy_Signals.py:125","message":"Checking overall_signal_count column existence","data_all_list":{"has_overall":'overall_signal_count' in filtered_df.columns,"filtered_df_shape":filtered_df.shape,"columns":list(filtered_df.columns)},"timestamp":pd.Timestamp.now().timestamp()*1000})+'\n')
-except: pass
-# #endregion
+                # fig_industry = px.histogram(
+                #     chart_df,
+                #     x='industry_category_name',
+                #     color='overall_signal_str',
+                #     title='各行业综合信号分布',
+                #     labels={
+                #         'industry_category_name': '行业分类',
+                #         'count': '股票数量',
+                #         'overall_signal_str': '综合信号数量'
+                #     },
+                #     category_orders={'overall_signal_str': sorted_signals_str},
+                #     barmode='overlay'
+                # )
 
-# #region agent log
-try:
-    with open(log_path, 'a', encoding='utf-8') as f:
-        overall_data = filtered_df['overall_signal_count'] if 'overall_signal_count' in filtered_df.columns else None
-        f.write(json.dumps({"sessionId":"debug-session","runId":"pre-fix","hypothesisId":"B","location":"pages/2_Buy_Signals.py:130","message":"Checking overall_signal_count for NaN values","data_all_list":{"has_nan":int(overall_data.isna().sum()) if overall_data is not None else None,"dtype":str(overall_data.dtype) if overall_data is not None else None,"min":float(overall_data.min()) if overall_data is not None and not overall_data.empty else None,"max":float(overall_data.max()) if overall_data is not None and not overall_data.empty else None},"timestamp":pd.Timestamp.now().timestamp()*1000})+'\n')
-except: pass
-# #endregion
+                fig_industry = px.histogram(
+                    chart_df,
+                    y='industry_category_name',  # 行业名称改到 y 轴
+                    x=None,  # histogram 默认会对 y 进行计数，x 保持 None 即可
+                    color='overall_signal_str',
+                    orientation='h',  # 设置为横向显示
+                    title='各行业综合信号分布',
+                    labels={
+                        'industry_category_name': '行业分类',
+                        'count': '股票数量',
+                        'overall_signal_str': '综合信号'
+                    },
+                    height=600,
+                    category_orders={'overall_signal_str': sorted_signals_str},
+                    barmode='group' #https://plotly.github.io/plotly.py-docs/generated/plotly.express.histogram.html
 
-# Display overall_signal_count histogram instead of separate buy/sell histograms
-if 'overall_signal_count' in filtered_df.columns:
-    # #region agent log
-    try:
-        with open(log_path, 'a', encoding='utf-8') as f:
-            f.write(json.dumps({"sessionId":"debug-session","runId":"pre-fix","hypothesisId":"D","location":"pages/2_Buy_Signals.py:135","message":"Creating overall_signal_count histogram","data_all_list":{"data_points":len(filtered_df['overall_signal_count'].dropna()),"nbins":20},"timestamp":pd.Timestamp.now().timestamp()*1000})+'\n')
-    except: pass
-    # #endregion
-    
-    fig_overall = px.histogram(
-        filtered_df,
-        x='overall_signal_count',
-        nbins=10,
-        title='综合信号数量分布',
-        labels={'overall_signal_count': '综合信号数量', 'count': '股票数量'}
-    )
-    st.plotly_chart(fig_overall, use_container_width=True)
-    
-    # #region agent log
-    try:
-        with open(log_path, 'a', encoding='utf-8') as f:
-            f.write(json.dumps({"sessionId":"debug-session","runId":"pre-fix","hypothesisId":"D","location":"pages/2_Buy_Signals.py:145","message":"Histogram created successfully","data_all_list":{"status":"success"},"timestamp":pd.Timestamp.now().timestamp()*1000})+'\n')
-    except: pass
-    # #endregion
-else:
-    # #region agent log
-    try:
-        with open(log_path, 'a', encoding='utf-8') as f:
-            f.write(json.dumps({"sessionId":"debug-session","runId":"pre-fix","hypothesisId":"A","location":"pages/2_Buy_Signals.py:148","message":"overall_signal_count column not found","data_all_list":{"available_columns":list(filtered_df.columns)},"timestamp":pd.Timestamp.now().timestamp()*1000})+'\n')
-    except: pass
-    # #endregion
-    st.warning("综合信号数据不可用")
-
-# 数据表格
-st.markdown("### 📋 详细数据")
-
-# 列分组定义
-col_groups = {
-    "基本信息": ['symbol', 'company', 'close'],
-    "行业信息": ['industry_category_name', 'industry_sub_category_name', 'industry_type_name'],
-    "信号指标": [col for col in filtered_df.columns if 'signal' in col.lower()],
-    "技术指标": [col for col in filtered_df.columns if col not in ['symbol', 'company', 'close'] and 'signal' not in col.lower() and filtered_df[col].dtype in ['int64', 'float64']],
-    "布尔指标": [col for col in filtered_df.columns if filtered_df[col].dtype == 'bool'],
-    "分红指标": [col for col in filtered_df.columns if 'Total_Yield' in col],
-}
-
-# 计算默认显示的列（基本信息 + 信号指标）
-default_display_cols = []
-for group_name in ["基本信息", "行业信息", "信号指标", "分红指标"]:
-    if group_name in col_groups:
-        available_cols = [col for col in col_groups[group_name] if col in filtered_df.columns]
-        default_display_cols.extend(available_cols)
-
-# 如果没有默认列，则使用所有列
-if not default_display_cols:
-    default_display_cols = list(filtered_df.columns)
-
-# 列选择器 - 允许用户选择要显示的列
-st.markdown("#### 列选择")
-col_selection_mode = st.radio(
-    "显示模式",
-    options=["显示所有列", "自定义选择"],
-    horizontal=True
-)
-
-if col_selection_mode == "显示所有列":
-    display_cols = list(filtered_df.columns)
-else:
-    # 自定义选择模式 - 默认选择基本信息 + 信号指标
-    selected_cols = []
-    for group_name, cols in col_groups.items():
-        available_cols = [col for col in cols if col in filtered_df.columns]
-        if available_cols:
-            # 默认选择：基本信息全部选中，信号指标全部选中，其他组不选中
-            default_selection = available_cols if group_name in ["基本信息", "信号指标"] else []
-            
-            with st.expander(f"{group_name} ({len(available_cols)}列)", expanded=(group_name == "基本信息")):
-                selected = st.multiselect(
-                    f"选择{group_name}",
-                    options=available_cols,
-                    default=default_selection,
-                    key=f"cols_{group_name}"
                 )
-                selected_cols.extend(selected)
-    
-    # 如果用户没有选择任何列，使用默认列
-    display_cols = selected_cols if selected_cols else default_display_cols
 
-# 排序选项 - 包含所有数值列
-sort_options = ['symbol', 'company'] + numeric_cols
-sort_by = st.selectbox(
-    "排序方式",
-    options=sort_options,
-    index=sort_options.index('overall_signal_count') if 'overall_signal_count' in sort_options else 0,
-    format_func=lambda x: {
-        'overall_signal_count': '综合信号',
-        'buy_signal_count': '买入信号',
-        'sell_signal_count': '卖出信号',
-        'close': '价格',
-        'symbol': '股票代码',
-        'company': '公司名称'
-    }.get(x, x)
-)
+                # 优化 UI：在条形图上显示具体数值，并让 y 轴标签更易读
+                fig_industry.update_traces(texttemplate='%{x}', textposition='inside')
+                fig_industry.update_layout(
+                    xaxis_title="股票数量",
+                    yaxis_title="行业分类",
+                    yaxis={'categoryorder': 'total ascending'}  # 按总量从小到大排序，方便查看
+                )
 
-if sort_by in filtered_df.columns:
+                st.plotly_chart(fig_industry, use_container_width=True)
+
+    else:
+        st.warning("综合信号数据不可用")
+
+def display_detailed_data(filtered_df):
+    """显示详细数据表格"""
+    st.markdown("### 📋 详细数据")
+
+    # 准备用于显示的DataFrame
+    display_df = filtered_df.copy()
+    # 列分组定义
+    col_groups = {
+        "基本信息": ['symbol_url', 'company', 'close'], # 使用symbol_url替代symbol
+        "行业信息": ['industry_category_name', 'industry_sub_category_name', 'industry_type_name'],
+        "信号指标": [col for col in filtered_df.columns if 'signal' in col.lower()],
+        "分红指标": [col for col in filtered_df.columns if 'Total_Yield' in col],
+        "分红指标(比率)": [col for col in filtered_df.columns if 'Yield_Ratio' in col],
+        "技术指标": [col for col in filtered_df.columns if col not in ['symbol', 'company', 'close', 'symbol_url'] and 'signal' not in col.lower() and 'Total_Yield' not in col and filtered_df[col].dtype in ['int64', 'float64']],
+        "布尔指标": [col for col in filtered_df.columns if filtered_df[col].dtype == 'bool'],
+    }
+    # 添加链接转换
+    # 构造URL: https://xueqiu.com/S/{stock_symbol}
+    # display_df['symbol'] 保持原样，通过column_config配置为LinkColumn
+    # 但是LinkColumn需要数据本身是URL。
+    # 所以我们需要创建一个新列或者修改symbol列。
+    # 为了保持排序和搜索的直观性，我们创建一个新的url列，或者修改symbol列为url但显示为代码。
+    # 这里直接修改symbol列为URL，利用LinkColumn的display_text正则来显示代码。
+    display_df['symbol_url'] = "https://xueqiu.com/S/" + display_df['symbol'].astype(str)
+    # ratio will display as percentage
+    display_df[col_groups["分红指标(比率)"]] = display_df[col_groups["分红指标(比率)"]]*100
+
+
+    ### 列选择器 ###
+    st.markdown("#### 列选择")
+    col_selection_mode = st.radio(
+        "显示模式",
+        options=["显示默认列", "显示所有列", "自定义选择"],
+        horizontal=True
+    )
+
+    # 默认显示的列
+    default_display_cols = []
+    for group_name in ["基本信息", "行业信息", "信号指标", "分红指标(比率)"]:
+        if group_name in col_groups:
+            # 注意：filtered_df中没有symbol_url，只有display_df有。
+            # col_groups["基本信息"] 包含了 symbol_url。
+            available_cols = []
+            for col in col_groups[group_name]:
+                if col in display_df.columns:
+                    available_cols.append(col)
+            default_display_cols.extend(available_cols)
+
+    final_display_cols = []
+    if col_selection_mode == "显示默认列":
+        final_display_cols = default_display_cols
+    elif col_selection_mode == "显示所有列":
+        final_display_cols = list(display_df.columns)
+        # 移除symbol (如果存在)，只保留symbol_url
+        if 'symbol' in final_display_cols and 'symbol_url' in final_display_cols:
+            final_display_cols.remove('symbol')
+    else:
+        # 自定义选择
+        selected_cols = []
+        for group_name, cols in col_groups.items():
+            available_cols = [col for col in cols if col in display_df.columns]
+            if available_cols:
+                # 默认选择
+                default_selection = available_cols if group_name in ["基本信息", "行业信息", "信号指标", "分红指标(比率)"] else []
+
+                with st.expander(f"{group_name} ({len(available_cols)}列)", expanded=(group_name == "基本信息")):
+                    selected = st.multiselect(
+                        f"选择{group_name}",
+                        options=available_cols,
+                        default=default_selection,
+                        key=f"cols_{group_name}"
+                    )
+                    selected_cols.extend(selected)
+
+        final_display_cols = selected_cols if selected_cols else default_display_cols
+
+    if not final_display_cols:
+        st.warning("请至少选择一列进行显示")
+        return
+
+    # 排序
+    # 因为display_df中有symbol_url，如果用户想按代码排序，其实按symbol_url排序效果一样
+    sort_options = [col for col in final_display_cols]
+
+    # 尝试把 'overall_signal_count' 作为默认排序
+    default_sort_index = 0
+    if 'overall_signal_count' in sort_options:
+        default_sort_index = sort_options.index('overall_signal_count')
+
+    sort_by = st.selectbox("排序方式", options=sort_options, index=default_sort_index)
     ascending = st.checkbox("升序", value=False)
-    filtered_df_sorted = filtered_df.sort_values(sort_by, ascending=ascending)
-else:
-    filtered_df_sorted = filtered_df
+    
+    display_df_sorted = display_df.sort_values(sort_by, ascending=ascending)
+    display_df_final = display_df_sorted[final_display_cols]
 
-# 确保display_cols中的列都存在
-display_cols = [col for col in display_cols if col in filtered_df_sorted.columns]
-
-# 创建带颜色映射的数据表格
-def style_dataframe(df_subset):
-    """为数值列添加颜色映射"""
-    styled_df = df_subset.copy()
+    # 样式设置
+    styled_display = display_df_final.style
     
-    # 为每个数值列添加颜色样式
-    for col in df_subset.columns:
-        if col not in ['symbol', 'company'] and df_subset[col].dtype in ['int64', 'float64']:
-            # 计算颜色映射（使用线性映射）
-            col_min = df_subset[col].min()
-            col_max = df_subset[col].max()
-            
-            if col_max != col_min:
-                # 归一化到0-1范围
-                normalized = (df_subset[col] - col_min) / (col_max - col_min)
-                # 应用颜色（绿色到红色）
-                colors = normalized.apply(lambda x: f"background-color: rgba({int(255*(1-x))}, {int(255*x)}, 0, 0.3)")
-                styled_df[col] = colors
-            else:
-                styled_df[col] = ""
-    
-    return styled_df
-
-# 显示数据表格（使用styler进行颜色映射）
-if display_cols:
-    display_df = filtered_df_sorted[display_cols].copy()
-    
-    # 创建样式化的DataFrame
-    styled_display = display_df.style
-    
-    # 为每个数值列应用颜色背景
-    for col in display_df.columns:
-        if col not in ['symbol', 'company'] and display_df[col].dtype in ['int64', 'float64']:
-            col_min = display_df[col].min()
-            col_max = display_df[col].max()
-            
+    for col in display_df_final.columns:
+        if col not in ['symbol_url', 'company'] and display_df_final[col].dtype in ['int64', 'float64']:
+            col_min = display_df_final[col].min()
+            col_max = display_df_final[col].max()
             if col_max != col_min:
                 # 使用背景色渐变（绿色=低值，红色=高值）
                 styled_display = styled_display.background_gradient(
@@ -371,24 +349,115 @@ if display_cols:
                     vmin=col_min,
                     vmax=col_max
                 )
-    
+
+    # 配置列
+    column_config = {
+        "symbol_url": st.column_config.LinkColumn(
+            "股票代码",
+            help="点击查看雪球详情",
+            display_text=r"https://xueqiu\.com/S/(.*)",
+            width="small"
+        ),
+        "company": st.column_config.Column(
+            "名称",
+            help="company",
+        ),
+        "close": st.column_config.Column(
+            "收盘价",
+            help="close",
+        ),
+        "industry_category_name": st.column_config.Column(
+            "行业类型",
+            help="industry_category_name",
+        ),
+        "industry_sub_category_name": st.column_config.Column(
+            "行业分类",
+            help="industry_sub_category_name",
+        ),
+        "industry_type_name": st.column_config.Column(
+            "行业",
+            help="industry_type_name",
+        ),
+        "overall_signal_count": st.column_config.Column(
+            "总体信号数",
+            help="买入信号数减卖出信号数",
+        ),
+        "buy_signal_count": st.column_config.Column(
+            "买入信号数",
+        ),
+        "sell_signal_count": st.column_config.Column(
+            "卖出信号数",
+        ),
+        "Yield_Ratio_1Y": st.column_config.NumberColumn(
+            "近1年股息率",
+            help="过去12个月累计现金分红收益率",
+            format="%.4f%%"  # Note: format handles the display
+        ),
+        "Yield_Ratio_3Y": st.column_config.NumberColumn(
+            "近3年股息率",
+            help="过去3年累计现金分红收益率",
+            format="%.4f%%"  # Note: format handles the display
+        ),
+        "Yield_Ratio_5Y": st.column_config.NumberColumn(
+            "近5年股息率",
+            help="过去5年累计现金分红收益率",
+            format="%.4f%%"  # Note: format handles the display
+        ),
+        "Total_Yield_1Y": st.column_config.NumberColumn(
+            "近1年股息率",
+            help="过去12个月累计现金分红收益率",
+            format="%.4f"  # Note: format handles the display
+        ),
+        "Total_Yield_3Y": st.column_config.NumberColumn(
+            "近3年股息率",
+            help="过去3年累计现金分红收益率",
+            format="%.4f"  # Note: format handles the display
+        ),
+        "Total_Yield_5Y": st.column_config.NumberColumn(
+            "近5年股息率",
+            help="过去5年累计现金分红收益率",
+            format="%.4f"  # Note: format handles the display
+        ),
+    }
+
+    # 显示表格
     st.dataframe(
         styled_display,
         use_container_width=True,
-        height=600
+        height=600,
+        column_config=column_config,
+        hide_index=True
     )
     
-    # 显示数据统计
+    # 显示统计和下载
     st.markdown("#### 📊 数据统计")
-    st.write(f"显示 {len(display_df)} 行，{len(display_cols)} 列")
+    st.write(f"显示 {len(display_df_final)} 行，{len(final_display_cols)} 列")
     
-    # 下载按钮
-    csv = filtered_df_sorted[display_cols].to_csv(index=False).encode('utf-8-sig')
+    csv = display_df_final.to_csv(index=False).encode('utf-8-sig')
     st.download_button(
         label="📥 下载筛选后的数据 (CSV)",
         data=csv,
         file_name=f"ashare_signals_{pd.Timestamp.now().strftime('%Y%m%d')}.csv",
         mime="text/csv"
     )
-else:
-    st.warning("请至少选择一列进行显示")
+
+    symbol_string = ",".join(filtered_df["symbol"].astype(str).tolist())
+    # 3. Display in a code block with the copy button
+    st.write("Click the icon on the right to copy filtered symbols:")
+    st.code(symbol_string, language=None)
+
+def main():
+    st.title("📊 A股买卖信号监测")
+
+    df = load_decision_data()
+    if df is None or df.empty:
+        st.warning("数据文件为空")
+        st.stop()
+
+    filtered_df = setup_sidebar(df)
+    display_metrics(filtered_df)
+    display_charts(filtered_df)
+    display_detailed_data(filtered_df)
+
+if __name__ == "__main__":
+    main()

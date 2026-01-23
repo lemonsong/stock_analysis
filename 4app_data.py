@@ -11,5 +11,10 @@ stock_cash_dividend_yield_by_periods_df = pd.read_csv("data_ak_dividend/stock_ca
 result =symbol_to_company_df.merge(stock_decision_metrics_df, how='right',on='symbol')
 result =result.merge(stock_cash_dividend_yield_by_periods_df, how='left', on='symbol')
 
+for dividend in ['Total_Yield_1Y','Total_Yield_3Y','Total_Yield_5Y']:
+    result['Yield_Ratio_' + dividend[-2:]] = result[dividend]/result['close']
+    result[dividend] = result[dividend].fillna(0)
+    result['Yield_Ratio_' + dividend[-2:]] = result['Yield_Ratio_' + dividend[-2:]].fillna(0)
+
 
 result.to_csv('data_app/app_decision.csv', index=False, encoding='utf-8')

@@ -1,10 +1,26 @@
 import streamlit as st
 import subprocess
-import sys
+import sys, logging
+
 from datetime import datetime
-from config import PROJECT_PATH
 import pandas as pd
-st.title("Data Refresh Pipeline")
+from config import PROJECT_PATH
+# page config
+from utils.streamlit_helper import setup_page_config
+setup_page_config()
+# logger
+from streamlit.logger import get_logger
+class StreamlitLogHandler(logging.Handler):
+    def __init__(self, widget_update_func):
+        super().__init__()
+        self.widget_update_func = widget_update_func
+
+    def emit(self, record):
+        msg = self.format(record)
+        self.widget_update_func(msg)
+
+
+st.title("💦 Data Refresh Pipeline")
 
 
 ######################### Section 1 #########################
@@ -47,6 +63,12 @@ if st.button("Run CN Stock - Daily Kline Pipeline", icon="📈", type="primary")
                 cmd.extend(["--end", end_str])
 
             # Run the script and wait for it to finish
+
+            logger = get_logger()
+            logger.handlers.clear()
+            handler = StreamlitLogHandler(st.empty().code)
+            logger.addHandler(handler)
+
             result = subprocess.run(cmd, capture_output=True, text=True, check=True)
 
             # Update progress

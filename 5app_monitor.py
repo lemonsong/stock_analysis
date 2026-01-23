@@ -1,13 +1,18 @@
 import streamlit as st
-from utils.cache import clear_cache, clean_expired_cache
+from utils.streamlit_helper import clear_cache, clean_expired_cache, setup_page_config
+
+
 
 # 页面配置只在主文件设置一次
-st.set_page_config(
+setup_page_config(
     page_title="投资监测分析平台",
     page_icon="💰",
     layout="wide",
     initial_sidebar_state="expanded"
 )
+
+
+
 
 # 侧边栏导航和设置
 st.sidebar.title("💰 投资监测分析平台")
@@ -28,14 +33,14 @@ st.sidebar.markdown("---")
 st.sidebar.markdown("### ⚙️ 全局设置")
 
 # 缓存管理
-st.sidebar.markdown("#### 缓存管理")
-if st.sidebar.button("🔄 清理过期缓存", use_container_width=True):
-    clean_expired_cache()
-    st.sidebar.success("已清理过期缓存")
+with st.sidebar.expander("缓存管理", expanded=False):
+    if st.button("🔄 清理过期缓存", use_container_width=True):
+        clean_expired_cache()
+        st.sidebar.success("已清理过期缓存")
 
-if st.sidebar.button("🗑️ 清除所有缓存", use_container_width=True):
-    clear_cache()
-    st.sidebar.success("已清除所有缓存")
+    if st.button("🗑️ 清除所有缓存", use_container_width=True):
+        clear_cache()
+        st.sidebar.success("已清除所有缓存")
 
 st.sidebar.markdown("---")
 

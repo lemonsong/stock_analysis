@@ -8,10 +8,14 @@ import plotly.express as px
 from plotly.subplots import make_subplots
 from pathlib import Path
 import io
+import sys
+# 添加根目录到sys.path以便导入utils
+# sys.path.append(str(Path(__file__).parent.parent))
+from utils.streamlit_helper import setup_page_config
 
 from config import PROJECT_PATH
 
-st.set_page_config(page_title="A股基本面分析", layout="wide")
+setup_page_config()
 
 st.title("📊 A股基本面分析和比较")
 
