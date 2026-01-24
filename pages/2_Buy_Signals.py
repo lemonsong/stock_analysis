@@ -251,7 +251,8 @@ def display_detailed_data(filtered_df):
         "信号指标": [col for col in filtered_df.columns if 'signal' in col.lower()],
         "分红指标": [col for col in filtered_df.columns if 'Total_Yield' in col],
         "分红指标(比率)": [col for col in filtered_df.columns if 'Yield_Ratio' in col],
-        "技术指标": [col for col in filtered_df.columns if col not in ['symbol', 'company', 'close', 'symbol_url'] and 'signal' not in col.lower() and 'Total_Yield' not in col and filtered_df[col].dtype in ['int64', 'float64']],
+        "基本面排名": [col for col in filtered_df.columns if 'fundamental' in col.lower()],
+        "技术指标": [col for col in filtered_df.columns if col not in ['symbol', 'company', 'close', 'symbol_url'] and 'signal' not in col.lower() and 'Total_Yield' not in col and 'fundamental' not in col.lower() and filtered_df[col].dtype in ['int64', 'float64']],
         "布尔指标": [col for col in filtered_df.columns if filtered_df[col].dtype == 'bool'],
     }
     # 添加链接转换
@@ -276,7 +277,7 @@ def display_detailed_data(filtered_df):
 
     # 默认显示的列
     default_display_cols = []
-    for group_name in ["基本信息", "行业信息", "信号指标", "分红指标(比率)"]:
+    for group_name in ["基本信息", "行业信息", "信号指标", "分红指标(比率)", "基本面排名"]:
         if group_name in col_groups:
             # 注意：filtered_df中没有symbol_url，只有display_df有。
             # col_groups["基本信息"] 包含了 symbol_url。
@@ -301,7 +302,7 @@ def display_detailed_data(filtered_df):
             available_cols = [col for col in cols if col in display_df.columns]
             if available_cols:
                 # 默认选择
-                default_selection = available_cols if group_name in ["基本信息", "行业信息", "信号指标", "分红指标(比率)"] else []
+                default_selection = available_cols if group_name in ["基本信息", "行业信息", "信号指标", "分红指标(比率)", "基本面排名"] else []
 
                 with st.expander(f"{group_name} ({len(available_cols)}列)", expanded=(group_name == "基本信息")):
                     selected = st.multiselect(
@@ -417,6 +418,21 @@ def display_detailed_data(filtered_df):
             "近5年股息率",
             help="过去5年累计现金分红收益率",
             format="%.4f"  # Note: format handles the display
+        ),
+        "fundamental_score": st.column_config.NumberColumn(
+            "基本面评分",
+            help="基于各项财务指标的综合评分（越高越好）",
+            format="%.2f"
+        ),
+        "fundamental_rank": st.column_config.NumberColumn(
+            "基本面排名",
+            help="基于综合评分的年度排名（越小越好）",
+            format="%d"
+        ),
+        "fundamental_fiscal_year": st.column_config.NumberColumn(
+            "财报年份",
+            help="排名所基于的财报年份",
+            format="%d"
         ),
     }
 

@@ -381,11 +381,15 @@ def render_comprehensive_tab(df, selected_symbols, stock_names):
                         symbol_data = baseline_data[baseline_data['symbol'] == symbol]
                         if not symbol_data.empty:
                             row = symbol_data.iloc[0]
-                            key_metrics = ['roe', 'netcash_operate_over_net_profit', 'debt_to_asset', 'inventory_turnover','ev_over_ebitda']
+                            key_metrics = ['fundamental_rank', 'fundamental_score', 'roe', 'netcash_operate_over_net_profit', 'debt_to_asset', 'inventory_turnover','ev_over_ebitda']
                             for metric in key_metrics:
                                 if metric in row and pd.notna(row[metric]):
                                     val = row[metric]
-                                    if metric in ['roe', 'debt_to_asset']:
+                                    if metric == 'fundamental_rank':
+                                         st.metric("综合排名", f"#{int(val)}")
+                                    elif metric == 'fundamental_score':
+                                         st.metric("基本面得分", f"{val:.2f}")
+                                    elif metric in ['roe', 'debt_to_asset']:
                                         st.metric(metric.upper(), f"{val:.2%}")
                                     elif metric == "netcash_operate_over_net_profit":
                                         st.metric(metric.upper(), f"{val:.2f}")
@@ -399,7 +403,7 @@ def render_comprehensive_tab(df, selected_symbols, stock_names):
             
             # 3. 数据汇总表
             st.markdown("##### 最新年份数据汇总")
-            display_cols = ['symbol', 'fiscal_year'] + radar_metrics
+            display_cols = ['symbol', 'fiscal_year', 'fundamental_rank', 'fundamental_score'] + radar_metrics
             display_cols = [col for col in display_cols if col in baseline_data.columns]
             display_df = baseline_data[display_cols].copy()
             display_df['symbol'] = display_df['symbol'].map(lambda x: f"{x} - {stock_names.get(x, x)}")
