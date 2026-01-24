@@ -1,6 +1,6 @@
 import pandas as pd
 import numpy as np
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import MinMaxScaler
 import joblib
 import os
 from config import PROJECT_PATH
@@ -61,7 +61,7 @@ def rank_fundamental():
                 X[col] = -X[col]
 
         # Scale
-        scaler = StandardScaler()
+        scaler = MinMaxScaler()
         X_scaled = scaler.fit_transform(X)
         scalers[year] = scaler
 
