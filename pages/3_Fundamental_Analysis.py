@@ -201,12 +201,12 @@ def render_indicator_help():
     """渲染财务指标帮助信息"""
     with st.expander("📘 财务指标深度解读手册 (点击展开/折叠)", expanded=False):
         # 创建六个标签页对应六大类指标
-        tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs([
-            "短期风险", "长期偿债", "获利能力", "资产效率", "现金质量", "估值指标","综合"
+        tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
+            "流动性", "杠杆", "效率", "盈利能力", "现金流和估值指标", "综合"
         ])
 
         with tab1:
-            st.subheader("一、 流动性与偿债能力（短期风险）")
+            st.subheader("一、 流动性")
             st.markdown("""
             - **Current Ratio (流动比率)**：流动资产/流动负债。衡量短期还债能力。一般 >2 为健壮。  
               ⚠️ **警惕**：比例过高可能意味着资金闲置或存货积压。
@@ -214,15 +214,15 @@ def render_indicator_help():
               ⚠️ **警惕**：若远低于流动比率，说明企业极度依赖卖货来还债。
             - **Cash Ratio (现金比率)**：现金及等价物/流动负债。最严苛的变现能力指标。  
               ⚠️ **警惕**：过低代表一旦银行断贷，企业立即面临违约。
+            """)
+
+        with tab2:
+            st.subheader("二、 杠杆")
+            st.markdown("""
             - **Total Debt (总负债)**：公司承担的所有债务总额。  
               ⚠️ **警惕**：绝对值增长速度若超过利润增长，需关注利息压力。
             - **Net Debt (净负债)**：总负债 - 现金。反映真实的债务负担。负值代表“现金多于债务”。  
               ⚠️ **警惕**：净负债剧增通常预示着大规模扩张或失血。
-            """)
-
-        with tab2:
-            st.subheader("二、 资本结构与长期偿债")
-            st.markdown("""
             - **Debt to Equity (产权比率)**：总负债/股东权益。衡量财务杠杆。  
               ⚠️ **警惕**：>1 意味着债权人出的钱比股东多，风险较高。
             - **Debt to Asset (资产负债率)**：总负债/总资产。衡量总资产中借钱的占比。  
@@ -232,7 +232,7 @@ def render_indicator_help():
             """)
 
         with tab3:
-            st.subheader("三、 经营规模与获利能力")
+            st.subheader("三、 效率")
             st.markdown("""
             - **Revenue (营业收入)**：生意规模。  
               ⚠️ **警惕**：营收停滞但利润上升，往往是靠“省钱”而非“增长”。
@@ -240,17 +240,6 @@ def render_indicator_help():
               ⚠️ **警惕**：连续多年下降说明行业进入惨烈价格战。
             - **Net Profit (净利润)**：最终到手的钱。  
               ⚠️ **警惕**：需结合非经常性损益看，谨防变卖资产凑出来的“虚假盈利”。
-            - **Gross Margin (毛利率)**：毛利/营收。产品溢价能力。  
-              ⚠️ **警惕**：突降通常意味着原材料暴涨或竞争对手降价。
-            - **Operating Margin (营业利润率)**：营业利润/营收。反映管理和销售效率。  
-              ⚠️ **警惕**：与毛利率背离说明内部开支（如研发、管理）失控。
-            - **Profit Margin (净利率)**：净利润/营收。  
-              ⚠️ **警惕**：极低的净利率意味着企业容错率极低，任何成本波动都能导致亏损。
-            """)
-
-        with tab4:
-            st.subheader("四、 资产效率（翻台率）")
-            st.markdown("""
             - **Asset Turnover (资产周转率)**：营收/总资产。衡量利用资产赚钱的效率。  
               ⚠️ **警惕**：逐年下降说明公司资产变得“沉重”，效率降低。
             - **Inventory Turnover (存货周转率)**：营收/存货。货卖得快不快。  
@@ -259,32 +248,37 @@ def render_indicator_help():
               ⚠️ **警惕**：持续下降说明公司对下游话语权丧失，或在虚增收入。
             """)
 
-        with tab5:
-            st.subheader("五、 股东回报与现金质量")
+        with tab4:
+            st.subheader("四、 盈利能力")
             st.markdown("""
+            - **Gross Margin (毛利率)**：毛利/营收。产品溢价能力。  
+              ⚠️ **警惕**：突降通常意味着原材料暴涨或竞争对手降价。
+            - **Operating Margin (营业利润率)**：营业利润/营收。反映管理和销售效率。  
+              ⚠️ **警惕**：与毛利率背离说明内部开支（如研发、管理）失控。
+            - **Profit Margin (净利率)**：净利润/营收。  
+              ⚠️ **警惕**：极低的净利率意味着企业容错率极低，任何成本波动都能导致亏损。
             - **ROE (净资产收益率)**：股东出的一块钱能赚多少钱。核心指标。  
               ⚠️ **警惕**：靠高负债强行推高的 ROE 极具风险。
             - **ROA (总资产收益率)**：衡量所有资产（含借的钱）的赚钱效率。  
               ⚠️ **警惕**：若 ROA 远低于 ROE，说明杠杆加得非常大。
+            """)
+
+        with tab5:
+            st.subheader("五、 现金流和估值指标")
+            st.markdown("""
             - **Netcash Operate over Net Profit (净现比)**：经营现金流净额/净利润。利润含金量。  
               ⚠️ **警惕**：长期 <1 说明利润多是“纸上富贵”，没有真现金流入。
             - **Free Cash Flow Conversion (自由现金流转化率)**：FCF / 净利润。  
               ⚠️ **警惕**：转化率低甚至为负，说明公司是个“吞金兽”，赚的钱全投回设备更新了。
             - **Change in Working Capital (营运资本变动)**：经营中压进去的钱。  
               ⚠️ **警惕**：正值过大代表现金被应收和存货占满，现金流会枯竭。
-            """)
-
-        with tab6:
-            st.subheader("六、 估值指标")
-            st.markdown("""
             - **Net Debt over EBITDA (净债务/EBITDA)**：衡量还清债务需要多少年经营利润。  
               ⚠️ **警惕**：>3 通常被银行视为高风险。
             - **EV over EBITDA (企业价值倍数)**：收购成本/经营现金流能力。比 PE 更稳健的估值。  
               ⚠️ **警惕**：需与行业均值对比，过高代表溢价过大。
             """)
-
-        with tab7:
-            st.subheader("七、 综合")
+        with tab6:
+            st.subheader("六、 综合")
             st.markdown("""
             1. ROE (净资产收益率) —— 【核心回报】
 地位：它是财务分析的“定海神针”。
@@ -307,14 +301,14 @@ def render_indicator_help():
 
 看板标准：非金融行业通常 < 60% 为安全。若该指标极高且利息保障倍数低，公司随时有暴雷风险。
 
-4. 存货/应收账款周转率 —— 【营运效率】
+4. 存货/应收账款周转率 (Inventory Turnover) —— 【营运效率】
 地位：它是企业的“代谢能力”。
 
 理由：反映了资产变现的速度。货卖得快不快？钱收回得顺不顺？在你的数据集中，这两个指标可以合并看作运营能力的代表。
 
 看板标准：逐年递增或保持稳定。如果周转率突然大幅下降，通常预示着产品竞争力下滑或下游客户违约风险增加。
 
-5. EV/EBITDA (企业价值倍数) —— 【估值定价】
+5. 企业价值倍数 (EV/EBITDA) —— 【估值定价】
 地位：它是专业的“买入标尺”。
 
 理由：相比 PE（市盈率），它剔除了非经常性损益、利息和税收的干扰，更公平地反映了企业核心业务的估值。它是机构投资者判断“买得值不值”的核心工具。
@@ -368,7 +362,7 @@ def render_comprehensive_tab(df, selected_symbols, stock_names):
                     height=500
                 )
                 st.plotly_chart(fig, use_container_width=True)
-            
+
             # 2. 统计摘要
             st.markdown("##### 📊 统计摘要")
             summary_cols = st.columns(min(len(selected_symbols), 4))
@@ -376,15 +370,21 @@ def render_comprehensive_tab(df, selected_symbols, stock_names):
                 col_idx = i % 4
                 with summary_cols[col_idx]:
                     with st.container(border=True):
-                        st.markdown(f"**symbol - {stock_names.get(symbol, symbol)}**")
+                        st.markdown(f"**{stock_names.get(symbol, symbol)}**")
                         symbol_data = baseline_data[baseline_data['symbol'] == symbol]
                         if not symbol_data.empty:
                             row = symbol_data.iloc[0]
-                            key_metrics = ['roe', 'netcash_operate_over_net_profit', 'debt_to_asset', 'inventory_turnover','ev_over_ebitda']
+                            key_metrics = ['fundamental_rank', 'fundamental_score', 'roe',
+                                           'netcash_operate_over_net_profit', 'debt_to_asset', 'inventory_turnover',
+                                           'ev_over_ebitda']
                             for metric in key_metrics:
                                 if metric in row and pd.notna(row[metric]):
                                     val = row[metric]
-                                    if metric in ['roe', 'debt_to_asset']:
+                                    if metric == 'fundamental_rank':
+                                        st.metric("综合排名", f"#{int(val)}")
+                                    elif metric == 'fundamental_score':
+                                        st.metric("基本面得分", f"{val:.2f}")
+                                    elif metric in ['roe', 'debt_to_asset']:
                                         st.metric(metric.upper(), f"{val:.2%}")
                                     elif metric == "netcash_operate_over_net_profit":
                                         st.metric(metric.upper(), f"{val:.2f}")
@@ -395,10 +395,10 @@ def render_comprehensive_tab(df, selected_symbols, stock_names):
                                     else:
                                         st.metric(metric.upper(), f"{val:.2f}")
             st.divider()
-            
+
             # 3. 数据汇总表
             st.markdown("##### 最新年份数据汇总")
-            display_cols = ['symbol', 'fiscal_year'] + radar_metrics
+            display_cols = ['symbol', 'fiscal_year', 'fundamental_rank', 'fundamental_score'] + radar_metrics
             display_cols = [col for col in display_cols if col in baseline_data.columns]
             display_df = baseline_data[display_cols].copy()
             display_df['symbol'] = display_df['symbol'].map(lambda x: f"{x} - {stock_names.get(x, x)}")
