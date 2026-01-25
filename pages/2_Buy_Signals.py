@@ -106,6 +106,15 @@ def setup_sidebar(df):
                 value=(price_min, price_max),
                 key="filter_close"
             )
+            growth_1Y_min = float(df['growth_1Y'].min())
+            growth_1Y_max = float(df['growth_1Y'].max())
+            growth_1Y_range = st.slider(
+                "1年均价增长",
+                min_value=growth_1Y_min,
+                max_value=growth_1Y_max,
+                value=(growth_1Y_min, growth_1Y_max),
+                key="filter_growth_1Y"
+            )
 
     # --- 应用筛选 ---
     filtered_df = df.copy()
@@ -127,6 +136,12 @@ def setup_sidebar(df):
         filtered_df = filtered_df[
             (filtered_df['close'] >= price_range[0]) &
             (filtered_df['close'] <= price_range[1])
+        ]
+
+    if growth_1Y_range:
+        filtered_df = filtered_df[
+            (filtered_df['growth_1Y'] >= growth_1Y_range[0]) &
+            (filtered_df['growth_1Y'] <= growth_1Y_range[1])
         ]
 
     # 应用搜索筛选
