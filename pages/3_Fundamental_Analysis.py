@@ -7,11 +7,12 @@ import plotly.graph_objects as go
 import plotly.express as px
 from plotly.subplots import make_subplots
 from pathlib import Path
+from utils.streamlit_helper import setup_page_config
+from utils.constants import FUNDAMENTAL_KEY_COLS
 import io, os
 import sys
 # 添加根目录到sys.path以便导入utils
 # sys.path.append(str(Path(__file__).parent.parent))
-from utils.streamlit_helper import setup_page_config
 
 from config import PROJECT_PATH
 
@@ -549,7 +550,7 @@ available_metrics = [col for col in df.columns if col not in ['symbol', 'SECURIT
 st.markdown("### 📈 财务指标对比")
 metric_category = st.selectbox("选择指标类别", options=list(financial_metrics.keys()) + ['自定义'], index=0, key="metric_category_select")
 if metric_category == '自定义':
-    selected_metrics = st.multiselect("选择指标", options=available_metrics, default=['roe','netcash_operate_over_net_profit','debt_to_asset','inventory_turnover','ev_over_ebitda'], key="metric_multiselect")
+    selected_metrics = st.multiselect("选择指标", options=available_metrics, default=FUNDAMENTAL_KEY_COLS, key="metric_multiselect")
 else:
     selected_metrics = [m for m in financial_metrics[metric_category] if m in available_metrics]
 

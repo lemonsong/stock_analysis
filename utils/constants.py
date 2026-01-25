@@ -26,9 +26,12 @@ AK_FUNDAMENTAL_KEEP_COMMON_COLS = ['SECURITY_NAME_ABBR', 'ORG_TYPE', 'REPORT_DAT
 
 
 # buy_sell_signal_column_type
-BUY_SIGNAL_COLS = ['rsi_less_than_10','close_less_than_boll_lb',
-                   'ewm_short_term_more_than_long_term', 'macd_buy', 'rsi_plus_macd_buy',
-                   'trix_buy', 'wr_more_than_90']
-SELL_SIGNAL_COLS = ['rsi_more_than_90', 'close_more_than_boll_ub',
-                    'ewm_short_term_less_than_long_term', 'macd_sell', 'rsi_plus_macd_sell',
-                    'trix_sell','wr_less_than_10']
+BUY_SIGNAL_COLS = ['rsi_less_than_10_buy','close_less_than_boll_lb_buy',
+                   'ewm_short_term_more_than_long_term_buy', 'macd_buy', 'rsi_plus_macd_buy',
+                   'trix_buy', 'wr_more_than_90_buy']
+SELL_SIGNAL_COLS = ['rsi_more_than_90_sell', 'close_more_than_boll_ub_sell',
+                    'ewm_short_term_less_than_long_term_sell', 'macd_sell', 'rsi_plus_macd_sell',
+                    'trix_sell','wr_less_than_10_sell']
+
+#
+FUNDAMENTAL_KEY_COLS = ['roe','netcash_operate_over_net_profit','debt_to_asset','inventory_turnover','ev_over_ebitda']
