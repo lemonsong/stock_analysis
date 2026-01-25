@@ -7,6 +7,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 import json
 from pathlib import Path
+from utils.constants import FUNDAMENTAL_KEY_COLS
 from utils.streamlit_helper import setup_page_config
 from config import PROJECT_PATH
 setup_page_config()
@@ -250,11 +251,13 @@ def display_detailed_data(filtered_df):
         "行业信息": ['industry_category_name', 'industry_sub_category_name', 'industry_type_name'],
         "信号指标": [col for col in filtered_df.columns if 'signal' in col.lower()],
         "分红指标": [col for col in filtered_df.columns if 'Total_Yield' in col],
-        "分红指标(比率)": [col for col in filtered_df.columns if 'Yield_Ratio' in col],
+        "分红率(%)": [col for col in filtered_df.columns if 'Yield_Ratio' in col],
+        "股价增长(%)": [col for col in filtered_df.columns if 'growth_' in col],
+        "基本面指标": FUNDAMENTAL_KEY_COLS,
         "基本面排名": [col for col in filtered_df.columns if 'fundamental' in col.lower()],
-        "技术指标": [col for col in filtered_df.columns if col not in ['symbol', 'company', 'close', 'symbol_url'] and 'signal' not in col.lower() and 'Total_Yield' not in col and 'fundamental' not in col.lower() and filtered_df[col].dtype in ['int64', 'float64']],
-        "布尔指标": [col for col in filtered_df.columns if filtered_df[col].dtype == 'bool'],
+        "技术指标": [col for col in filtered_df.columns if col.endswith('_buy') or col.endswith('_sell')],
     }
+
     # 添加链接转换
     # 构造URL: https://xueqiu.com/S/{stock_symbol}
     # display_df['symbol'] 保持原样，通过column_config配置为LinkColumn
@@ -264,7 +267,8 @@ def display_detailed_data(filtered_df):
     # 这里直接修改symbol列为URL，利用LinkColumn的display_text正则来显示代码。
     display_df['symbol_url'] = "https://xueqiu.com/S/" + display_df['symbol'].astype(str)
     # ratio will display as percentage
-    display_df[col_groups["分红指标(比率)"]] = display_df[col_groups["分红指标(比率)"]]*100
+    display_df[col_groups["股价增长(%)"]] = display_df[col_groups["股价增长(%)"]]*100
+    display_df[col_groups["分红率(%)"]] = display_df[col_groups["分红率(%)"]]*100
 
 
     ### 列选择器 ###
@@ -277,7 +281,7 @@ def display_detailed_data(filtered_df):
 
     # 默认显示的列
     default_display_cols = []
-    for group_name in ["基本信息", "行业信息", "信号指标", "分红指标(比率)", "基本面排名"]:
+    for group_name in ["基本信息", "行业信息", "信号指标", "股价增长(%)", "分红率(%)", "股价增长", "基本面指标", "基本面排名"]:
         if group_name in col_groups:
             # 注意：filtered_df中没有symbol_url，只有display_df有。
             # col_groups["基本信息"] 包含了 symbol_url。
@@ -302,7 +306,7 @@ def display_detailed_data(filtered_df):
             available_cols = [col for col in cols if col in display_df.columns]
             if available_cols:
                 # 默认选择
-                default_selection = available_cols if group_name in ["基本信息", "行业信息", "信号指标", "分红指标(比率)", "基本面排名"] else []
+                default_selection = available_cols if group_name in ["基本信息", "行业信息", "信号指标", "分红率(%)", "基本面排名"] else []
 
                 with st.expander(f"{group_name} ({len(available_cols)}列)", expanded=(group_name == "基本信息")):
                     selected = st.multiselect(
@@ -363,9 +367,10 @@ def display_detailed_data(filtered_df):
             "名称",
             help="company",
         ),
-        "close": st.column_config.Column(
+        "close": st.column_config.NumberColumn(
             "收盘价",
             help="close",
+            format="%.2f"
         ),
         "industry_category_name": st.column_config.Column(
             "行业类型",
@@ -419,6 +424,10 @@ def display_detailed_data(filtered_df):
             help="过去5年累计现金分红收益率",
             format="%.4f"  # Note: format handles the display
         ),
+        "growth_1Y": st.column_config.NumberColumn("1Y均价增长", format="%.2f%%"),
+        "growth_2Y": st.column_config.NumberColumn("2Y均价增长", format="%.2f%%"),
+        "growth_3Y": st.column_config.NumberColumn("3Y均价增长", format="%.2f%%"),
+
         "fundamental_score": st.column_config.NumberColumn(
             "基本面评分",
             help="基于各项财务指标的综合评分（越高越好）",

@@ -4,14 +4,14 @@ Create the final data to display in the signal page
 Meanwhile, join fundamental rank to fundamental metrics. and listed helpful fundamental metrics and rank to the signal data
 '''
 import pandas as pd
-from utils.constants import BUY_SIGNAL_COLS, SELL_SIGNAL_COLS
+from utils.constants import BUY_SIGNAL_COLS, SELL_SIGNAL_COLS,FUNDAMENTAL_KEY_COLS
 from config import PROJECT_PATH
 import os
 
 # read stock_name_industry.csv to map symbol to company and industry
 symbol_to_company_df = pd.read_csv("data_all_list/china_stock/stock_name_industry.csv")[['symbol', 'company', 'industry_category_name', 'industry_sub_category_name', 'industry_type_name']]
 # buy/sell signal
-stock_decision_metrics_df = pd.read_csv('0decision.csv')[['symbol','close','overall_signal_count','buy_signal_count','sell_signal_count'] + BUY_SIGNAL_COLS + SELL_SIGNAL_COLS]
+stock_decision_metrics_df = pd.read_csv('0decision.csv')[['symbol','close','overall_signal_count','buy_signal_count','sell_signal_count'] + BUY_SIGNAL_COLS + SELL_SIGNAL_COLS + ['growth_1Y','growth_2Y','growth_3Y']]
 # dividends
 stock_cash_dividend_yield_by_periods_df = pd.read_csv("data_ak_dividend/stock_cash_dividend_yield_by_periods.csv")
 # create decision signal
@@ -42,12 +42,13 @@ if os.path.exists(rank_path):
         fundamental_df.to_csv(fundamental_path, index=False)
         print(f"Updated {fundamental_path}")
 
-    # 2. Join latest year fundamental_rank_prediction to app_decision_df
-    # Get latest rank for each symbol
-    latest_rank_df = rank_df.sort_values('fiscal_year').groupby('symbol').tail(1)
+    # 2. Join latest year key fundamental metrics and fundamental rank metrics to app_decision_df
+    # Get latest year data for each symbol
+    # Use fundamental_df have both fundamental metrics and fundamental rank metrics
+    latest_rank_df = fundamental_df.sort_values('fiscal_year').groupby('symbol').tail(1)
     
     # Rename columns to indicate they are fundamental info
-    latest_rank_df = latest_rank_df[['symbol', 'fundamental_score', 'fundamental_rank', 'fiscal_year']]
+    latest_rank_df = latest_rank_df[['symbol', 'fundamental_score', 'fundamental_rank', 'fiscal_year']+FUNDAMENTAL_KEY_COLS]
     latest_rank_df = latest_rank_df.rename(columns={'fiscal_year': 'fundamental_fiscal_year'})
     
     app_decision_df = app_decision_df.merge(latest_rank_df, on='symbol', how='left')
