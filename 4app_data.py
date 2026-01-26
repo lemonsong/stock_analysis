@@ -48,9 +48,14 @@ if os.path.exists(rank_path):
     latest_rank_df = fundamental_df.sort_values('fiscal_year').groupby('symbol').tail(1)
     
     # Rename columns to indicate they are fundamental info
-    latest_rank_df = latest_rank_df[['symbol', 'fundamental_score', 'fundamental_rank', 'fiscal_year']+FUNDAMENTAL_KEY_COLS]
+    latest_rank_df = latest_rank_df[['symbol', 'fundamental_rank']+FUNDAMENTAL_KEY_COLS]
     latest_rank_df = latest_rank_df.rename(columns={'fiscal_year': 'fundamental_fiscal_year'})
     
     app_decision_df = app_decision_df.merge(latest_rank_df, on='symbol', how='left')
+
+stock_individual_fund_flow_rank_df = pd.read_csv('data_other/stock_individual_fund_flow_rank_df.csv')
+
+# create decision signal
+app_decision_df = app_decision_df.merge(stock_individual_fund_flow_rank_df[['symbol','10日主力净流入-净占比']], how='left',on='symbol')
 
 app_decision_df.to_csv('data_app/app_decision.csv', index=False, encoding='utf-8')

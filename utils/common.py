@@ -1,5 +1,6 @@
 from pathlib import Path
 import sys
+from datetime import datetime
 
 def get_file_paths_pathlib(folder_path: str) -> list[str]:
     """
@@ -137,7 +138,6 @@ def format_df_column_name(df):
                               '除权除息日': 'execution_date'
                               })
 
-from datetime import datetime
 
 
 def get_today_date_string(format_string: str = '%Y-%m-%d') -> str:

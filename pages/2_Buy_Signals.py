@@ -8,7 +8,7 @@ import plotly.graph_objects as go
 import json
 from pathlib import Path
 from utils.constants import FUNDAMENTAL_KEY_COLS
-from utils.streamlit_helper import setup_page_config
+from utils.streamlit_helper import clear_cache, clean_expired_cache, setup_page_config
 from config import PROJECT_PATH
 setup_page_config()
 
@@ -115,6 +115,15 @@ def setup_sidebar(df):
                 value=(growth_1Y_min, growth_1Y_max),
                 key="filter_growth_1Y"
             )
+            fundamental_rank_min = float(df['fundamental_rank'].min())
+            fundamental_rank_max = float(df['fundamental_rank'].max())
+            fundamental_rank_range = st.slider(
+                "基本面排名",
+                min_value=fundamental_rank_min,
+                max_value=fundamental_rank_max,
+                value=(fundamental_rank_min, fundamental_rank_max),
+                key="filter_fundamental_rank"
+            )
 
     # --- 应用筛选 ---
     filtered_df = df.copy()
@@ -144,6 +153,12 @@ def setup_sidebar(df):
             (filtered_df['growth_1Y'] <= growth_1Y_range[1])
         ]
 
+    if fundamental_rank_range:
+        filtered_df = filtered_df[
+            (filtered_df['fundamental_rank'] >= fundamental_rank_range[0]) &
+            (filtered_df['fundamental_rank'] <= fundamental_rank_range[1])
+        ]
+
     # 应用搜索筛选
     if search_term:
         if search_mode == "分别搜索":
@@ -157,6 +172,15 @@ def setup_sidebar(df):
             mask = combined.str.contains(search_term, case=False, na=False)
         filtered_df = filtered_df[mask]
 
+    # 缓存管理
+    with st.sidebar.expander("缓存管理", expanded=False):
+        if st.button("🔄 清理过期缓存", use_container_width=True):
+            clean_expired_cache()
+            st.sidebar.success("已清理过期缓存")
+
+        if st.button("🗑️ 清除所有缓存", use_container_width=True):
+            clear_cache()
+            st.sidebar.success("已清除所有缓存")
     return filtered_df
 
 def display_metrics(filtered_df):
@@ -271,6 +295,7 @@ def display_detailed_data(filtered_df):
         "基本面指标": FUNDAMENTAL_KEY_COLS,
         "基本面排名": [col for col in filtered_df.columns if 'fundamental' in col.lower()],
         "技术指标": [col for col in filtered_df.columns if col.endswith('_buy') or col.endswith('_sell')],
+        "净流入":[col for col in filtered_df.columns if '净流入' in col],
     }
 
     # 添加链接转换
@@ -284,6 +309,9 @@ def display_detailed_data(filtered_df):
     # ratio will display as percentage
     display_df[col_groups["股价增长(%)"]] = display_df[col_groups["股价增长(%)"]]*100
     display_df[col_groups["分红率(%)"]] = display_df[col_groups["分红率(%)"]]*100
+    display_df['roe'] = display_df['roe']*100
+    display_df['debt_to_asset'] = display_df['debt_to_asset']*100
+
 
 
     ### 列选择器 ###
@@ -296,7 +324,7 @@ def display_detailed_data(filtered_df):
 
     # 默认显示的列
     default_display_cols = []
-    for group_name in ["基本信息", "行业信息", "信号指标", "股价增长(%)", "分红率(%)", "股价增长", "基本面指标", "基本面排名"]:
+    for group_name in ["基本信息", "行业信息", "信号指标", "股价增长(%)", "分红率(%)", "股价增长", "基本面指标", "基本面排名", "净流入"]:
         if group_name in col_groups:
             # 注意：filtered_df中没有symbol_url，只有display_df有。
             # col_groups["基本信息"] 包含了 symbol_url。
@@ -388,26 +416,29 @@ def display_detailed_data(filtered_df):
             format="%.2f"
         ),
         "industry_category_name": st.column_config.Column(
-            "行业类型",
+            "门类",
             help="industry_category_name",
         ),
         "industry_sub_category_name": st.column_config.Column(
-            "行业分类",
+            "次类",
             help="industry_sub_category_name",
         ),
         "industry_type_name": st.column_config.Column(
-            "行业",
+            "大类",
             help="industry_type_name",
         ),
-        "overall_signal_count": st.column_config.Column(
+        "overall_signal_count": st.column_config.NumberColumn(
             "总体信号数",
             help="买入信号数减卖出信号数",
+            format="%d"
         ),
-        "buy_signal_count": st.column_config.Column(
+        "buy_signal_count": st.column_config.NumberColumn(
             "买入信号数",
+            format="%d"
         ),
-        "sell_signal_count": st.column_config.Column(
+        "sell_signal_count": st.column_config.NumberColumn(
             "卖出信号数",
+            format="%d"
         ),
         "Yield_Ratio_1Y": st.column_config.NumberColumn(
             "近1年股息率",
@@ -458,6 +489,49 @@ def display_detailed_data(filtered_df):
             help="排名所基于的财报年份",
             format="%d"
         ),
+        "roe": st.column_config.NumberColumn(
+            "ROE",
+            help="",
+            format="%.2f%%",
+            width="small"),
+        "netcash_operate_over_net_profit": st.column_config.NumberColumn(
+            "Net cash operate/Net profit",
+            help="",
+            format="%.2f",
+            width="small"),
+        "debt_to_asset": st.column_config.NumberColumn(
+            "Debt/Asset",
+            help="",
+            format="%.2f%%",
+            width="small"),
+        "inventory_turnover": st.column_config.NumberColumn(
+            "Inventory Turnover",
+            help="",
+            format="%.1f 次/年",
+        width="small"),
+        "ev_over_ebitda": st.column_config.NumberColumn(
+            "EV/EBITDA",
+            help="",
+            format="%.1f x",
+        width="small"),
+        "'10日主力净流入-净占比'": st.column_config.NumberColumn(
+            "'10日主力净流入-净占比'",
+            help="",
+            format="%.2f",
+            width="small"),
+
+    # elif metric == 'fundamental_score':
+    # st.metric("基本面得分", f"{val:.2f}")
+    # elif metric in ['roe', 'debt_to_asset']:
+    # st.metric(metric.upper(), f"{val:.2%}")
+    # elif metric == "netcash_operate_over_net_profit":
+    # st.metric(metric.upper(), f"{val:.2f}")
+    # elif metric == "ev_over_ebitda":
+    # st.metric(metric.upper(), f"{val:.2f} x")
+    # elif metric == "inventory_turnover":
+    # st.metric(metric.upper(), f"{val:.1f} 次/年")
+    # else:
+    # st.metric(metric.upper(), f"{val:.2f}")
     }
 
     # 显示表格
