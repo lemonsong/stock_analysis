@@ -355,7 +355,7 @@ def render_comprehensive_tab(df, selected_symbols, stock_names):
                         r=values,
                         theta=radar_metrics,
                         fill='toself',
-                        name=f"{row['symbol']} - {stock_names.get(row['symbol'], row['symbol'])}"
+                        name=row['display_name']
                     ))
                 fig.update_layout(
                     polar=dict(radialaxis=dict(visible=True, range=[0, 100])),
@@ -371,7 +371,7 @@ def render_comprehensive_tab(df, selected_symbols, stock_names):
                 col_idx = i % 4
                 with summary_cols[col_idx]:
                     with st.container(border=True):
-                        st.markdown(f"**{stock_names.get(symbol, symbol)}**")
+                        st.markdown(f"**{symbol} - {stock_names.get(symbol, symbol)}**")
                         symbol_data = baseline_data[baseline_data['symbol'] == symbol]
                         if not symbol_data.empty:
                             row = symbol_data.iloc[0]
@@ -399,10 +399,10 @@ def render_comprehensive_tab(df, selected_symbols, stock_names):
 
             # 3. 数据汇总表
             st.markdown("##### 最新年份数据汇总")
-            display_cols = ['symbol', 'fiscal_year', 'fundamental_rank', 'fundamental_score'] + radar_metrics
+            display_cols = ['display_name', 'fiscal_year', 'fundamental_rank', 'fundamental_score'] + radar_metrics
             display_cols = [col for col in display_cols if col in baseline_data.columns]
             display_df = baseline_data[display_cols].copy()
-            display_df['symbol'] = display_df['symbol'].map(lambda x: f"{x} - {stock_names.get(x, x)}")
+            display_df.rename(columns={'display_name': 'symbol'}, inplace=True)
 
             try:
                 st.dataframe(display_df.style.background_gradient(cmap='PuBu'), use_container_width=True)
@@ -456,22 +456,21 @@ def render_trends_tab(df, selected_symbols, selected_metrics, stock_names):
             st.markdown(f"##### {metric}")
             
             # 1. 趋势图
-            plot_df = df[['symbol', 'fiscal_year', metric]].dropna(subset=[metric])
+            plot_df = df[['display_name', 'fiscal_year', metric]].dropna(subset=[metric])
             if not plot_df.empty:
                 fig = px.line(
                     plot_df,
                     x='fiscal_year',
                     y=metric,
-                    color='symbol',
+                    color='display_name',
                     markers=True,
-                    labels={'fiscal_year': '年份', metric: metric, 'symbol': '股票代码'},
+                    labels={'fiscal_year': '年份', metric: metric, 'display_name': '股票'},
                     title=f"{metric} 趋势"
                 )
                 st.plotly_chart(fig, use_container_width=True)
 
             # 2. 对比表 (紧接在图表下方)
-            pivot_data = df.pivot_table(index='symbol', columns='fiscal_year', values=metric, aggfunc='first')
-            pivot_data.index = [f"{idx} - {stock_names.get(idx, idx)}" for idx in pivot_data.index]
+            pivot_data = df.pivot_table(index='display_name', columns='fiscal_year', values=metric, aggfunc='first')
             try:
                 st.dataframe(pivot_data.style.background_gradient(cmap='RdYlGn', axis=1), use_container_width=True)
             except:
@@ -535,6 +534,7 @@ if not selected_symbols:
 
 # 筛选数据
 filtered_df = df[df['symbol'].isin(selected_symbols)].copy()
+filtered_df['display_name'] = filtered_df['symbol'] + ' - ' + filtered_df['SECURITY_NAME_ABBR']
 stock_names = {row['symbol']: row['SECURITY_NAME_ABBR'] for _, row in filtered_df[['symbol', 'SECURITY_NAME_ABBR']].drop_duplicates().iterrows()}
 
 # 指标选择
@@ -562,7 +562,8 @@ if 'fiscal_year' in filtered_df.columns:
     min_year = int(filtered_df['fiscal_year'].min())
     max_year = int(filtered_df['fiscal_year'].max())
     year_range = st.slider("选择年份范围", min_value=min_year, max_value=max_year, value=(max(min_year, max_year - 5), max_year), key="year_range_slider")
-    filtered_df = filter_stock_data(df, selected_symbols, year_range)
+    filtered_df = filter_stock_data(df, selected_symbols, year_range).copy()
+    filtered_df['display_name'] = filtered_df['symbol'] + ' - ' + filtered_df['SECURITY_NAME_ABBR']
 
 # 新的 Tab 布局
 tab1, tab2 = st.tabs(["💹 综合分析", "📊 财务指标趋势 & 对比"])
