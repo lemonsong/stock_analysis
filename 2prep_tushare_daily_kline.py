@@ -71,21 +71,44 @@ for stock_symbol in symbol_li:
     #
     stock_kline_df = pd.read_csv(stock_kline_file_path)
     stock_kline_df['date'] = pd.to_datetime(stock_kline_df['date']).dt.date
-    n_row_old = str(len(stock_kline_df))
+
+    # Check old data
+    n_row_old = len(stock_kline_df)
+    if n_row_old > 0:
+        old_min_date = stock_kline_df['date'].min()
+        old_max_date = stock_kline_df['date'].max()
+    else:
+        old_min_date = None
+        old_max_date = None
+
     logging.info(f'Clean {stock_symbol}')
     # logging.info(stock_kline_df.tail(5))
     stock_kline_df = clean_daily_by_dates(stock_kline_df, stock_symbol, calendar_name='XSHG',
                                           calender_start="2020-12-01",
                                           calendar_end=end_date_d,
                                           must_end_date=end_date_d)
+
+    # Check new data
+    n_row_new = len(stock_kline_df)
+    if n_row_new > 0:
+        new_min_date = stock_kline_df['date'].min()
+        new_max_date = stock_kline_df['date'].max()
+    else:
+        new_min_date = None
+        new_max_date = None
+
     logging.info(f'Save to {stock_kline_file_path}')
     stock_kline_df.to_csv(stock_kline_file_path, index=False, encoding='utf-8')
     # update write log
     write_log_df_sub = pd.DataFrame({
         'folder': daily_folder,
         'symbol': [stock_symbol],
-        'old_data_max_date': n_row_old,
-        'new_date_min_date': str(len(stock_kline_df)),
+        'old_count': [n_row_old],
+        'old_min_date': [old_min_date],
+        'old_max_date': [old_max_date],
+        'new_count': [n_row_new],
+        'new_min_date': [new_min_date],
+        'new_max_date': [new_max_date],
         'update_time': datetime.now(),
         'method': 'clean'
     })

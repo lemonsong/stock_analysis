@@ -226,8 +226,11 @@ def run_strategies(stocks, start_date, end_date, bundle_name, output_dir):
         print(f"Bundle {bundle_name} not found or load failed: {e}. Attempting ingest...")
         os.system(f"zipline ingest -b {bundle_name}")
 
+    processed_count = 0
+    total_stocks = len(stocks)
     for stock in stocks:
-        print(f"Processing {stock}...")
+        processed_count += 1
+        print(f"Processing {stock}... ({processed_count}/{total_stocks}). Left: {total_stocks - processed_count}")
         stock_summary = {'Symbol': stock}
 
         for strategy_name, StrategyClass in STRATEGIES.items():
@@ -261,6 +264,14 @@ def run_strategies(stocks, start_date, end_date, bundle_name, output_dir):
                 # traceback.print_exc()
 
         summary_results.append(stock_summary)
+
+        # Save summary every 10 stocks
+        if processed_count % 10 == 0:
+            summary_df = pd.DataFrame(summary_results)
+            number_cols = [col for col in summary_df.columns if col != 'symbol']
+            summary_df[number_cols] = summary_df[number_cols].round(6)
+            summary_df.to_csv(os.path.join(output_dir, "zipline_summary.csv"), index=False)
+            logging.info(f"Summary saved to {os.path.join(output_dir, 'zipline_summary.csv')} (Progress: {processed_count}/{total_stocks})")
 
     # Save summary
     if summary_results:
