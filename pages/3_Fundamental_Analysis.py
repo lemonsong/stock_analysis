@@ -40,8 +40,8 @@ def load_fundamental_data():
                 df_ind = pd.read_csv(industry_file)
                 df['symbol'] = df['symbol'].astype(str)
                 df_ind['symbol'] = df_ind['symbol'].astype(str)
-                df = pd.merge(df, df_ind[['symbol', 'industry_category_name', 'industry_type_name']], on='symbol', how='left')
-                df.rename(columns={'industry_type_name': 'industry'}, inplace=True)
+                df = pd.merge(df, df_ind[['symbol', 'industry_category_name', 'industry_sub_category_name', 'industry_type_name']], on='symbol', how='left')
+                df['industry'] = df['industry_type_name'] # For backward compatibility
             except Exception as e:
                 st.warning(f"加载行业数据失败: {e}")
 
@@ -115,12 +115,28 @@ def setup_sidebar(df):
         if 'industry' not in df.columns:
             st.sidebar.error("未找到行业数据")
         else:
-            industries = sorted(df['industry'].dropna().unique())
-            selected_industry = st.sidebar.selectbox("选择行业", industries, key="industry_select")
+            industry_filters = {}
+            # Define industry levels and their labels
+            levels = [
+                ('industry_category_name', '门类'),
+                ('industry_type_name', '大类'),
+                ('industry_sub_category_name', '次类')
+            ]
 
-            if selected_industry:
-                industry_stocks = df[df['industry'] == selected_industry]['symbol'].unique()
+            for level, label in levels:
+                if level in df.columns:
+                    options = ["全部"] + sorted(list(df[level].dropna().unique()))
+                    industry_filters[level] = st.sidebar.selectbox(label, options, key=f"filter_{level}")
 
+            # Apply filters
+            filtered_df_ind = df.copy()
+            for col, value in industry_filters.items():
+                if value != "全部":
+                    filtered_df_ind = filtered_df_ind[filtered_df_ind[col] == value]
+
+            industry_stocks = filtered_df_ind['symbol'].unique()
+
+            if len(industry_stocks) > 0:
                 st.sidebar.markdown("##### 财务指标筛选 (最新年份)")
 
                 filter_metrics = {
@@ -167,6 +183,8 @@ def setup_sidebar(df):
                 if len(selected_symbols) > 0:
                      with st.sidebar.expander("查看筛选结果"):
                          st.table(filtered_industry_stocks[['symbol', 'SECURITY_NAME_ABBR']])
+            else:
+                st.sidebar.warning("未找到符合条件的股票")
     elif selection_method == "🔍 搜索股票":
         search_term = st.sidebar.text_input("搜索股票代码或名称", "", key="search_term")
 

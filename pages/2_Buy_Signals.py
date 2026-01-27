@@ -116,35 +116,45 @@ def setup_sidebar(df):
                 value=(growth_1Y_min, growth_1Y_max),
                 key="filter_growth_1Y"
             )
-            # fundamental_rank_min = float(df['fundamental_rank'].min())
-            # fundamental_rank_max = float(df['fundamental_rank'].max())
-            # fundamental_rank_range = st.slider(
-            #     "基本面排名",
-            #     min_value=fundamental_rank_min,
-            #     max_value=fundamental_rank_max,
-            #     value=(fundamental_rank_min, fundamental_rank_max),
-            #     key="filter_fundamental_rank"
-            # )
 
-    # wait until have fundamental data for all stock
-    # # 5. 基本面指标筛选
-    # fundamental_filters = {}
-    # with st.sidebar.expander("基本面指标", expanded=True):
-    #     fundamental_cols = FUNDAMENTAL_KEY_COLS
-    #     for col in fundamental_cols:
-    #         if col in df.columns:
-    #             col_min = float(df[col].min())
-    #             # col_max = float(df[col].max())
-    #             col_max = df[col].replace([np.inf, -np.inf], np.nan).max()
-    #             fundamental_filters[col] = st.slider(
-    #                 f"{col}",
-    #                 min_value=col_min,
-    #                 max_value=col_max,
-    #                 # value=(col_min, col_max),
-    #                 value=(0.0, col_max),
-    #                 step=1.0,
-    #                 key=f"filter_{col}"
-    #             )
+            fundamental_rank_range = None
+            include_null_rank = True
+            if 'fundamental_rank' in df.columns:
+                fundamental_rank_min = float(df['fundamental_rank'].min())
+                fundamental_rank_max = float(df['fundamental_rank'].max())
+                fundamental_rank_range = st.slider(
+                    "基本面排名",
+                    min_value=fundamental_rank_min,
+                    max_value=fundamental_rank_max,
+                    value=(fundamental_rank_min, fundamental_rank_max),
+                    key="filter_fundamental_rank"
+                )
+                include_null_rank = st.checkbox("包含未知排名", value=True, key="include_null_rank")
+
+    # 5. 基本面指标筛选
+    fundamental_filters = {}
+    with st.sidebar.expander("基本面指标", expanded=True):
+        include_null_fundamental = st.checkbox("包含未知指标值", value=True, key="include_null_fundamental")
+        fundamental_cols = FUNDAMENTAL_KEY_COLS
+        for col in fundamental_cols:
+            if col in df.columns:
+                col_min = float(df[col].min())
+                # col_max = float(df[col].max())
+                col_max = df[col].replace([np.inf, -np.inf], np.nan).max()
+
+                # Handle potential all-NaN column
+                if pd.isna(col_min) or pd.isna(col_max):
+                    continue
+
+                fundamental_filters[col] = st.slider(
+                    f"{col}",
+                    min_value=col_min,
+                    max_value=col_max,
+                    # value=(col_min, col_max),
+                    value=(0.0 if col_min < 0 else col_min, col_max),
+                    step=1.0,
+                    key=f"filter_{col}"
+                )
 
 
     # --- 应用筛选 ---
@@ -175,24 +185,31 @@ def setup_sidebar(df):
             (filtered_df['growth_1Y'] <= growth_1Y_range[1])
         ]
 
-    # if fundamental_rank_range:
-    #     filtered_df = filtered_df[
-    #         (filtered_df['fundamental_rank'] >= fundamental_rank_range[0]) &
-    #         (filtered_df['fundamental_rank'] <= fundamental_rank_range[1])
-    #     ]
-    # wait until have fundamental data for all stock
-    # # 应用基本面筛选
-    # for col, (min_val, max_val) in fundamental_filters.items():
-    #     filtered_df = filtered_df[
-    #         (filtered_df[col] >= min_val) &
-    #         (filtered_df[col] <= max_val)
-    #         ]
+    if fundamental_rank_range:
+        if include_null_rank:
+            filtered_df = filtered_df[
+                ((filtered_df['fundamental_rank'] >= fundamental_rank_range[0]) &
+                (filtered_df['fundamental_rank'] <= fundamental_rank_range[1])) |
+                filtered_df['fundamental_rank'].isna()
+            ]
+        else:
+            filtered_df = filtered_df[
+                (filtered_df['fundamental_rank'] >= fundamental_rank_range[0]) &
+                (filtered_df['fundamental_rank'] <= fundamental_rank_range[1])
+            ]
 
-    # if fundamental_rank_range:
-    #     filtered_df = filtered_df[
-    #         (filtered_df['fundamental_rank'] >= fundamental_rank_range[0]) &
-    #         (filtered_df['fundamental_rank'] <= fundamental_rank_range[1])
-    #     ]
+    # 应用基本面筛选
+    for col, (min_val, max_val) in fundamental_filters.items():
+        if include_null_fundamental:
+            filtered_df = filtered_df[
+                ((filtered_df[col] >= min_val) & (filtered_df[col] <= max_val)) |
+                filtered_df[col].isna()
+            ]
+        else:
+            filtered_df = filtered_df[
+                (filtered_df[col] >= min_val) &
+                (filtered_df[col] <= max_val)
+            ]
 
     # 应用搜索筛选
     if search_term:
