@@ -14,7 +14,8 @@ import pandas as pd
 import requests
 from io import BytesIO
 from utils.common import format_stock_symbol, format_df_column_name
-from config import PROJECT_PATH
+from utils.constants import PROJECT_PATH
+
 PROGRAM_PATH = f'{PROJECT_PATH}/data_all_list/china_stock'
 
 

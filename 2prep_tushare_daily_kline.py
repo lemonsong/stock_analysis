@@ -6,12 +6,11 @@ prep Tushare kline data_all_list
 '''
 import pandas as pd
 import tushare as ts
-from utils.constants import TUSHARE_API_KEY
+from utils.constants import TUSHARE_API_KEY, PROJECT_PATH
 from utils.tushare_helper import format_tushare_kline_to_dolt_style
 import random
 import time
 
-from config import PROJECT_PATH
 import os
 from utils.common import format_stock_symbol, get_file_paths_pathlib, extract_stock_symbol_from_path
 from utils.dolt_helper import clean_daily_by_dates

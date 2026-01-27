@@ -12,7 +12,7 @@ logging.basicConfig(
 )
 import pandas as pd
 import akshare as ak
-from config import PROJECT_PATH
+from utils.constants import PROJECT_PATH
 from utils.common import get_file_paths_pathlib, extract_stock_symbol_from_path
 
 

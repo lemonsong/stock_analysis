@@ -12,9 +12,8 @@ logging.basicConfig(
 import pandas as pd
 
 from utils.common import get_file_paths_pathlib, extract_stock_symbol_from_path
-from config import PROJECT_PATH
 from functools import reduce
-from utils.constants import AK_FUNDAMENTAL_KEEP_COMMON_COLS
+from utils.constants import AK_FUNDAMENTAL_KEEP_COMMON_COLS, PROJECT_PATH
 
 # TODO: iterate code to handle the situation that one stock only have one sheet, e.g. balance sheet rather than all the 3, becuase the extract step we teminated manually
 

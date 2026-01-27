@@ -7,7 +7,7 @@ import sys
 import pandas as pd
 import tushare as ts
 import pysnowball as ball
-from config import PROJECT_PATH
+from utils.constants import PROJECT_PATH
 import os
 from utils.common import format_stock_symbol, get_file_paths_pathlib, extract_stock_symbol_from_path
 from utils.tushare_helper import format_tushare_kline_to_dolt_style

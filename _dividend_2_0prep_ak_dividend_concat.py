@@ -6,7 +6,7 @@ import pandas as pd
 import random
 import time
 
-from config import PROJECT_PATH
+from utils.constants import PROJECT_PATH
 import os
 from utils.common import format_stock_symbol, get_file_paths_pathlib, extract_stock_symbol_from_path, format_df_column_name
 from datetime import datetime

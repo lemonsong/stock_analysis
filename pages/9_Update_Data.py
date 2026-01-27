@@ -4,7 +4,7 @@ import sys, logging
 
 from datetime import datetime
 import pandas as pd
-from config import PROJECT_PATH
+from utils.constants import PROJECT_PATH
 # page config
 from utils.streamlit_helper import setup_page_config
 setup_page_config()
@@ -131,6 +131,7 @@ if st.button("Run CN Stock - Fundamental Pipeline", icon="📊", type="primary")
         {"file": "2_0prep_ak_fundamental_by_yearly_concat.py", "desc": "Concatenate fundamentals of stocks into one file; remove columns with sparse value"},
         {"file": "2_1prep_ak_fundamental_market_value.py", "desc": "Calculate yearly latest market value"},
         {"file": "2_2prep_ak_fundamental_by_yearly_calculate.py", "desc": "Calculate fundamental metrics"},
+        {"file": "3analysis_rank_ak_fundamental_by_yearly.py", "desc": "Rank key fundamental metrics"},
         {"file": "4app_data.py", "desc": "Format data for App"}
 
     ]

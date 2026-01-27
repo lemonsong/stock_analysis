@@ -14,7 +14,7 @@ logging.basicConfig(
 from utils.common import get_file_paths_pathlib, extract_stock_symbol_from_path
 
 import pandas as pd
-from config import PROJECT_PATH
+from utils.constants import PROJECT_PATH
 
 PROGRAM_PATH = f'{PROJECT_PATH}/data_ak_fund_detail_info_xq'
 file_list = get_file_paths_pathlib(PROGRAM_PATH)

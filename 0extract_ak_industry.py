@@ -9,7 +9,7 @@ logging.basicConfig(
 import pandas as pd
 import akshare as ak
 from utils.common import format_stock_symbol,basic_formatter
-from config import PROJECT_PATH
+from utils.constants import PROJECT_PATH
 
 PROGRAM_PATH = f'{PROJECT_PATH}/data_ak_industry/'
 

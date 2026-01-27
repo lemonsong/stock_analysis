@@ -11,7 +11,7 @@ logging.basicConfig(
 )
 import pandas as pd
 import akshare as ak
-from config import PROJECT_PATH
+from utils.constants import PROJECT_PATH
 
 '''
 https://akshare.akfamily.xyz/data/stock/stock.html#id165

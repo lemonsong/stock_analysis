@@ -3,13 +3,14 @@
 """
 import streamlit as st
 import pandas as pd
+import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
 import json
 from pathlib import Path
-from utils.constants import FUNDAMENTAL_KEY_COLS
+from utils.constants import FUNDAMENTAL_KEY_COLS, SEQUENTIAL_COLOR, PROJECT_PATH
 from utils.streamlit_helper import clear_cache, clean_expired_cache, setup_page_config
-from config import PROJECT_PATH
+
 setup_page_config()
 
 @st.cache_data
@@ -89,7 +90,7 @@ def setup_sidebar(df):
                     f"{col}",
                     min_value=col_min,
                     max_value=col_max,
-                    value=(col_min, col_max),
+                    value=(0.0 if col == 'overall_signal_count' else col_min, col_max),
                     key=f"filter_{col}"
                 )
 
@@ -115,15 +116,36 @@ def setup_sidebar(df):
                 value=(growth_1Y_min, growth_1Y_max),
                 key="filter_growth_1Y"
             )
-            fundamental_rank_min = float(df['fundamental_rank'].min())
-            fundamental_rank_max = float(df['fundamental_rank'].max())
-            fundamental_rank_range = st.slider(
-                "基本面排名",
-                min_value=fundamental_rank_min,
-                max_value=fundamental_rank_max,
-                value=(fundamental_rank_min, fundamental_rank_max),
-                key="filter_fundamental_rank"
-            )
+            # fundamental_rank_min = float(df['fundamental_rank'].min())
+            # fundamental_rank_max = float(df['fundamental_rank'].max())
+            # fundamental_rank_range = st.slider(
+            #     "基本面排名",
+            #     min_value=fundamental_rank_min,
+            #     max_value=fundamental_rank_max,
+            #     value=(fundamental_rank_min, fundamental_rank_max),
+            #     key="filter_fundamental_rank"
+            # )
+
+    # wait until have fundamental data for all stock
+    # # 5. 基本面指标筛选
+    # fundamental_filters = {}
+    # with st.sidebar.expander("基本面指标", expanded=True):
+    #     fundamental_cols = FUNDAMENTAL_KEY_COLS
+    #     for col in fundamental_cols:
+    #         if col in df.columns:
+    #             col_min = float(df[col].min())
+    #             # col_max = float(df[col].max())
+    #             col_max = df[col].replace([np.inf, -np.inf], np.nan).max()
+    #             fundamental_filters[col] = st.slider(
+    #                 f"{col}",
+    #                 min_value=col_min,
+    #                 max_value=col_max,
+    #                 # value=(col_min, col_max),
+    #                 value=(0.0, col_max),
+    #                 step=1.0,
+    #                 key=f"filter_{col}"
+    #             )
+
 
     # --- 应用筛选 ---
     filtered_df = df.copy()
@@ -153,11 +175,24 @@ def setup_sidebar(df):
             (filtered_df['growth_1Y'] <= growth_1Y_range[1])
         ]
 
-    if fundamental_rank_range:
-        filtered_df = filtered_df[
-            (filtered_df['fundamental_rank'] >= fundamental_rank_range[0]) &
-            (filtered_df['fundamental_rank'] <= fundamental_rank_range[1])
-        ]
+    # if fundamental_rank_range:
+    #     filtered_df = filtered_df[
+    #         (filtered_df['fundamental_rank'] >= fundamental_rank_range[0]) &
+    #         (filtered_df['fundamental_rank'] <= fundamental_rank_range[1])
+    #     ]
+    # wait until have fundamental data for all stock
+    # # 应用基本面筛选
+    # for col, (min_val, max_val) in fundamental_filters.items():
+    #     filtered_df = filtered_df[
+    #         (filtered_df[col] >= min_val) &
+    #         (filtered_df[col] <= max_val)
+    #         ]
+
+    # if fundamental_rank_range:
+    #     filtered_df = filtered_df[
+    #         (filtered_df['fundamental_rank'] >= fundamental_rank_range[0]) &
+    #         (filtered_df['fundamental_rank'] <= fundamental_rank_range[1])
+    #     ]
 
     # 应用搜索筛选
     if search_term:
@@ -392,8 +427,7 @@ def display_detailed_data(filtered_df):
                 # 使用背景色渐变（绿色=低值，红色=高值）
                 styled_display = styled_display.background_gradient(
                     subset=[col],
-                    # cmap='RdYlGn',  # 红-黄-绿
-                    cmap='PuBu',  # 红-黄-绿
+                    cmap=SEQUENTIAL_COLOR,
                     vmin=col_min,
                     vmax=col_max
                 )

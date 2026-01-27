@@ -8,13 +8,11 @@ import plotly.express as px
 from plotly.subplots import make_subplots
 from pathlib import Path
 from utils.streamlit_helper import setup_page_config
-from utils.constants import FUNDAMENTAL_KEY_COLS
+from utils.constants import FUNDAMENTAL_KEY_COLS, SEQUENTIAL_COLOR, PROJECT_PATH
 import io, os
 import sys
 # 添加根目录到sys.path以便导入utils
 # sys.path.append(str(Path(__file__).parent.parent))
-
-from config import PROJECT_PATH
 
 setup_page_config()
 
@@ -405,7 +403,7 @@ def render_comprehensive_tab(df, selected_symbols, stock_names):
             display_df.rename(columns={'display_name': 'symbol'}, inplace=True)
 
             try:
-                st.dataframe(display_df.style.background_gradient(cmap='PuBu'), use_container_width=True)
+                st.dataframe(display_df.style.background_gradient(cmap=SEQUENTIAL_COLOR), use_container_width=True)
             except:
                 st.dataframe(display_df, use_container_width=True)
             

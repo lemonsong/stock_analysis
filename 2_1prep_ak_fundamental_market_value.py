@@ -12,7 +12,7 @@ logging.basicConfig(
 import pandas as pd
 
 from utils.common import get_file_paths_pathlib, extract_stock_symbol_from_path
-from config import PROJECT_PATH
+from utils.constants import PROJECT_PATH
 
 PATH_TO_KLINE_CSV = '/Users/yilin/Documents/Projects/stock_analysis/data_tushare/daily'
 PROGRAM_PATH = f'{PROJECT_PATH}/data_ak_fundamental'

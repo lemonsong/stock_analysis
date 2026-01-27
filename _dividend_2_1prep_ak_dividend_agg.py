@@ -10,7 +10,7 @@ import pandas as pd
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
 from utils.common import get_file_paths_pathlib, extract_stock_symbol_from_path
-from config import PROJECT_PATH
+from utils.constants import PROJECT_PATH
 from functools import reduce
 
 # ref: https://www.tidy-finance.org/python/financial-statement-analysis.html#combining-financial-ratios

@@ -1,6 +1,6 @@
 import dotenv
 import os
-
+PROJECT_PATH = os.path.dirname(os.path.abspath(__file__))
 project_dir = os.path.join(os.path.dirname(__file__), os.pardir)
 dotenv_path = os.path.join(project_dir, '.env')
 dotenv.load_dotenv(dotenv_path)
@@ -20,6 +20,10 @@ DEEPSEEK_BASE_URL = os.getenv("DEEPSEEK_BASE_URL")
 DEEPSEEK_ENABLED = os.getenv("DEEPSEEK_ENABLED")
 ALLTICK_API_KEY = os.getenv("ALLTICK_API_KEY")
 ALPHAVANTAGE_API_KEY = os.getenv("ALPHAVANTAGE_API_KEY")
+
+# plotly chart: https://plotly.com/python/builtin-colorscales/
+SEQUENTIAL_COLOR ='PuBu' #'YlGnBu' #'GnBu'
+# discrete color: https://plotly.com/python/discrete-color/
 
 # ak_fundamental_by_yearly
 AK_FUNDAMENTAL_KEEP_COMMON_COLS = ['SECURITY_NAME_ABBR', 'ORG_TYPE', 'REPORT_DATE_NAME']

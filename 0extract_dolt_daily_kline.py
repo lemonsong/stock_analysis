@@ -10,7 +10,7 @@ import shutil
 import os
 import mysql.connector
 import pandas as pd
-from config import PROJECT_PATH
+from utils.constants import PROJECT_PATH
 from utils.dolt_helper import clean_daily_by_dates
 
 mydb = mysql.connector.connect(

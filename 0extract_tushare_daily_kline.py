@@ -4,8 +4,7 @@ Update single stock of ALL stock kline data_all_list between start_date and end_
 import sys
 import pandas as pd
 import tushare as ts
-from utils.constants import TUSHARE_API_KEY
-from config import PROJECT_PATH
+from utils.constants import TUSHARE_API_KEY, PROJECT_PATH
 import os
 from utils.common import format_stock_symbol, get_file_paths_pathlib, extract_stock_symbol_from_path
 from utils.tushare_helper import format_tushare_kline_to_dolt_style
@@ -30,8 +29,8 @@ if len(sys.argv) > 1:
     logging.info(f"Fetching data via sys argument parser: {start_date} to {end_date}")
     # TODO:add end_date validation step or automate start & end data input to avoid mistakes
 else:
-    start_date = "2026-01-14"  # TODO
-    end_date = '2026-01-20'  # TODO
+    start_date = "2026-01-15"  # TODO
+    end_date = '2026-01-23'  # TODO
     logging.info(f"Fetching data via manual input: {start_date} to {end_date}")
 
 

@@ -8,7 +8,7 @@ logging.basicConfig(
 )
 import pandas as pd
 import akshare as ak
-from config import PROJECT_PATH
+from utils.constants import PROJECT_PATH
 
 import argparse, sys
 

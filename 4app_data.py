@@ -4,8 +4,7 @@ Create the final data to display in the signal page
 Meanwhile, join fundamental rank to fundamental metrics. and listed helpful fundamental metrics and rank to the signal data
 '''
 import pandas as pd
-from utils.constants import BUY_SIGNAL_COLS, SELL_SIGNAL_COLS,FUNDAMENTAL_KEY_COLS
-from config import PROJECT_PATH
+from utils.constants import BUY_SIGNAL_COLS, SELL_SIGNAL_COLS, FUNDAMENTAL_KEY_COLS, PROJECT_PATH
 import os
 
 # read stock_name_industry.csv to map symbol to company and industry

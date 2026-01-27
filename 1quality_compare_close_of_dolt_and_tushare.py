@@ -5,8 +5,7 @@ in order to check DOLT data_all_list quality
 '''
 import pandas as pd
 import tushare as ts
-from utils.constants import TUSHARE_API_KEY
-from config import PROJECT_PATH
+from utils.constants import TUSHARE_API_KEY, PROJECT_PATH
 import os
 from utils.common import format_stock_symbol, get_file_paths_pathlib, extract_stock_symbol_from_path
 from datetime import datetime

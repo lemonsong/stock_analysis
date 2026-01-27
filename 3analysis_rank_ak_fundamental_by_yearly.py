@@ -12,7 +12,8 @@ import numpy as np
 from sklearn.preprocessing import MinMaxScaler
 import joblib
 import os
-from config import PROJECT_PATH
+from utils.constants import PROJECT_PATH
+
 
 def rank_fundamental():
     # Define paths

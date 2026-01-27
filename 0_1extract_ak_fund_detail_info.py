@@ -13,7 +13,7 @@ logging.basicConfig(
 
 import akshare as ak
 import pandas as pd
-from config import PROJECT_PATH
+from utils.constants import PROJECT_PATH
 
 PROGRAM_PATH = f'{PROJECT_PATH}/data_ak_fund_detail_info_xq'
 all_fund_df = pd.read_csv(f'{PROJECT_PATH}/0_all_fund.csv',
