@@ -17,13 +17,7 @@ stock_cash_dividend_yield_by_periods_df = pd.read_csv("data_ak_dividend/stock_ca
 app_decision_df = symbol_to_company_df.merge(stock_decision_metrics_df, how='right',on='symbol')
 app_decision_df = app_decision_df.merge(stock_cash_dividend_yield_by_periods_df, how='left', on='symbol')
 # # TODO: need to run _dividend pipeline when we need to refresh dividend calcualtion (around every half year)
-# fill na with 0 for dividend cols
-dividend_cols = [col for col in app_decision_df.columns if 'dividned' in col]
-app_decision_df[dividend_cols] = app_decision_df[dividend_cols].fillna(0)
-# for dividend in ['Total_Yield_1Y','Total_Yield_3Y','Total_Yield_5Y']:
-#     app_decision_df['Yield_Ratio_' + dividend[-2:]] = app_decision_df[dividend]/app_decision_df['close']
-#     app_decision_df[dividend] = app_decision_df[dividend].fillna(0)
-#     app_decision_df['Yield_Ratio_' + dividend[-2:]] = app_decision_df['Yield_Ratio_' + dividend[-2:]].fillna(0)
+
 
 # Join fundamental ranking to fundamental metrics and join the latest year fundamental ranking to decision df
 rank_path = os.path.join(PROJECT_PATH, 'data_ak_fundamental', 'fundamental_rank_prediction.csv')
@@ -54,9 +48,12 @@ if os.path.exists(rank_path):
     
     app_decision_df = app_decision_df.merge(latest_rank_df, on='symbol', how='left')
 
+# add big money net inflow
 stock_individual_fund_flow_rank_df = pd.read_csv('data_other/stock_individual_fund_flow_rank_df.csv')
+app_decision_df = app_decision_df.merge(stock_individual_fund_flow_rank_df[['symbol', 'big_money_net_inflow_ratio_10d']], how='left', on='symbol')
 
-# create decision signal
-app_decision_df = app_decision_df.merge(stock_individual_fund_flow_rank_df[['symbol','10日主力净流入-净占比']], how='left',on='symbol')
+# fillna with 0
+dividend_cols = [col for col in app_decision_df.columns if 'dividend' in col]
+app_decision_df[dividend_cols+['big_money_net_inflow_ratio_10d']] = app_decision_df[dividend_cols+['big_money_net_inflow_ratio_10d']].fillna(0)
 
 app_decision_df.to_csv('data_app/app_decision.csv', index=False, encoding='utf-8')

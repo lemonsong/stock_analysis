@@ -134,9 +134,11 @@ def format_df_column_name(df):
                               '次类简称': 'industry_sub_category_name',
                               '大类代码': 'industry_type_id',
                               '大类简称': 'industry_type_name',
-                              '现金分红-现金分红比例':'cash_dividend',
+                              '现金分红-现金分红比例': 'cash_dividend',
                               '现金分红-股息率': 'cash_dividend_yield',
-                              '除权除息日': 'execution_date'
+                              '除权除息日': 'execution_date',
+                              '10日主力净流入-净占比':'big_money_net_inflow_ratio_10d',
+
                               })
 
 

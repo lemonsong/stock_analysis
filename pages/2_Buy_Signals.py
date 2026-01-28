@@ -94,57 +94,11 @@ def setup_sidebar(df):
                     key=f"filter_{col}"
                 )
 
-    # 4. 价格筛选
-    price_range = None
-    growth_1Y_range = None
-    zl_inflow_range = None
-    total_dividend_yield_1Y_range = None
-    if 'close' in numeric_cols:
-        with st.sidebar.expander("价格", expanded=False):
-            price_min = float(df['close'].min())
-            price_max = float(df['close'].max())
-            price_range = st.slider(
-                "价格",
-                min_value=price_min,
-                max_value=price_max,
-                value=(price_min, price_max),
-                key="filter_close"
-            )
-            growth_1Y_min = float(df['growth_1Y'].min())
-            growth_1Y_max = float(df['growth_1Y'].max())
-            growth_1Y_range = st.slider(
-                "1年均价增长",
-                min_value=growth_1Y_min,
-                max_value=growth_1Y_max,
-                value=(growth_1Y_min, growth_1Y_max),
-                key="filter_growth_1Y"
-            )
-            zl_inflow_min = float(df['10日主力净流入-净占比'].min())
-            zl_inflow_max = float(df['10日主力净流入-净占比'].max())
-            zl_inflow_range = st.slider(
-                "10日主力净流入-净占比",
-                min_value=zl_inflow_min,
-                max_value=zl_inflow_max,
-                value=(zl_inflow_min, zl_inflow_max),
-                key="filter_zl_inflow"
-            )
-            total_dividend_yield_1Y_min = float(df['total_dividend_yield_1Y'].min())
-            total_dividend_yield_1Y_max = float(df['total_dividend_yield_1Y'].max())
-            total_dividend_yield_1Y_range = st.slider(
-                "近1年股息率",
-                min_value=total_dividend_yield_1Y_min,
-                max_value=total_dividend_yield_1Y_max,
-                value=(total_dividend_yield_1Y_min, total_dividend_yield_1Y_max),
-                key="filter_total_dividend_yield_1Y"
-            )
 
-
-
-
-    # 5. 基本面指标筛选
+    # 4. 基本面指标筛选
     fundamental_filters = {}
     with st.sidebar.expander("基本面指标", expanded=True):
-        include_null_fundamental = st.checkbox("包含未知指标值", value=True, key="include_null_fundamental")
+        include_null_value = st.checkbox("包含未知指标值", value=True, key="include_null_value")
         fundamental_cols = FUNDAMENTAL_KEY_COLS
         for col in fundamental_cols:
             if col in df.columns:
@@ -177,6 +131,49 @@ def setup_sidebar(df):
                 key="filter_fundamental_rank"
             )
 
+    # 5. 其他筛选
+    price_range = None
+    growth_1Y_range = None
+    big_money_inflow_range = None
+    total_dividend_yield_1Y_range = None
+    if 'close' in numeric_cols:
+        with st.sidebar.expander("其他", expanded=False):
+            price_min = float(df['close'].min())
+            price_max = float(df['close'].max())
+            price_range = st.slider(
+                "价格",
+                min_value=price_min,
+                max_value=price_max,
+                value=(price_min, price_max),
+                key="filter_close"
+            )
+            growth_1Y_min = float(df['growth_1Y'].min())
+            growth_1Y_max = float(df['growth_1Y'].max())
+            growth_1Y_range = st.slider(
+                "1年均价增长",
+                min_value=growth_1Y_min,
+                max_value=growth_1Y_max,
+                value=(growth_1Y_min, growth_1Y_max),
+                key="filter_growth_1Y"
+            )
+            # big_money_inflow_min = float(df['big_money_net_inflow_ratio_10d'].min())
+            # big_money_inflow_max = float(df['big_money_net_inflow_ratio_10d'].max())
+            # big_money_inflow_range = st.slider(
+            #     "10日主力净流入比",
+            #     min_value=big_money_inflow_min,
+            #     max_value=big_money_inflow_max,
+            #     value=(big_money_inflow_min, big_money_inflow_max),
+            #     key="filter_big_money_inflow"
+            # )
+            total_dividend_yield_1Y_min = float(df['total_dividend_yield_1Y'].min())
+            total_dividend_yield_1Y_max = float(df['total_dividend_yield_1Y'].max())
+            total_dividend_yield_1Y_range = st.slider(
+                "近1年股息率",
+                min_value=total_dividend_yield_1Y_min,
+                max_value=total_dividend_yield_1Y_max,
+                value=(total_dividend_yield_1Y_min, total_dividend_yield_1Y_max),
+                key="filter_total_dividend_yield_1Y"
+            )
 
     # --- 应用筛选 ---
     filtered_df = df.copy()
@@ -193,33 +190,9 @@ def setup_sidebar(df):
             (filtered_df[col] <= max_val)
         ]
 
-    # 应用价格筛选
-    if price_range:
-        filtered_df = filtered_df[
-            (filtered_df['close'] >= price_range[0]) &
-            (filtered_df['close'] <= price_range[1])
-        ]
-
-    if growth_1Y_range:
-        filtered_df = filtered_df[
-            (filtered_df['growth_1Y'] >= growth_1Y_range[0]) &
-            (filtered_df['growth_1Y'] <= growth_1Y_range[1])
-        ]
-
-    if zl_inflow_range:
-        filtered_df = filtered_df[
-            (filtered_df['10日主力净流入-净占比'] >= growth_1Y_range[0]) &
-            (filtered_df['10日主力净流入-净占比'] <= growth_1Y_range[1])
-            ]
-    if total_dividend_yield_1Y_range:
-        filtered_df = filtered_df[
-            (filtered_df['total_dividend_yield_1Y'] >= total_dividend_yield_1Y_range[0]) &
-            (filtered_df['total_dividend_yield_1Y'] <= total_dividend_yield_1Y_range[1])
-            ]
-
     # 应用基本面筛选
     for col, (min_val, max_val) in fundamental_filters.items():
-        if include_null_fundamental:
+        if include_null_value:
             filtered_df = filtered_df[
                 ((filtered_df[col] >= min_val) & (filtered_df[col] <= max_val)) |
                 filtered_df[col].isna()
@@ -231,7 +204,7 @@ def setup_sidebar(df):
             ]
 
     if fundamental_rank_range:
-        if include_null_fundamental:
+        if include_null_value:
             filtered_df = filtered_df[
                 ((filtered_df['fundamental_rank'] >= fundamental_rank_range[0]) &
                 (filtered_df['fundamental_rank'] <= fundamental_rank_range[1])) |
@@ -243,12 +216,38 @@ def setup_sidebar(df):
                 (filtered_df['fundamental_rank'] <= fundamental_rank_range[1])
             ]
 
+
+    # 应用其他筛选
+    if price_range:
+        filtered_df = filtered_df[
+            (filtered_df['close'] >= price_range[0]) &
+            (filtered_df['close'] <= price_range[1])
+            ]
+
+    if growth_1Y_range:
+        filtered_df = filtered_df[
+            (filtered_df['growth_1Y'] >= growth_1Y_range[0]) &
+            (filtered_df['growth_1Y'] <= growth_1Y_range[1])
+            ]
+
+    # if big_money_inflow_range:
+    #     filtered_df = filtered_df[
+    #         (filtered_df['big_money_net_inflow_ratio_10d'] >= growth_1Y_range[0]) &
+    #         (filtered_df['big_money_net_inflow_ratio_10d'] <= growth_1Y_range[1])
+    #         ]
+    #
+    if total_dividend_yield_1Y_range:
+        filtered_df = filtered_df[
+            (filtered_df['total_dividend_yield_1Y'] >= total_dividend_yield_1Y_range[0]) &
+            (filtered_df['total_dividend_yield_1Y'] <= total_dividend_yield_1Y_range[1])
+            ]
+
     # 应用搜索筛选
     if search_term:
         if search_mode == "分别搜索":
             mask = (
-                filtered_df['symbol'].str.contains(search_term, case=False, na=False) |
-                filtered_df['company'].str.contains(search_term, case=False, na=False)
+                    filtered_df['symbol'].str.contains(search_term, case=False, na=False) |
+                    filtered_df['company'].str.contains(search_term, case=False, na=False)
             )
         else:
             # 创建symbol+company的组合列进行搜索
@@ -379,7 +378,7 @@ def display_detailed_data(filtered_df):
         "基本面指标": FUNDAMENTAL_KEY_COLS,
         "基本面排名": [col for col in filtered_df.columns if 'fundamental' in col.lower()],
         "技术指标": [col for col in filtered_df.columns if col.endswith('_buy') or col.endswith('_sell')],
-        "净流入":[col for col in filtered_df.columns if '净流入' in col],
+        "净流入":[col for col in filtered_df.columns if 'inflow' in col],
     }
 
     # 添加链接转换
@@ -599,7 +598,7 @@ def display_detailed_data(filtered_df):
             help="",
             format="%.1f x",
         width="small"),
-        "10日主力净流入-净占比": st.column_config.NumberColumn(
+        "big_money_net_inflow_ratio_10d": st.column_config.NumberColumn(
             "主力净流入比",
             help="",
             format="%.2f",
@@ -652,7 +651,7 @@ def main():
     if df is None or df.empty:
         st.warning("数据文件为空")
         st.stop()
-    # df['10日主力净流入-净占比'] = df['10日主力净流入-净占比'].astype(float)
+    # df['big_money_net_inflow_ratio_10d'] = df['big_money_net_inflow_ratio_10d'].astype(float)
     filtered_df = setup_sidebar(df)
     display_metrics(filtered_df)
     display_charts(filtered_df)
