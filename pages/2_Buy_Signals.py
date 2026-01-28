@@ -96,6 +96,9 @@ def setup_sidebar(df):
 
     # 4. 价格筛选
     price_range = None
+    growth_1Y_range = None
+    zl_inflow_range = None
+    total_dividend_yield_1Y_range = None
     if 'close' in numeric_cols:
         with st.sidebar.expander("价格", expanded=False):
             price_min = float(df['close'].min())
@@ -116,20 +119,27 @@ def setup_sidebar(df):
                 value=(growth_1Y_min, growth_1Y_max),
                 key="filter_growth_1Y"
             )
+            zl_inflow_min = float(df['10日主力净流入-净占比'].min())
+            zl_inflow_max = float(df['10日主力净流入-净占比'].max())
+            zl_inflow_range = st.slider(
+                "10日主力净流入-净占比",
+                min_value=zl_inflow_min,
+                max_value=zl_inflow_max,
+                value=(zl_inflow_min, zl_inflow_max),
+                key="filter_zl_inflow"
+            )
+            total_dividend_yield_1Y_min = float(df['total_dividend_yield_1Y'].min())
+            total_dividend_yield_1Y_max = float(df['total_dividend_yield_1Y'].max())
+            total_dividend_yield_1Y_range = st.slider(
+                "近1年股息率",
+                min_value=total_dividend_yield_1Y_min,
+                max_value=total_dividend_yield_1Y_max,
+                value=(total_dividend_yield_1Y_min, total_dividend_yield_1Y_max),
+                key="filter_total_dividend_yield_1Y"
+            )
 
-            fundamental_rank_range = None
-            include_null_rank = True
-            if 'fundamental_rank' in df.columns:
-                fundamental_rank_min = float(df['fundamental_rank'].min())
-                fundamental_rank_max = float(df['fundamental_rank'].max())
-                fundamental_rank_range = st.slider(
-                    "基本面排名",
-                    min_value=fundamental_rank_min,
-                    max_value=fundamental_rank_max,
-                    value=(fundamental_rank_min, fundamental_rank_max),
-                    key="filter_fundamental_rank"
-                )
-                include_null_rank = st.checkbox("包含未知排名", value=True, key="include_null_rank")
+
+
 
     # 5. 基本面指标筛选
     fundamental_filters = {}
@@ -155,6 +165,17 @@ def setup_sidebar(df):
                     step=1.0,
                     key=f"filter_{col}"
                 )
+        fundamental_rank_range = None
+        if 'fundamental_rank' in df.columns:
+            fundamental_rank_min = float(df['fundamental_rank'].min())
+            fundamental_rank_max = float(df['fundamental_rank'].max())
+            fundamental_rank_range = st.slider(
+                "基本面排名",
+                min_value=fundamental_rank_min,
+                max_value=fundamental_rank_max,
+                value=(fundamental_rank_min, fundamental_rank_max),
+                key="filter_fundamental_rank"
+            )
 
 
     # --- 应用筛选 ---
@@ -185,17 +206,15 @@ def setup_sidebar(df):
             (filtered_df['growth_1Y'] <= growth_1Y_range[1])
         ]
 
-    if fundamental_rank_range:
-        if include_null_rank:
-            filtered_df = filtered_df[
-                ((filtered_df['fundamental_rank'] >= fundamental_rank_range[0]) &
-                (filtered_df['fundamental_rank'] <= fundamental_rank_range[1])) |
-                filtered_df['fundamental_rank'].isna()
+    if zl_inflow_range:
+        filtered_df = filtered_df[
+            (filtered_df['10日主力净流入-净占比'] >= growth_1Y_range[0]) &
+            (filtered_df['10日主力净流入-净占比'] <= growth_1Y_range[1])
             ]
-        else:
-            filtered_df = filtered_df[
-                (filtered_df['fundamental_rank'] >= fundamental_rank_range[0]) &
-                (filtered_df['fundamental_rank'] <= fundamental_rank_range[1])
+    if total_dividend_yield_1Y_range:
+        filtered_df = filtered_df[
+            (filtered_df['total_dividend_yield_1Y'] >= total_dividend_yield_1Y_range[0]) &
+            (filtered_df['total_dividend_yield_1Y'] <= total_dividend_yield_1Y_range[1])
             ]
 
     # 应用基本面筛选
@@ -209,6 +228,19 @@ def setup_sidebar(df):
             filtered_df = filtered_df[
                 (filtered_df[col] >= min_val) &
                 (filtered_df[col] <= max_val)
+            ]
+
+    if fundamental_rank_range:
+        if include_null_fundamental:
+            filtered_df = filtered_df[
+                ((filtered_df['fundamental_rank'] >= fundamental_rank_range[0]) &
+                (filtered_df['fundamental_rank'] <= fundamental_rank_range[1])) |
+                filtered_df['fundamental_rank'].isna()
+            ]
+        else:
+            filtered_df = filtered_df[
+                (filtered_df['fundamental_rank'] >= fundamental_rank_range[0]) &
+                (filtered_df['fundamental_rank'] <= fundamental_rank_range[1])
             ]
 
     # 应用搜索筛选
@@ -341,8 +373,8 @@ def display_detailed_data(filtered_df):
         "基本信息": ['symbol_url', 'company', 'close'], # 使用symbol_url替代symbol
         "行业信息": ['industry_category_name', 'industry_sub_category_name', 'industry_type_name'],
         "信号指标": [col for col in filtered_df.columns if 'signal' in col.lower()],
-        "分红指标": [col for col in filtered_df.columns if 'Total_Yield' in col],
-        "分红率(%)": [col for col in filtered_df.columns if 'Yield_Ratio' in col],
+        "分红指标": [col for col in filtered_df.columns if 'total_dividend' in col and 'yield' not in col],
+        "分红率(%)": [col for col in filtered_df.columns if 'total_dividend_yield' in col],
         "股价增长(%)": [col for col in filtered_df.columns if 'growth_' in col],
         "基本面指标": FUNDAMENTAL_KEY_COLS,
         "基本面排名": [col for col in filtered_df.columns if 'fundamental' in col.lower()],
@@ -469,10 +501,12 @@ def display_detailed_data(filtered_df):
         "industry_category_name": st.column_config.Column(
             "门类",
             help="industry_category_name",
+            width="small"
         ),
         "industry_sub_category_name": st.column_config.Column(
             "次类",
             help="industry_sub_category_name",
+            width="small"
         ),
         "industry_type_name": st.column_config.Column(
             "大类",
@@ -491,39 +525,39 @@ def display_detailed_data(filtered_df):
             "卖出信号数",
             format="%d"
         ),
-        "Yield_Ratio_1Y": st.column_config.NumberColumn(
+        "total_dividend_yield_1Y": st.column_config.NumberColumn(
             "近1年股息率",
             help="过去12个月累计现金分红收益率",
-            format="%.4f%%"  # Note: format handles the display
+            format="%.2f%%"  # Note: format handles the display
         ),
-        "Yield_Ratio_3Y": st.column_config.NumberColumn(
+        "total_dividend_yield_3Y": st.column_config.NumberColumn(
             "近3年股息率",
             help="过去3年累计现金分红收益率",
-            format="%.4f%%"  # Note: format handles the display
+            format="%.2f%%"  # Note: format handles the display
         ),
-        "Yield_Ratio_5Y": st.column_config.NumberColumn(
+        "total_dividend_yield_5Y": st.column_config.NumberColumn(
             "近5年股息率",
             help="过去5年累计现金分红收益率",
-            format="%.4f%%"  # Note: format handles the display
+            format="%.2f%%"  # Note: format handles the display
         ),
-        "Total_Yield_1Y": st.column_config.NumberColumn(
-            "近1年股息率",
-            help="过去12个月累计现金分红收益率",
-            format="%.4f"  # Note: format handles the display
+        "total_dividend_1Y": st.column_config.NumberColumn(
+            "近1年股息",
+            help="过去12个月累计现金分红收益",
+            format="%.2f"  # Note: format handles the display
         ),
-        "Total_Yield_3Y": st.column_config.NumberColumn(
-            "近3年股息率",
-            help="过去3年累计现金分红收益率",
-            format="%.4f"  # Note: format handles the display
+        "total_dividend_3Y": st.column_config.NumberColumn(
+            "近3年股息",
+            help="过去3年累计现金分红收益",
+            format="%.2f"  # Note: format handles the display
         ),
-        "Total_Yield_5Y": st.column_config.NumberColumn(
-            "近5年股息率",
-            help="过去5年累计现金分红收益率",
-            format="%.4f"  # Note: format handles the display
+        "total_dividend_5Y": st.column_config.NumberColumn(
+            "近5年股息",
+            help="过去5年累计现金分红收益",
+            format="%.2f"  # Note: format handles the display
         ),
-        "growth_1Y": st.column_config.NumberColumn("1Y均价增长", format="%.2f%%"),
-        "growth_2Y": st.column_config.NumberColumn("2Y均价增长", format="%.2f%%"),
-        "growth_3Y": st.column_config.NumberColumn("3Y均价增长", format="%.2f%%"),
+        "growth_1Y": st.column_config.NumberColumn("近1年均价增长", format="%.2f%%"),
+        "growth_2Y": st.column_config.NumberColumn("近2年均价增长", format="%.2f%%"),
+        "growth_3Y": st.column_config.NumberColumn("近3年均价增长", format="%.2f%%"),
 
         "fundamental_score": st.column_config.NumberColumn(
             "基本面评分",
@@ -565,8 +599,8 @@ def display_detailed_data(filtered_df):
             help="",
             format="%.1f x",
         width="small"),
-        "'10日主力净流入-净占比'": st.column_config.NumberColumn(
-            "'10日主力净流入-净占比'",
+        "10日主力净流入-净占比": st.column_config.NumberColumn(
+            "主力净流入比",
             help="",
             format="%.2f",
             width="small"),
@@ -618,7 +652,7 @@ def main():
     if df is None or df.empty:
         st.warning("数据文件为空")
         st.stop()
-
+    # df['10日主力净流入-净占比'] = df['10日主力净流入-净占比'].astype(float)
     filtered_df = setup_sidebar(df)
     display_metrics(filtered_df)
     display_charts(filtered_df)

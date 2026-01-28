@@ -16,12 +16,14 @@ stock_cash_dividend_yield_by_periods_df = pd.read_csv("data_ak_dividend/stock_ca
 # create decision signal
 app_decision_df = symbol_to_company_df.merge(stock_decision_metrics_df, how='right',on='symbol')
 app_decision_df = app_decision_df.merge(stock_cash_dividend_yield_by_periods_df, how='left', on='symbol')
-# calculate yield ratio
-# TODO: need to run _dividend pipeline when we need to refresh dividend calcualtion (around every half year)
-for dividend in ['Total_Yield_1Y','Total_Yield_3Y','Total_Yield_5Y']:
-    app_decision_df['Yield_Ratio_' + dividend[-2:]] = app_decision_df[dividend]/app_decision_df['close']
-    app_decision_df[dividend] = app_decision_df[dividend].fillna(0)
-    app_decision_df['Yield_Ratio_' + dividend[-2:]] = app_decision_df['Yield_Ratio_' + dividend[-2:]].fillna(0)
+# # TODO: need to run _dividend pipeline when we need to refresh dividend calcualtion (around every half year)
+# fill na with 0 for dividend cols
+dividend_cols = [col for col in app_decision_df.columns if 'dividned' in col]
+app_decision_df[dividend_cols] = app_decision_df[dividend_cols].fillna(0)
+# for dividend in ['Total_Yield_1Y','Total_Yield_3Y','Total_Yield_5Y']:
+#     app_decision_df['Yield_Ratio_' + dividend[-2:]] = app_decision_df[dividend]/app_decision_df['close']
+#     app_decision_df[dividend] = app_decision_df[dividend].fillna(0)
+#     app_decision_df['Yield_Ratio_' + dividend[-2:]] = app_decision_df['Yield_Ratio_' + dividend[-2:]].fillna(0)
 
 # Join fundamental ranking to fundamental metrics and join the latest year fundamental ranking to decision df
 rank_path = os.path.join(PROJECT_PATH, 'data_ak_fundamental', 'fundamental_rank_prediction.csv')
