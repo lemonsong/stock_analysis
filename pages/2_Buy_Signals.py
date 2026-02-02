@@ -604,25 +604,13 @@ def display_detailed_data(filtered_df):
             format="%.2f",
             width="small"),
 
-    # elif metric == 'fundamental_score':
-    # st.metric("基本面得分", f"{val:.2f}")
-    # elif metric in ['roe', 'debt_to_asset']:
-    # st.metric(metric.upper(), f"{val:.2%}")
-    # elif metric == "netcash_operate_over_net_profit":
-    # st.metric(metric.upper(), f"{val:.2f}")
-    # elif metric == "ev_over_ebitda":
-    # st.metric(metric.upper(), f"{val:.2f} x")
-    # elif metric == "inventory_turnover":
-    # st.metric(metric.upper(), f"{val:.1f} 次/年")
-    # else:
-    # st.metric(metric.upper(), f"{val:.2f}")
     }
 
     # 显示表格
     st.dataframe(
         styled_display,
         use_container_width=True,
-        height=600,
+        height=700,
         column_config=column_config,
         hide_index=True
     )

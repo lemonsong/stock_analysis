@@ -309,6 +309,13 @@ if __name__ == "__main__":
         if os.path.exists(scan_dir):
             files = [f for f in os.listdir(scan_dir) if f.endswith(".csv")]
             stocks = [os.path.splitext(f)[0] for f in files]
+
+            exist_summary_path = os.path.join(args.output_dir, "zipline_summary_part1.csv")
+            if os.path.exists(exist_summary_path):
+                # exist_zipline_df = pd.read_csv(exist_summary_path).drop_duplicates()
+                # exist_zipline_df.to_csv(exist_summary_path, encoding='utf-8', index=False)
+                exist_symbol = pd.read_csv(exist_summary_path)['Symbol'].tolist()
+                stocks = [i for i in stocks if i not in exist_symbol]
             # the above is similar to the following code
             # file_list = get_file_paths_pathlib(f'{PROGRAM_PATH}/{daily_folder}')
             # symbol_li = [extract_stock_symbol_from_path(file_path, from_format='MARKETnumber',
