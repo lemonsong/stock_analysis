@@ -33,8 +33,8 @@ STRATEGIES = [
 ]
 
 METRICS = [
-    "Annual Return", "Cumulative Return", "Annual Volatility",
-    "Sharpe Ratio", "Max Drawdown"
+    "Annual Return", "Cumulative Return",
+    "Sharpe Ratio", "Annual Volatility", "Max Drawdown"
 ]
 
 @st.cache_data
@@ -49,14 +49,13 @@ def load_data():
     if INDUSTRY_FILE.exists():
         df_ind = pd.read_csv(INDUSTRY_FILE)
         # Ensure symbol columns are strings and consistent
-        df['Symbol'] = df['Symbol'].astype(str)
+        df['symbol'] = df['symbol'].astype(str)
         df_ind['symbol'] = df_ind['symbol'].astype(str)
 
         # Merge
         df = df.merge(
-            df_ind[['symbol', 'industry_category_name', 'industry_type_name', 'industry_sub_category_name']],
-            left_on='Symbol',
-            right_on='symbol',
+            df_ind[['symbol', 'company', 'industry_category_name', 'industry_type_name', 'industry_sub_category_name']],
+            on='symbol',
             how='left'
         )
     else:
@@ -185,8 +184,8 @@ else:
 # Industry Filters
 industry_levels = {
     'Category': 'industry_category_name',
+    'Sub-Category': 'industry_sub_category_name',
     'Type': 'industry_type_name',
-    'Sub-Category': 'industry_sub_category_name'
 }
 
 filtered_df = df_long.copy()
@@ -199,9 +198,9 @@ for label, col in industry_levels.items():
         if val != "All":
             filtered_df = filtered_df[filtered_df[col] == val]
 
-# Apply Symbol Filter (Intersect with industry filter)
+# Apply symbol Filter (Intersect with industry filter)
 if selected_symbols:
-    filtered_df = filtered_df[filtered_df['Symbol'].isin(selected_symbols)]
+    filtered_df = filtered_df[filtered_df['symbol'].isin(selected_symbols)]
 
 if filtered_df.empty:
     st.warning("No data matches the filters.")
@@ -211,7 +210,7 @@ if filtered_df.empty:
 st.header("📊 Backtest Summary")
 col1, col2, col3 = st.columns(3)
 with col1:
-    st.metric("Total Symbols", filtered_df['Symbol'].nunique())
+    st.metric("Total Symbols", filtered_df['symbol'].nunique())
 
 # Best Strategy (Avg Annual Return)
 avg_returns = filtered_df[filtered_df['Metric'] == 'Annual Return'].groupby('Strategy')['Value'].mean()
@@ -237,15 +236,15 @@ with tab1:
     st.subheader("Symbol Strategy Comparison")
 
     # Get list of unique symbols in filtered data
-    display_symbols = filtered_df['Symbol'].unique()
+    display_symbols = filtered_df['symbol'].unique()
 
     if len(display_symbols) > 20 and not selected_symbols:
         st.warning(f"Showing first 20 symbols out of {len(display_symbols)}. Please use filters to narrow down.")
         display_symbols = display_symbols[:20]
 
     for sym in display_symbols:
-        st.markdown(f"### {sym}")
-        sym_data = filtered_df[filtered_df['Symbol'] == sym]
+        st.markdown(f"### {sym}-{filtered_df.loc[filtered_df['symbol'] == sym,['company']].values[0][0]}")
+        sym_data = filtered_df[filtered_df['symbol'] == sym]
 
         # Grid Layout: Columns = Metrics
         # We have 5 metrics.
@@ -286,7 +285,7 @@ with tab2:
 
     col_ctrl1, col_ctrl2 = st.columns(2)
     with col_ctrl1:
-        ind_level_label = st.selectbox("Select Industry Level", list(industry_levels.keys()), index=1)
+        ind_level_label = st.selectbox("Select Industry Level", list(industry_levels.keys()), index=2)
         ind_col = industry_levels[ind_level_label]
 
     with col_ctrl2:

@@ -388,7 +388,8 @@ def display_detailed_data(filtered_df):
     # 所以我们需要创建一个新列或者修改symbol列。
     # 为了保持排序和搜索的直观性，我们创建一个新的url列，或者修改symbol列为url但显示为代码。
     # 这里直接修改symbol列为URL，利用LinkColumn的display_text正则来显示代码。
-    display_df['symbol_url'] = "https://xueqiu.com/S/" + display_df['symbol'].astype(str)
+    display_df.insert(0, 'symbol_url', "https://xueqiu.com/S/" + display_df['symbol'].astype(str), allow_duplicates=True)
+    # display_df['symbol_url'] = "https://xueqiu.com/S/" + display_df['symbol'].astype(str)
     # ratio will display as percentage
     display_df[col_groups["股价增长(%)"]] = display_df[col_groups["股价增长(%)"]]*100
     display_df[col_groups["分红率(%)"]] = display_df[col_groups["分红率(%)"]]*100
