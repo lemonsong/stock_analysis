@@ -9,10 +9,9 @@ from plotly.subplots import make_subplots
 from pathlib import Path
 from utils.streamlit_helper import setup_page_config
 from utils.constants import FUNDAMENTAL_KEY_COLS, SEQUENTIAL_COLOR, PROJECT_PATH
+from utils.filters import render_filter_sidebar
 import io, os
 import sys
-# 添加根目录到sys.path以便导入utils
-# sys.path.append(str(Path(__file__).parent.parent))
 
 setup_page_config()
 
@@ -51,12 +50,6 @@ def load_fundamental_data():
         return None
 
 @st.cache_data
-def get_stock_list(_df):
-    """获取股票列表（缓存）"""
-    return _df[['symbol', 'SECURITY_NAME_ABBR']].drop_duplicates()
-
-
-@st.cache_data
 def filter_stock_data(_df, symbols, year_range):
     """筛选股票数据（缓存）"""
     return _df[
@@ -77,142 +70,6 @@ def load_kline_data(symbol):
         except Exception:
             return None
     return None
-
-def setup_sidebar(df):
-    """设置侧边栏股票选择逻辑"""
-    st.sidebar.header("选择股票")
-
-    selection_method = st.sidebar.radio(
-        "选择方式",
-        ["📝 列表输入", "🏭 行业筛选", "🔍 搜索股票", ],
-        index=0,
-        key="selection_method"
-    )
-
-    selected_symbols = []
-
-    available_stocks = get_stock_list(df)
-    stock_map = {
-        row['symbol']: f"{row['symbol']} - {row['SECURITY_NAME_ABBR']}"
-        for _, row in available_stocks.iterrows()
-    }
-
-
-    if selection_method == "📝 列表输入":
-        st.sidebar.caption("输入股票代码，用逗号分隔")
-        input_text = st.sidebar.text_area("股票代码列表", "SZ000629,SH600295,SZ000672,SH600808,SH603612,SZ000959,SH601702,SH603399,SZ002787,SH603688,SH603995,SH600801,SH600293,SZ002080", key="list_input")
-        if input_text:
-            symbols = [s.strip() for s in input_text.replace('，', ',').split(',') if s.strip()]
-            valid_symbols = [s for s in symbols if s in stock_map]
-            invalid_symbols = [s for s in symbols if s not in stock_map]
-
-            if invalid_symbols:
-                st.sidebar.warning(f"未找到代码: {', '.join(invalid_symbols)}")
-
-            selected_symbols = valid_symbols
-
-    elif selection_method == "🏭 行业筛选":
-        if 'industry' not in df.columns:
-            st.sidebar.error("未找到行业数据")
-        else:
-            industry_filters = {}
-            # Define industry levels and their labels
-            levels = [
-                ('industry_category_name', '门类'),
-                ('industry_type_name', '大类'),
-                ('industry_sub_category_name', '次类')
-            ]
-
-            for level, label in levels:
-                if level in df.columns:
-                    options = ["全部"] + sorted(list(df[level].dropna().unique()))
-                    industry_filters[level] = st.sidebar.selectbox(label, options, key=f"filter_{level}")
-
-            # Apply filters
-            filtered_df_ind = df.copy()
-            for col, value in industry_filters.items():
-                if value != "全部":
-                    filtered_df_ind = filtered_df_ind[filtered_df_ind[col] == value]
-
-            industry_stocks = filtered_df_ind['symbol'].unique()
-
-            if len(industry_stocks) > 0:
-                st.sidebar.markdown("##### 财务指标筛选 (最新年份)")
-
-                filter_metrics = {
-                    'roe': 'ROE (%)',
-                    'netcash_operate_over_net_profit': '净现比',
-                    'debt_to_asset': '资产负债率',
-                    'inventory_turnover': '存货周转率',
-                    'ev_over_ebitda': 'EV/EBITDA'
-                }
-
-                latest_year = df['fiscal_year'].max()
-                latest_df = df[(df['fiscal_year'] == latest_year) & (df['symbol'].isin(industry_stocks))]
-
-                filtered_industry_stocks = latest_df.copy()
-
-                with st.sidebar.expander("指标筛选条件", expanded=True):
-                    for metric, label in filter_metrics.items():
-                        if metric not in latest_df.columns:
-                            continue
-
-                        min_val = float(latest_df[metric].min())
-                        max_val = float(latest_df[metric].max())
-
-                        if min_val == max_val:
-                            continue
-
-                        val_range = st.slider(
-                            f"{label}",
-                            min_value=min_val,
-                            max_value=max_val,
-                            value=(min_val, max_val),
-                            step=(max_val-min_val)/100 if max_val != min_val else 1.0,
-                            key=f"slider_{metric}"
-                        )
-
-                        filtered_industry_stocks = filtered_industry_stocks[
-                            (filtered_industry_stocks[metric] >= val_range[0]) &
-                            (filtered_industry_stocks[metric] <= val_range[1])
-                        ]
-
-                selected_symbols = filtered_industry_stocks['symbol'].tolist()
-                st.sidebar.success(f"筛选出 {len(selected_symbols)} 只股票")
-
-                if len(selected_symbols) > 0:
-                     with st.sidebar.expander("查看筛选结果"):
-                         st.table(filtered_industry_stocks[['symbol', 'SECURITY_NAME_ABBR']])
-            else:
-                st.sidebar.warning("未找到符合条件的股票")
-    elif selection_method == "🔍 搜索股票":
-        search_term = st.sidebar.text_input("搜索股票代码或名称", "", key="search_term")
-
-        filtered_stocks = available_stocks
-        if search_term:
-            filtered_stocks = available_stocks[
-                (available_stocks['symbol'].str.contains(search_term, case=False, na=False)) |
-                (available_stocks['SECURITY_NAME_ABBR'].str.contains(search_term, case=False, na=False))
-                ]
-
-        stock_options = {
-            f"{row['symbol']} - {row['SECURITY_NAME_ABBR']}": row['symbol']
-            for _, row in filtered_stocks.iterrows()
-        }
-
-        default_selection = st.session_state.get('selected_stocks_search', [])
-        default_selection = [s for s in default_selection if s in stock_options.keys()]
-
-        selected_keys = st.sidebar.multiselect(
-            "选择股票（多选）",
-            options=list(stock_options.keys()),
-            default=default_selection,
-            key="search_multiselect"
-        )
-        st.session_state['selected_stocks_search'] = selected_keys
-        selected_symbols = [stock_options[k] for k in selected_keys]
-
-    return selected_symbols, stock_map
 
 def render_indicator_help():
     """渲染财务指标帮助信息"""
@@ -532,7 +389,14 @@ if df is None or df.empty:
     st.stop()
 
 # 侧边栏设置
-selected_symbols, stock_map = setup_sidebar(df)
+filtered_df_sidebar = render_filter_sidebar(df)
+selected_symbols = filtered_df_sidebar['symbol'].unique().tolist()
+
+# 创建stock_map
+stock_map = {
+    row['symbol']: f"{row['symbol']} - {row['SECURITY_NAME_ABBR']}"
+    for _, row in df[['symbol', 'SECURITY_NAME_ABBR']].drop_duplicates().iterrows()
+}
 
 # 数据质量检查
 st.sidebar.markdown("#### 📊 数据质量")

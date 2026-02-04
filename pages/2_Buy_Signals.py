@@ -10,6 +10,7 @@ import json
 from pathlib import Path
 from utils.constants import FUNDAMENTAL_KEY_COLS, SEQUENTIAL_COLOR, PROJECT_PATH
 from utils.streamlit_helper import clear_cache, clean_expired_cache, setup_page_config
+from utils.filters import render_filter_sidebar
 
 setup_page_config()
 
@@ -50,33 +51,12 @@ def get_numeric_columns(df):
 
 def setup_sidebar(df):
     """设置侧边栏筛选条件并返回筛选后的数据"""
-    st.sidebar.header("筛选条件")
+    # 1. 股票筛选 (Refactored)
+    filtered_df = render_filter_sidebar(df)
 
-    numeric_cols = get_numeric_columns(df)
-
-    # 1. 股票搜索
-    st.sidebar.markdown("#### 🔍 股票搜索")
-    search_mode = st.sidebar.radio(
-        "搜索模式",
-        options=["分别搜索", "合并搜索"],
-        index=0,
-        help="分别搜索：在symbol或company中搜索；合并搜索：在symbol+company的组合中搜索"
-    )
-
-    search_term = ""
-    if search_mode == "分别搜索":
-        search_term = st.sidebar.text_input("搜索股票代码或名称", "")
-    else:
-        search_term = st.sidebar.text_input("搜索股票代码+名称组合", "", help="例如：SH600000平安银行")
-
-    # 2. 行业筛选
     st.sidebar.markdown("#### 📊 数值列筛选")
 
-    industry_filters = {}
-    for level in ['industry_category_name', 'industry_sub_category_name', 'industry_type_name']:
-        if level in df.columns:
-            options = ["全部"] + list(df[level].unique())
-            industry_filters[level] = st.sidebar.selectbox(level, options)
+    numeric_cols = get_numeric_columns(df)
 
     # 3. 信号指标筛选
     signal_filters = {}
@@ -176,12 +156,7 @@ def setup_sidebar(df):
             )
 
     # --- 应用筛选 ---
-    filtered_df = df.copy()
-
-    # 应用行业筛选
-    for col, value in industry_filters.items():
-        if value != "全部":
-            filtered_df = filtered_df[filtered_df[col] == value]
+    # filtered_df starts as the result of render_filter_sidebar
 
     # 应用信号筛选
     for col, (min_val, max_val) in signal_filters.items():
@@ -241,19 +216,6 @@ def setup_sidebar(df):
             (filtered_df['total_dividend_yield_1Y'] >= total_dividend_yield_1Y_range[0]) &
             (filtered_df['total_dividend_yield_1Y'] <= total_dividend_yield_1Y_range[1])
             ]
-
-    # 应用搜索筛选
-    if search_term:
-        if search_mode == "分别搜索":
-            mask = (
-                    filtered_df['symbol'].str.contains(search_term, case=False, na=False) |
-                    filtered_df['company'].str.contains(search_term, case=False, na=False)
-            )
-        else:
-            # 创建symbol+company的组合列进行搜索
-            combined = (filtered_df['symbol'].astype(str) + filtered_df['company'].astype(str))
-            mask = combined.str.contains(search_term, case=False, na=False)
-        filtered_df = filtered_df[mask]
 
     # 缓存管理
     with st.sidebar.expander("缓存管理", expanded=False):
