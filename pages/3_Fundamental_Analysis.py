@@ -389,7 +389,7 @@ if df is None or df.empty:
     st.stop()
 
 # 侧边栏设置
-filtered_df_sidebar = render_filter_sidebar(df)
+filtered_df_sidebar = render_filter_sidebar(df, key="fundamental_analysis", enable_submit_button=True)
 selected_symbols = filtered_df_sidebar['symbol'].unique().tolist()
 
 # 创建stock_map

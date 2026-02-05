@@ -158,7 +158,7 @@ if df_raw is None:
 
 # Filter using shared component
 # Use df_raw (one row per stock) for filtering to ensure correct counts
-filtered_raw = render_filter_sidebar(df_raw)
+filtered_raw = render_filter_sidebar(df_raw, key="backtest_overview", enable_submit_button=True)
 
 if filtered_raw.empty:
     st.warning("No data matches the filters.")

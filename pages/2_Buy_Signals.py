@@ -52,7 +52,7 @@ def get_numeric_columns(df):
 def setup_sidebar(df):
     """设置侧边栏筛选条件并返回筛选后的数据"""
     # 1. 股票筛选 (Refactored)
-    filtered_df = render_filter_sidebar(df)
+    filtered_df = render_filter_sidebar(df, key="buy_signals", enable_submit_button=False)
 
     st.sidebar.markdown("#### 📊 数值列筛选")
 

@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 
-def render_filter_sidebar(df):
+def render_filter_sidebar(df, key="default", enable_submit_button=True):
     """
     Renders the shared stock filter component in the sidebar.
 
@@ -9,6 +9,9 @@ def render_filter_sidebar(df):
         df: The dataframe containing stock data.
             Must contain 'symbol'.
             Should contain 'company', 'industry_category_name', 'industry_type_name', 'industry_sub_category_name' for full functionality.
+        key: A unique key prefix for session state management.
+        enable_submit_button: If True (default), filters are applied only when the 'Apply Filters & Render' button is clicked.
+                              If False, filters are applied immediately (reactive).
 
     Returns:
         pd.DataFrame: The filtered dataframe.
@@ -21,9 +24,10 @@ def render_filter_sidebar(df):
         ["组合筛选", "列表导入"],
         index=0,
         horizontal=True,
-        key="filter_mode_radio"
+        key=f"{key}_filter_mode_radio"
     )
 
+    # Ensure we are working on a copy to avoid SettingWithCopyWarning
     filtered_df = df.copy()
 
     # Ensure symbol is string
@@ -34,7 +38,7 @@ def render_filter_sidebar(df):
         st.sidebar.caption("输入股票代码，用逗号分隔 (例如: SH600000,SZ000001)")
         default_list = ""
 
-        input_text = st.sidebar.text_area("股票代码列表", default_list, key="filter_list_input")
+        input_text = st.sidebar.text_area("股票代码列表", default_list, key=f"{key}_filter_list_input")
 
         if input_text:
             # Parse input
@@ -56,7 +60,7 @@ def render_filter_sidebar(df):
         }
 
         # Toggle for Multi-select
-        allow_multi = st.sidebar.checkbox("行业多选模式", value=False, key="filter_ind_multi")
+        allow_multi = st.sidebar.checkbox("行业多选模式", value=False, key=f"{key}_filter_ind_multi")
 
         for col, label in ind_cols.items():
             if col in df.columns:
@@ -70,7 +74,7 @@ def render_filter_sidebar(df):
                         f"{label}",
                         options=options,
                         default=[],
-                        key=f"filter_ind_{col}"
+                        key=f"{key}_filter_ind_{col}"
                     )
                     if selected:
                         filtered_df = filtered_df[filtered_df[col].isin(selected)]
@@ -81,7 +85,7 @@ def render_filter_sidebar(df):
                         f"{label}",
                         options=options,
                         index=0,
-                        key=f"filter_ind_{col}"
+                        key=f"{key}_filter_ind_{col}"
                     )
                     if selected != "全部":
                         filtered_df = filtered_df[filtered_df[col] == selected]
@@ -104,10 +108,25 @@ def render_filter_sidebar(df):
         selected_items = st.sidebar.multiselect(
             "搜索并选择 (留空显示所有筛选结果)",
             options=options,
-            key="filter_stock_select"
+            key=f"{key}_filter_stock_select"
         )
 
         if selected_items:
             filtered_df = filtered_df[filtered_df['display_name'].isin(selected_items)]
 
-    return filtered_df
+    # --- Apply / Render Button ---
+    if enable_submit_button:
+        apply_btn = st.sidebar.button("Apply Filters & Render", key=f"{key}_apply_btn")
+
+        # Store the filtered result in session state
+        session_key = f"{key}_active_filtered_df"
+
+        # If button clicked OR first run (not in session state), update
+        # Note: If we want initial state to be fully loaded, we check `session_key not in st.session_state`
+        if apply_btn or session_key not in st.session_state:
+            st.session_state[session_key] = filtered_df
+
+        return st.session_state[session_key]
+    else:
+        # Reactive mode: Return filtered_df immediately
+        return filtered_df
