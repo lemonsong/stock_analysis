@@ -14,7 +14,7 @@ from functools import reduce
 
 # ref: https://www.tidy-finance.org/python/financial-statement-analysis.html#combining-financial-ratios
 
-PROGRAM_PATH = f'{PROJECT_PATH}/data_ak_fundamental'
+PROGRAM_PATH = f'{PROJECT_PATH}/data/ak_fundamental'
 fundamental_df_cleaned = pd.read_csv(f'{PROGRAM_PATH}/fundamental_cleaned.csv')
 
 # extract fiscal_year for following transformations

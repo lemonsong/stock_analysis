@@ -1,10 +1,10 @@
 import dotenv
 import os
-# PROJECT_PATH = '/Users/yilin/Documents/Projects/stock_analysis'
+# PROJECT_PATH = '/Users/yilin/Documents/Projects_stock/stock_analysis'
 #os.path.dirname(os.path.abspath(__file__))
 from pathlib import Path
 
-# PROJECT_PATH = '/Users/yilin/Documents/Projects/stock_analysis'
+# PROJECT_PATH = '/Users/yilin/Documents/Projects_stock/stock_analysis'
 # Use relative path to make it portable
 PROJECT_PATH = str(Path(__file__).parent.parent)
 

@@ -24,9 +24,9 @@ from utils.alltick_helper import (calculate_ndays, get_single_stock_price_hist,
                                   process_single_stock_price_hist, get_all_stock_list,
                                   get_extracted_stock_list)
 
-# path_to_stock_csv = '/Users/yilin/Documents/Projects/stock_analysis/zipline_data/daily'
-# path_to_stock_csv = '/Users/yilin/Documents/Projects/stock_analysis/zipline_data/daily_test'
-# path_to_stock_csv = '/Users/yilin/Documents/Projects/stock_analysis/data_dolt/daily'
+# path_to_stock_csv = f'{PROJECT_PATH}/data/zipline/daily'
+# path_to_stock_csv = f'{PROJECT_PATH}/data/zipline/daily_test'
+# path_to_stock_csv = f'{PROJECT_PATH}/data/dolt/daily'
 path_to_stock_csv = f'{PROJECT_PATH}/data/tushare_kline/daily'
 
 

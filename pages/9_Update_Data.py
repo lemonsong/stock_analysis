@@ -85,7 +85,7 @@ st.divider()  # 👈 Draws a horizontal rule
 
 st.header("Fundamentals Pipeline", divider=True)
 # 1. Filter Input
-stock_filtered_df = pd.read_csv(f"{PROJECT_PATH}/data_app/app_decision.csv")
+stock_filtered_df = pd.read_csv(f"{PROJECT_PATH}/data/dwa/app_decision.csv")
 # st.subheader("Overal Buy/Sell count")
 options_overall_signal_count = ['All']+[str(item) for item in stock_filtered_df.overall_signal_count.unique()]
 choice_overall_signal_count = st.segmented_control('Pick one overall_signal_count',

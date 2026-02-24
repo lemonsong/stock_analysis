@@ -19,8 +19,8 @@ setup_page_config()
 st.title("📊 A股基本面分析和比较")
 
 # 数据文件路径
-fundamental_file = Path(PROJECT_PATH) / 'data_ak_fundamental' / 'fundamental_calculated_metrics.csv'
-industry_file = Path(PROJECT_PATH) / 'data_app' / 'app_decision.csv'
+fundamental_file = Path(PROJECT_PATH) / 'data/ak_fundamental' / 'fundamental_calculated_metrics.csv'
+industry_file = Path(PROJECT_PATH) / 'data/dwa' / 'app_decision.csv'
 
 if not fundamental_file.exists():
     st.error(f"未找到基本面数据文件: {fundamental_file}")

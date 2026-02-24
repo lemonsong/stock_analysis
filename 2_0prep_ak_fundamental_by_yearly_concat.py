@@ -17,7 +17,7 @@ from utils.constants import AK_FUNDAMENTAL_KEEP_COMMON_COLS, PROJECT_PATH
 
 # TODO: iterate code to handle the situation that one stock only have one sheet, e.g. balance sheet rather than all the 3, becuase the extract step we teminated manually
 
-PROGRAM_PATH = f'{PROJECT_PATH}/data_ak_fundamental'
+PROGRAM_PATH = f'{PROJECT_PATH}/data/ak_fundamental'
 ### get stock symbols ###
 # get list of fundamental sheets files
 fundamental_yearly_files = get_file_paths_pathlib(f'{PROGRAM_PATH}/single_file')

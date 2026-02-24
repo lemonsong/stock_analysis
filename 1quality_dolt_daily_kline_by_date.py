@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 import logging
 from stockstats import StockDataFrame as sdf
+from utils.constants import PROJECT_PATH
 
 
 from utils.common import get_file_paths_pathlib, extract_stock_symbol_from_path, get_today_date_string
@@ -20,12 +21,12 @@ import exchange_calendars as xcals
 
 import pytz
 
-# path_to_stock_csv = '/Users/yilin/Documents/Projects/stock_analysis/zipline_data/daily'
-# path_to_stock_csv = '/Users/yilin/Documents/Projects/stock_analysis/zipline_data/daily_test'
-# path_to_stock_csv = '/Users/yilin/Documents/Projects/stock_analysis/data_dolt/daily'
+# path_to_stock_csv = f'{PROJECT_PATH}/data/zipline/daily'
+# path_to_stock_csv = f'{PROJECT_PATH}/data/zipline/daily_test'
+# path_to_stock_csv = f'{PROJECT_PATH}/data/dolt/daily'
 # check TUSHARE data_all_list
-path_to_stock_csv = '/Users/yilin/Documents/Projects/stock_analysis/data/tushare_kline/daily'
-end_date_str = '2026-01-23' # TODO:
+path_to_stock_csv = f'{PROJECT_PATH}/data/tushare_kline/daily'
+end_date_str = '2026-02-24' # TODO:
 
 
 print('start')

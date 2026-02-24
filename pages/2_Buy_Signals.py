@@ -16,7 +16,7 @@ setup_page_config()
 @st.cache_data
 def load_decision_data():
     """加载决策数据"""
-    decision_file = Path(PROJECT_PATH) / 'data_app/app_decision.csv'
+    decision_file = Path(PROJECT_PATH) / 'data/dwa/app_decision.csv'
 
     if not decision_file.exists():
         st.error(f"未找到数据文件: {decision_file}")

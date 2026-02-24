@@ -8,11 +8,11 @@ from utils.constants import BUY_SIGNAL_COLS, SELL_SIGNAL_COLS, FUNDAMENTAL_KEY_C
 import os
 
 # read stock_name_industry.csv to map symbol to company and industry
-symbol_to_company_df = pd.read_csv("data_all_list/china_stock/stock_name_industry.csv")[['symbol', 'company', 'industry_category_name', 'industry_sub_category_name', 'industry_type_name']]
+symbol_to_company_df = pd.read_csv(f"{PROJECT_PATH}/data/basic/stock_name_industry.csv")[['symbol', 'company', 'industry_category_name', 'industry_sub_category_name', 'industry_type_name']]
 # buy/sell signal
-stock_decision_metrics_df = pd.read_csv('0decision.csv')[['symbol','close','overall_signal_count','buy_signal_count','sell_signal_count'] + BUY_SIGNAL_COLS + SELL_SIGNAL_COLS + ['growth_1Y','growth_2Y','growth_3Y']]
+stock_decision_metrics_df = pd.read_csv(f'{PROJECT_PATH}/data/dwa/kline_analysis.csv')[['symbol','close','overall_signal_count','buy_signal_count','sell_signal_count'] + BUY_SIGNAL_COLS + SELL_SIGNAL_COLS + ['growth_1Y','growth_2Y','growth_3Y']]
 # dividends
-stock_cash_dividend_yield_by_periods_df = pd.read_csv("data_ak_dividend/stock_cash_dividend_yield_by_periods.csv")
+stock_cash_dividend_yield_by_periods_df = pd.read_csv(f"{PROJECT_PATH}/data/ak_dividend/stock_cash_dividend_yield_by_periods.csv")
 # create decision signal
 app_decision_df = symbol_to_company_df.merge(stock_decision_metrics_df, how='right',on='symbol')
 app_decision_df = app_decision_df.merge(stock_cash_dividend_yield_by_periods_df, how='left', on='symbol')
@@ -49,11 +49,11 @@ if os.path.exists(rank_path):
     app_decision_df = app_decision_df.merge(latest_rank_df, on='symbol', how='left')
 
 # add big money net inflow
-stock_individual_fund_flow_rank_df = pd.read_csv('data_other/stock_individual_fund_flow_rank_df.csv')
+stock_individual_fund_flow_rank_df = pd.read_csv(f'{PROJECT_PATH}/data/basic/stock_individual_fund_flow_rank.csv')
 app_decision_df = app_decision_df.merge(stock_individual_fund_flow_rank_df[['symbol', 'big_money_net_inflow_ratio_10d']], how='left', on='symbol')
 
 # fillna with 0
 dividend_cols = [col for col in app_decision_df.columns if 'dividend' in col]
 app_decision_df[dividend_cols+['big_money_net_inflow_ratio_10d']] = app_decision_df[dividend_cols+['big_money_net_inflow_ratio_10d']].fillna(0)
 # app_decision_df = app_decision_df.sort_values(['overall_signal_count','buy_signal_count','sell_signal_count','industry_category_name', 'industry_sub_category_name', 'industry_type_name'])
-app_decision_df.to_csv('data_app/app_decision.csv', index=False, encoding='utf-8')
+app_decision_df.to_csv(f'{PROJECT_PATH}/data/dwa/app_decision.csv', index=False, encoding='utf-8')

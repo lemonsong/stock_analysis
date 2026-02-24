@@ -33,7 +33,7 @@ register(
     csvdir_equities(
         ['daily'],
         # change toyour path to the daily folder
-        '/Users/yilin/Documents/Projects/stock_analysis/data_dolt',
+        '/Users/yilin/Documents/Projects_stock/stock_analysis/data/tushare_kline',
     ),
     calendar_name='XSHG',  # China mainland stock market calendar
     start_session=start_session,
