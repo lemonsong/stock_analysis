@@ -7,7 +7,7 @@ import plotly.graph_objects as go
 import plotly.express as px
 from plotly.subplots import make_subplots
 from pathlib import Path
-from utils.streamlit_helper import setup_page_config
+from utils.streamlit_helper import setup_page_config, render_filter_sidebar
 from utils.constants import FUNDAMENTAL_KEY_COLS, SEQUENTIAL_COLOR, PROJECT_PATH
 import io, os
 import sys
@@ -26,6 +26,7 @@ if not fundamental_file.exists():
     st.error(f"未找到基本面数据文件: {fundamental_file}")
     st.stop()
 
+
 @st.cache_data
 def load_fundamental_data():
     """加载基本面数据，并合并行业信息"""
@@ -39,9 +40,12 @@ def load_fundamental_data():
             try:
                 df_ind = pd.read_csv(industry_file)
                 df['symbol'] = df['symbol'].astype(str)
+                df = df.drop('SECURITY_NAME_ABBR', axis=1)
                 df_ind['symbol'] = df_ind['symbol'].astype(str)
-                df = pd.merge(df, df_ind[['symbol', 'industry_category_name', 'industry_sub_category_name', 'industry_type_name']], on='symbol', how='left')
-                df['industry'] = df['industry_type_name'] # For backward compatibility
+                df = pd.merge(df, df_ind[
+                    ['symbol', 'company', 'industry_category_name', 'industry_sub_category_name', 'industry_type_name']],
+                              on='symbol', how='left')
+                df['industry'] = df['industry_type_name']  # For backward compatibility
             except Exception as e:
                 st.warning(f"加载行业数据失败: {e}")
 
@@ -49,11 +53,6 @@ def load_fundamental_data():
     except Exception as e:
         st.error(f"读取数据文件失败: {e}")
         return None
-
-@st.cache_data
-def get_stock_list(_df):
-    """获取股票列表（缓存）"""
-    return _df[['symbol', 'SECURITY_NAME_ABBR']].drop_duplicates()
 
 
 @st.cache_data
@@ -63,7 +62,8 @@ def filter_stock_data(_df, symbols, year_range):
         (_df['symbol'].isin(symbols)) &
         (_df['fiscal_year'] >= year_range[0]) &
         (_df['fiscal_year'] <= year_range[1])
-    ]
+        ]
+
 
 def load_kline_data(symbol):
     """加载单只股票的日K线数据"""
@@ -78,141 +78,6 @@ def load_kline_data(symbol):
             return None
     return None
 
-def setup_sidebar(df):
-    """设置侧边栏股票选择逻辑"""
-    st.sidebar.header("选择股票")
-
-    selection_method = st.sidebar.radio(
-        "选择方式",
-        ["📝 列表输入", "🏭 行业筛选", "🔍 搜索股票", ],
-        index=0,
-        key="selection_method"
-    )
-
-    selected_symbols = []
-
-    available_stocks = get_stock_list(df)
-    stock_map = {
-        row['symbol']: f"{row['symbol']} - {row['SECURITY_NAME_ABBR']}"
-        for _, row in available_stocks.iterrows()
-    }
-
-
-    if selection_method == "📝 列表输入":
-        st.sidebar.caption("输入股票代码，用逗号分隔")
-        input_text = st.sidebar.text_area("股票代码列表", "SZ000629,SH600295,SZ000672,SH600808,SH603612,SZ000959,SH601702,SH603399,SZ002787,SH603688,SH603995,SH600801,SH600293,SZ002080", key="list_input")
-        if input_text:
-            symbols = [s.strip() for s in input_text.replace('，', ',').split(',') if s.strip()]
-            valid_symbols = [s for s in symbols if s in stock_map]
-            invalid_symbols = [s for s in symbols if s not in stock_map]
-
-            if invalid_symbols:
-                st.sidebar.warning(f"未找到代码: {', '.join(invalid_symbols)}")
-
-            selected_symbols = valid_symbols
-
-    elif selection_method == "🏭 行业筛选":
-        if 'industry' not in df.columns:
-            st.sidebar.error("未找到行业数据")
-        else:
-            industry_filters = {}
-            # Define industry levels and their labels
-            levels = [
-                ('industry_category_name', '门类'),
-                ('industry_type_name', '大类'),
-                ('industry_sub_category_name', '次类')
-            ]
-
-            for level, label in levels:
-                if level in df.columns:
-                    options = ["全部"] + sorted(list(df[level].dropna().unique()))
-                    industry_filters[level] = st.sidebar.selectbox(label, options, key=f"filter_{level}")
-
-            # Apply filters
-            filtered_df_ind = df.copy()
-            for col, value in industry_filters.items():
-                if value != "全部":
-                    filtered_df_ind = filtered_df_ind[filtered_df_ind[col] == value]
-
-            industry_stocks = filtered_df_ind['symbol'].unique()
-
-            if len(industry_stocks) > 0:
-                st.sidebar.markdown("##### 财务指标筛选 (最新年份)")
-
-                filter_metrics = {
-                    'roe': 'ROE (%)',
-                    'netcash_operate_over_net_profit': '净现比',
-                    'debt_to_asset': '资产负债率',
-                    'inventory_turnover': '存货周转率',
-                    'ev_over_ebitda': 'EV/EBITDA'
-                }
-
-                latest_year = df['fiscal_year'].max()
-                latest_df = df[(df['fiscal_year'] == latest_year) & (df['symbol'].isin(industry_stocks))]
-
-                filtered_industry_stocks = latest_df.copy()
-
-                with st.sidebar.expander("指标筛选条件", expanded=True):
-                    for metric, label in filter_metrics.items():
-                        if metric not in latest_df.columns:
-                            continue
-
-                        min_val = float(latest_df[metric].min())
-                        max_val = float(latest_df[metric].max())
-
-                        if min_val == max_val:
-                            continue
-
-                        val_range = st.slider(
-                            f"{label}",
-                            min_value=min_val,
-                            max_value=max_val,
-                            value=(min_val, max_val),
-                            step=(max_val-min_val)/100 if max_val != min_val else 1.0,
-                            key=f"slider_{metric}"
-                        )
-
-                        filtered_industry_stocks = filtered_industry_stocks[
-                            (filtered_industry_stocks[metric] >= val_range[0]) &
-                            (filtered_industry_stocks[metric] <= val_range[1])
-                        ]
-
-                selected_symbols = filtered_industry_stocks['symbol'].tolist()
-                st.sidebar.success(f"筛选出 {len(selected_symbols)} 只股票")
-
-                if len(selected_symbols) > 0:
-                     with st.sidebar.expander("查看筛选结果"):
-                         st.table(filtered_industry_stocks[['symbol', 'SECURITY_NAME_ABBR']])
-            else:
-                st.sidebar.warning("未找到符合条件的股票")
-    elif selection_method == "🔍 搜索股票":
-        search_term = st.sidebar.text_input("搜索股票代码或名称", "", key="search_term")
-
-        filtered_stocks = available_stocks
-        if search_term:
-            filtered_stocks = available_stocks[
-                (available_stocks['symbol'].str.contains(search_term, case=False, na=False)) |
-                (available_stocks['SECURITY_NAME_ABBR'].str.contains(search_term, case=False, na=False))
-                ]
-
-        stock_options = {
-            f"{row['symbol']} - {row['SECURITY_NAME_ABBR']}": row['symbol']
-            for _, row in filtered_stocks.iterrows()
-        }
-
-        default_selection = st.session_state.get('selected_stocks_search', [])
-        default_selection = [s for s in default_selection if s in stock_options.keys()]
-
-        selected_keys = st.sidebar.multiselect(
-            "选择股票（多选）",
-            options=list(stock_options.keys()),
-            default=default_selection,
-            key="search_multiselect"
-        )
-        st.session_state['selected_stocks_search'] = selected_keys
-        selected_symbols = [stock_options[k] for k in selected_keys]
-
-    return selected_symbols, stock_map
 
 def render_indicator_help():
     """渲染财务指标帮助信息"""
@@ -333,6 +198,7 @@ def render_indicator_help():
 看板标准：寻找“低估值 + 高ROE”的交叉点。
             """)
 
+
 def render_comprehensive_tab(df, selected_symbols, stock_names):
     """渲染综合分析 Tab"""
     st.markdown("#### 综合分析")
@@ -347,12 +213,12 @@ def render_comprehensive_tab(df, selected_symbols, stock_names):
         )
         # 获取基准年份的数据
         baseline_data = df[df['fiscal_year'] == baseline_year].copy()
-        
+
         if not baseline_data.empty:
             # 1. 雷达图
-            radar_metrics = ['roe', 'netcash_operate_over_net_profit', 'debt_to_asset', 'inventory_turnover','ev_over_ebitda']
+            radar_metrics = FUNDAMENTAL_KEY_COLS
             radar_metrics = [m for m in radar_metrics if m in baseline_data.columns]
-            
+
             if len(radar_metrics) >= 3:
                 st.markdown("##### 关键指标雷达图（归一化）")
                 normalized_data = baseline_data[radar_metrics].copy()
@@ -424,7 +290,7 @@ def render_comprehensive_tab(df, selected_symbols, stock_names):
                 st.dataframe(display_df.style.background_gradient(cmap=SEQUENTIAL_COLOR), use_container_width=True)
             except:
                 st.dataframe(display_df, use_container_width=True)
-            
+
             # 4. 日K线展示
             st.markdown("##### 📈 股价走势 (日K线)")
             kline_cols = st.columns(min(len(selected_symbols), 2))
@@ -455,6 +321,7 @@ def render_comprehensive_tab(df, selected_symbols, stock_names):
                     else:
                         st.caption(f"{stock_names.get(symbol, symbol)} - 暂无K线数据")
 
+
 def render_trends_tab(df, selected_symbols, selected_metrics, stock_names):
     """渲染趋势与指标 Tab"""
     st.markdown("#### 财务指标趋势与对比")
@@ -470,7 +337,7 @@ def render_trends_tab(df, selected_symbols, selected_metrics, stock_names):
             if metric not in df.columns: continue
 
             st.markdown(f"##### {metric}")
-            
+
             # 1. 趋势图
             plot_df = df[['display_name', 'fiscal_year', metric]].dropna(subset=[metric])
             if not plot_df.empty:
@@ -532,7 +399,15 @@ if df is None or df.empty:
     st.stop()
 
 # 侧边栏设置
-selected_symbols, stock_map = setup_sidebar(df)
+filtered_df_sidebar = render_filter_sidebar(df, default_filter_mode=0, default_stock_input_list='SZ300726,SH688138,SZ002180,SZ300458,SZ000725,SH600707', default_stock_search_list=['SH600054-黄山旅游'])
+selected_symbols = filtered_df_sidebar['symbol'].unique().tolist()
+
+# 创建stock_map
+# SECURITY_NAME_ABBR
+stock_map = {
+    row['symbol']: f"{row['symbol']} - {row['company']}"
+    for _, row in df[['symbol', 'company']].drop_duplicates().iterrows()
+}
 
 # 数据质量检查
 st.sidebar.markdown("#### 📊 数据质量")
@@ -550,23 +425,30 @@ if not selected_symbols:
 
 # 筛选数据
 filtered_df = df[df['symbol'].isin(selected_symbols)].copy()
-filtered_df['display_name'] = filtered_df['symbol'] + ' - ' + filtered_df['SECURITY_NAME_ABBR']
-stock_names = {row['symbol']: row['SECURITY_NAME_ABBR'] for _, row in filtered_df[['symbol', 'SECURITY_NAME_ABBR']].drop_duplicates().iterrows()}
+filtered_df['display_name'] = filtered_df['symbol'] + ' - ' + filtered_df['company']
+stock_names = {row['symbol']: row['company'] for _, row in
+               filtered_df[['symbol', 'company']].drop_duplicates().iterrows()}
 
 # 指标选择
 financial_metrics = {
     'Liquidity Ratios（流动性比率）': ['current_ratio', 'quick_ratio', 'cash_ratio'],
     'Leverage Ratios（杠杆比率）': ['total_debt', 'net_debt', 'debt_to_equity', 'debt_to_asset', 'interest_coverage'],
-    'Efficiency Ratios（效率比率）': ['revenue', 'gross_profit', 'net_profit', 'asset_turnover', 'inventory_turnover', 'receivables_turnover'],
+    'Efficiency Ratios（效率比率）': ['revenue', 'gross_profit', 'net_profit', 'asset_turnover', 'inventory_turnover',
+                                    'receivables_turnover'],
     'Profitability Ratios（盈利能力比率）': ['gross_margin', 'operating_margin', 'profit_margin', 'roe', 'roa'],
-    'Cash Flow & Valuation Metrics（现金流和估值指标）': ['netcash_operate_over_net_profit', 'free_cash_flow_conversion_rate', 'change_in_working_capital', 'net_debt_over_ebitda', 'ev_over_ebitda']
+    'Cash Flow & Valuation Metrics（现金流和估值指标）': ['netcash_operate_over_net_profit',
+                                                        'free_cash_flow_conversion_rate', 'change_in_working_capital',
+                                                        'net_debt_over_ebitda', 'ev_over_ebitda']
 }
-available_metrics = [col for col in df.columns if col not in ['symbol', 'SECURITY_NAME_ABBR', 'fiscal_year', 'ORG_TYPE', 'industry']]
+available_metrics = [col for col in df.columns if
+                     col not in ['symbol', 'company', 'fiscal_year', 'ORG_TYPE', 'industry']]
 
 st.markdown("### 📈 财务指标对比")
-metric_category = st.selectbox("选择指标类别", options=list(financial_metrics.keys()) + ['自定义'], index=0, key="metric_category_select")
+metric_category = st.selectbox("选择指标类别", options=list(financial_metrics.keys()) + ['自定义'], index=0,
+                               key="metric_category_select")
 if metric_category == '自定义':
-    selected_metrics = st.multiselect("选择指标", options=available_metrics, default=FUNDAMENTAL_KEY_COLS, key="metric_multiselect")
+    selected_metrics = st.multiselect("选择指标", options=available_metrics, default=FUNDAMENTAL_KEY_COLS,
+                                      key="metric_multiselect")
 else:
     selected_metrics = [m for m in financial_metrics[metric_category] if m in available_metrics]
 
@@ -577,9 +459,10 @@ if not selected_metrics:
 if 'fiscal_year' in filtered_df.columns:
     min_year = int(filtered_df['fiscal_year'].min())
     max_year = int(filtered_df['fiscal_year'].max())
-    year_range = st.slider("选择年份范围", min_value=min_year, max_value=max_year, value=(max(min_year, max_year - 5), max_year), key="year_range_slider")
+    year_range = st.slider("选择年份范围", min_value=min_year, max_value=max_year,
+                           value=(max(min_year, max_year - 5), max_year), key="year_range_slider")
     filtered_df = filter_stock_data(df, selected_symbols, year_range).copy()
-    filtered_df['display_name'] = filtered_df['symbol'] + ' - ' + filtered_df['SECURITY_NAME_ABBR']
+    filtered_df['display_name'] = filtered_df['symbol'] + ' - ' + filtered_df['company']
 
 # 新的 Tab 布局
 tab1, tab2 = st.tabs(["💹 综合分析", "📊 财务指标趋势 & 对比"])

@@ -34,7 +34,7 @@ if len(sys.argv) > 1:
     end_date_str = args.end
     logging.info(f"Fetching data via sys argument parser: {end_date_str}")
 else:
-    end_date_str = '2026-01-14' # TODO:
+    end_date_str = '2026-02-03' # TODO:
     logging.info(f"Fetching data via manual input: {end_date_str}")
 end_date_d = datetime.strptime(end_date_str, '%Y-%m-%d').date()
 

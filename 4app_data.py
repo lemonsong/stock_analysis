@@ -55,5 +55,5 @@ app_decision_df = app_decision_df.merge(stock_individual_fund_flow_rank_df[['sym
 # fillna with 0
 dividend_cols = [col for col in app_decision_df.columns if 'dividend' in col]
 app_decision_df[dividend_cols+['big_money_net_inflow_ratio_10d']] = app_decision_df[dividend_cols+['big_money_net_inflow_ratio_10d']].fillna(0)
-
+# app_decision_df = app_decision_df.sort_values(['overall_signal_count','buy_signal_count','sell_signal_count','industry_category_name', 'industry_sub_category_name', 'industry_type_name'])
 app_decision_df.to_csv('data_app/app_decision.csv', index=False, encoding='utf-8')

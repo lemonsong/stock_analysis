@@ -58,9 +58,9 @@ else:
 
     # OR
 
-    # decision_df = pd.read_csv(f'{PROJECT_PATH}/0decision2.csv')
-    # critical_df = decision_df.iloc[380:400,:].copy()
-    # stock_li = critical_df.symbol.tolist()
+    decision_df = pd.read_csv(f'{PROJECT_PATH}/0decision2.csv')
+    critical_df = decision_df.iloc[400:450,:].copy()
+    stock_li = critical_df.symbol.tolist()
 
     # stock list to fetch fundamentals data_all_list
     # stock_li = ['SZ300377','SZ300468']
@@ -69,7 +69,7 @@ else:
     # stock_li = ['SZ002105','SH605001']
     # stock_li = ['SZ002555','SZ002315','SH603444','SZ300533','SH601360']
     # stock_li = ['SH600901','SH601077','SH601318','SZ002142','SH601555']
-    stock_li = ['SZ002264']
+    # stock_li = ['SZ002264']
 logging.info(f"{stock_li=}")
 
 

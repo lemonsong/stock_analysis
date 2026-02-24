@@ -3,19 +3,13 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 from pathlib import Path
+from utils.streamlit_helper import render_filter_sidebar, setup_page_config
+
 import os
 import sys
 
 # Add parent directory to path to import utils
 sys.path.append(str(Path(__file__).parent.parent))
-
-try:
-    from utils.streamlit_helper import setup_page_config
-except ImportError:
-    # Fallback if utils not found (e.g. running as standalone)
-    def setup_page_config():
-        st.set_page_config(layout="wide", page_title="Backtest Overview")
-
 setup_page_config()
 
 st.title("📈 Backtest Overview")
@@ -54,7 +48,7 @@ def load_data():
 
         # Merge
         df = df.merge(
-            df_ind[['symbol', 'company', 'industry_category_name', 'industry_type_name', 'industry_sub_category_name']],
+            df_ind[['symbol', 'company', 'industry_category_name', 'industry_sub_category_name', 'industry_type_name']],
             on='symbol',
             how='left'
         )
@@ -164,47 +158,27 @@ df_raw = load_data()
 if df_raw is None:
     st.stop()
 
+# Filter using shared component
+# Use df_raw (one row per stock) for filtering to ensure correct counts
+filtered_raw = render_filter_sidebar(df_raw, default_filter_mode=0, default_stock_input_list='SZ002249')
+
+if filtered_raw.empty:
+    st.warning("No data matches the filters.")
+    st.stop()
+
 # Preprocess
-# We use the fast melt version
-df_long = fast_melt(df_raw)
+# Melt only the filtered data
+filtered_df = fast_melt(filtered_raw)
 
-# Sidebar
-st.sidebar.header("Filters")
+# For "Symbol Analysis" tab, we need selected symbols list
+selected_symbols = filtered_raw['symbol'].unique().tolist()
 
-# Symbol Filter
-symbol_input = st.sidebar.text_area("Symbols (comma separated)", "")
-selected_symbols = []
-if symbol_input:
-    raw_symbols = [s.strip() for s in symbol_input.replace('，', ',').split(',') if s.strip()]
-    selected_symbols = raw_symbols
-else:
-    # Default to all or top 5
-    pass
-
-# Industry Filters
+# Industry levels for the second tab (Keep this for the aggregation tab logic)
 industry_levels = {
     'Category': 'industry_category_name',
     'Sub-Category': 'industry_sub_category_name',
     'Type': 'industry_type_name',
 }
-
-filtered_df = df_long.copy()
-
-# Apply Industry Filters
-for label, col in industry_levels.items():
-    if col in df_long.columns:
-        options = ["All"] + sorted(df_long[col].dropna().unique().tolist())
-        val = st.sidebar.selectbox(f"Industry {label}", options, index=0)
-        if val != "All":
-            filtered_df = filtered_df[filtered_df[col] == val]
-
-# Apply symbol Filter (Intersect with industry filter)
-if selected_symbols:
-    filtered_df = filtered_df[filtered_df['symbol'].isin(selected_symbols)]
-
-if filtered_df.empty:
-    st.warning("No data matches the filters.")
-    st.stop()
 
 # Summary Section
 st.header("📊 Backtest Summary")
@@ -276,7 +250,7 @@ with tab1:
                 # Maybe rotate them
                 fig.update_xaxes(tickangle=45)
 
-                st.plotly_chart(fig, use_container_width=True)
+                st.plotly_chart(fig, use_container_width=True, key=f"{sym}_{metric}")
 
         st.divider()
 
@@ -329,5 +303,5 @@ with tab2:
                         margin=dict(l=0, r=0, t=30, b=0)
                     )
                     fig.update_xaxes(tickangle=45)
-                    st.plotly_chart(fig, use_container_width=True)
+                    st.plotly_chart(fig, use_container_width=True, key=f"{ind_val}_{metric}")
             st.divider()

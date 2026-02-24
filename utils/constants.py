@@ -1,7 +1,13 @@
 import dotenv
 import os
-PROJECT_PATH = '/Users/yilin/Documents/Projects/stock_analysis'
+# PROJECT_PATH = '/Users/yilin/Documents/Projects/stock_analysis'
 #os.path.dirname(os.path.abspath(__file__))
+from pathlib import Path
+
+# PROJECT_PATH = '/Users/yilin/Documents/Projects/stock_analysis'
+# Use relative path to make it portable
+PROJECT_PATH = str(Path(__file__).parent.parent)
+
 
 project_dir = os.path.join(os.path.dirname(__file__), os.pardir)
 dotenv_path = os.path.join(project_dir, '.env')
@@ -41,3 +47,9 @@ SELL_SIGNAL_COLS = ['rsi_more_than_90_sell', 'close_more_than_boll_ub_sell',
 
 #
 FUNDAMENTAL_KEY_COLS = ['roe','netcash_operate_over_net_profit','debt_to_asset','inventory_turnover','ev_over_ebitda']
+INDUSTRY_COL_DICT = {
+            'industry_category_name': '门类',
+            'industry_sub_category_name': '次类',
+            'industry_type_name': '大类',
+        }
+INDUSTRY_COL_DEFAULT_TO_USE = 2
