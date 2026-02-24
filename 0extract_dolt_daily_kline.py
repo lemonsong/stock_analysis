@@ -23,25 +23,27 @@ mydb = mysql.connector.connect(
 recent_symbol_q = """
     SELECT symbol 
     FROM final_a_stock_eod_price 
-    WHERE tradedate>=CURRENT_DATE() - INTERVAL 14 DAY
+    WHERE tradedate>=CURRENT_DATE() - INTERVAL 30 DAY
     GROUP BY symbol"""
 recent_symbol_df = pd.read_sql(recent_symbol_q, mydb)
 
-hist_symbol_q = """
-        SELECT symbol 
-        FROM final_a_stock_eod_price
-        WHERE  tradedate>='2020-12-01' and tradedate<'2021-01-01'
-        GROUP BY symbol"""
-hist_symbol_df = pd.read_sql(hist_symbol_q, mydb)
-
-all_symbol_df = pd.merge(recent_symbol_df, hist_symbol_df, how='inner')
+# changelog: remove the traded in 2020-12-01 filter
+# hist_symbol_q = """
+#         SELECT symbol
+#         FROM final_a_stock_eod_price
+#         WHERE  tradedate>='2020-12-01' and tradedate<'2021-01-01'
+#         GROUP BY symbol"""
+# hist_symbol_df = pd.read_sql(hist_symbol_q, mydb)
+#
+# all_symbol_df = pd.merge(recent_symbol_df, hist_symbol_df, how='inner')
+all_symbol_df = recent_symbol_df.copy()
 print(all_symbol_df.head())
 print("Number of stock: "+str(len(all_symbol_df)))
-all_symbol_df.to_csv(f'{PROJECT_PATH}/data_dolt/all_current_stock.csv', encoding='utf-8', index=False)
+all_symbol_df.to_csv(f'{PROJECT_PATH}/data/dolt/all_current_stock.csv', encoding='utf-8', index=False)
 
 
 # clean the folder first
-folder_path = f'{PROJECT_PATH}/data_dolt/daily' # Replace with the actual path to the folder
+folder_path = f'{PROJECT_PATH}/data/dolt/daily' # Replace with the actual path to the folder
 if os.path.exists(folder_path):
     try:
         shutil.rmtree(folder_path)
@@ -64,9 +66,9 @@ for s in all_symbol_df.symbol.tolist():
     stock_kline_df = pd.read_sql(stock_kline_q, mydb)
     stock_kline_df = clean_daily_by_dates(stock_kline_df, s, calendar_name = 'XSHG',
                            calender_start = "2020-12-01",
-                           calendar_end= '2025-10-30')
+                           calendar_end= '2026-02-24')
 
-    stock_kline_df.to_csv(f'{PROJECT_PATH}/data_dolt/daily/{s}.csv', encoding='utf-8', index=False)
+    stock_kline_df.to_csv(f'{PROJECT_PATH}/data/dolt/daily/{s}.csv', encoding='utf-8', index=False)
     n += 1
     print(f"Fetched data of {n} stocks")
 

@@ -11,7 +11,7 @@ st.title("💼 My Holdings Monitor")
 # Paths
 HOLDING_FILE = Path(PROJECT_PATH) / 'data_other/my_holding.csv'
 DECISION_FILE = Path(PROJECT_PATH) / 'data_app/app_decision.csv'
-DAILY_DATA_DIR = Path(PROJECT_PATH) / 'data_tushare/daily'
+DAILY_DATA_DIR = Path(PROJECT_PATH) / 'data/tushare_kline/daily'
 
 
 @st.cache_data

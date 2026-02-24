@@ -32,7 +32,7 @@ if len(sys.argv) > 1:
     # filter data based on arguments
     if len(args.text_stock_list) == 0:
         logging.info(f"Fetching data via field&value filter")
-        stock_filtered_df = pd.read_csv(f"{PROJECT_PATH}/data_app/app_decision.csv")
+        stock_filtered_df = pd.read_csv(f"{PROJECT_PATH}/data/dwa/app_decision.csv")
         if args.choice_overall_signal_count != 'All':
             stock_filtered_df = stock_filtered_df.loc[
                 stock_filtered_df.overall_signal_count == int(args.choice_overall_signal_count)]
@@ -52,15 +52,15 @@ if len(sys.argv) > 1:
 else:
     logging.info(f"Fetching data via manual input")
 
-    # decision_df = pd.read_csv(f'{PROJECT_PATH}/0decision.csv')
-    # critical_df = decision_df.loc[decision_df.overall_signal_count == 1].copy()
-    # stock_li = critical_df.symbol.tolist()
+    decision_df = pd.read_csv(f'{PROJECT_PATH}/data/dwa/kline_analysis.csv')
+    critical_df = decision_df.loc[decision_df.overall_signal_count == 1].copy()
+    stock_li = critical_df.symbol.tolist()
 
     # OR
 
-    decision_df = pd.read_csv(f'{PROJECT_PATH}/0decision2.csv')
-    critical_df = decision_df.iloc[400:450,:].copy()
-    stock_li = critical_df.symbol.tolist()
+    # decision_df = pd.read_csv(f'{PROJECT_PATH}/data/dwa/kline_analysis.csv')
+    # critical_df = decision_df.iloc[400:450,:].copy()
+    # stock_li = critical_df.symbol.tolist()
 
     # stock list to fetch fundamentals data_all_list
     # stock_li = ['SZ300377','SZ300468']
@@ -73,7 +73,7 @@ else:
 logging.info(f"{stock_li=}")
 
 
-PROGRAM_PATH = f'{PROJECT_PATH}/data_ak_fundamental/single_file/'
+PROGRAM_PATH = f'{PROJECT_PATH}/data/ak_fundamental/single_file/'
 
 ###########################
 # DONE level 1: get file name all files in the path. only fetch and write data_all_list if the symbol_xx_sheet not existed.

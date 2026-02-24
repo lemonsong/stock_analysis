@@ -67,7 +67,7 @@ def filter_stock_data(_df, symbols, year_range):
 
 def load_kline_data(symbol):
     """加载单只股票的日K线数据"""
-    file_path = Path(PROJECT_PATH) / 'data_tushare' / 'daily' / f'{symbol}.csv'
+    file_path = Path(PROJECT_PATH) / 'data' / 'tushare_kline' / 'daily' / f'{symbol}.csv'
     if file_path.exists():
         try:
             df = pd.read_csv(file_path)

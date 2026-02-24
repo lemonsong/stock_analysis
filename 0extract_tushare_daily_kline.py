@@ -34,7 +34,7 @@ else:
     logging.info(f"Fetching data via manual input: {start_date} to {end_date}")
 
 
-PROGRAM_PATH = f'{PROJECT_PATH}/data_tushare'
+PROGRAM_PATH = f'{PROJECT_PATH}/data/tushare_kline'
 kline_file_path = f'{PROGRAM_PATH}/0kline_{start_date}_to_{end_date}.csv'
 write_log_file_path = f'{PROGRAM_PATH}/0daily_data_write_log.csv'
 

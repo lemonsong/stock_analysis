@@ -19,6 +19,7 @@ logging.basicConfig(
 from stockstats import StockDataFrame as sdf
 
 from utils.common import get_file_paths_pathlib, extract_stock_symbol_from_path, get_today_date_string
+from utils.constants import PROJECT_PATH
 from utils.alltick_helper import (calculate_ndays, get_single_stock_price_hist,
                                   process_single_stock_price_hist, get_all_stock_list,
                                   get_extracted_stock_list)
@@ -26,7 +27,7 @@ from utils.alltick_helper import (calculate_ndays, get_single_stock_price_hist,
 # path_to_stock_csv = '/Users/yilin/Documents/Projects/stock_analysis/zipline_data/daily'
 # path_to_stock_csv = '/Users/yilin/Documents/Projects/stock_analysis/zipline_data/daily_test'
 # path_to_stock_csv = '/Users/yilin/Documents/Projects/stock_analysis/data_dolt/daily'
-path_to_stock_csv = '/Users/yilin/Documents/Projects/stock_analysis/data_tushare/daily'
+path_to_stock_csv = f'{PROJECT_PATH}/data/tushare_kline/daily'
 
 
 
@@ -140,4 +141,4 @@ all_stock_metrics['overall_signal_count'] = all_stock_metrics['buy_signal_count'
 
 all_stock_metrics = all_stock_metrics.sort_values('overall_signal_count', ascending=False)
 
-all_stock_metrics.to_csv('/Users/yilin/Documents/Projects/stock_analysis/0decision.csv', index=False, encoding='utf-8')
+all_stock_metrics.to_csv(f'{PROJECT_PATH}/data/dwa/kline_analysis.csv', index=False, encoding='utf-8')

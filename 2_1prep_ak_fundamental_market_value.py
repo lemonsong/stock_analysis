@@ -14,7 +14,7 @@ import pandas as pd
 from utils.common import get_file_paths_pathlib, extract_stock_symbol_from_path
 from utils.constants import PROJECT_PATH
 
-PATH_TO_KLINE_CSV = '/Users/yilin/Documents/Projects/stock_analysis/data_tushare/daily'
+PATH_TO_KLINE_CSV = '/Users/yilin/Documents/Projects/stock_analysis/data/tushare_kline/daily'
 PROGRAM_PATH = f'{PROJECT_PATH}/data_ak_fundamental'
 # close_col = 'close' # TODO: close or adjclose. If use this, we need to rename the columns name to close, so that the program can run smoothly when join to fundamental data_all_list and calculate financial metrics
 

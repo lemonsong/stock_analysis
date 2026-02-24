@@ -24,7 +24,7 @@ import pytz
 # path_to_stock_csv = '/Users/yilin/Documents/Projects/stock_analysis/zipline_data/daily_test'
 # path_to_stock_csv = '/Users/yilin/Documents/Projects/stock_analysis/data_dolt/daily'
 # check TUSHARE data_all_list
-path_to_stock_csv = '/Users/yilin/Documents/Projects/stock_analysis/data_tushare/daily'
+path_to_stock_csv = '/Users/yilin/Documents/Projects/stock_analysis/data/tushare_kline/daily'
 end_date_str = '2026-01-23' # TODO:
 
 

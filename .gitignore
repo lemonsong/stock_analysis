@@ -2,3 +2,5 @@ data/basic/2025年上半年上市公司行业分类结果（按股票代码排�
 /.env
 /data/ak_dividend/single_file/
 /data/ak_dividend/stock_dividend.csv
+/data/tushare_kline/daily/
+/data/dwa/kline_analysis.csv
