@@ -14,7 +14,7 @@ import numpy as np
 import akshare as ak
 from utils.constants import PROJECT_PATH
 
-stock_individual_fund_flow_path = f'{PROJECT_PATH}/data_other/stock_individual_fund_flow_rank_df.csv'
+stock_individual_fund_flow_path = f'{PROJECT_PATH}/data/basic/stock_individual_fund_flow_rank_df.csv'
 if not os.path.exists(stock_individual_fund_flow_path):
     stock_individual_fund_flow_rank_df = ak.stock_individual_fund_flow_rank(indicator="10日")
 else:
