@@ -20,12 +20,12 @@ app_decision_df = app_decision_df.merge(stock_cash_dividend_yield_by_periods_df,
 
 
 # Join fundamental ranking to fundamental metrics and join the latest year fundamental ranking to decision df
-rank_path = os.path.join(PROJECT_PATH, 'data_ak_fundamental', 'fundamental_rank_prediction.csv')
+rank_path = os.path.join(PROJECT_PATH, 'data/ak_fundamental', 'fundamental_rank_prediction.csv')
 if os.path.exists(rank_path):
     rank_df = pd.read_csv(rank_path)
     
     # 1. Update fundamental_calculated_metrics.csv
-    fundamental_path = os.path.join(PROJECT_PATH, 'data_ak_fundamental', 'fundamental_calculated_metrics.csv')
+    fundamental_path = os.path.join(PROJECT_PATH, 'data/ak_fundamental', 'fundamental_calculated_metrics.csv')
     if os.path.exists(fundamental_path):
         fundamental_df = pd.read_csv(fundamental_path)
         # Drop existing columns to avoid duplicates
@@ -51,6 +51,22 @@ if os.path.exists(rank_path):
 # add big money net inflow
 stock_individual_fund_flow_rank_df = pd.read_csv(f'{PROJECT_PATH}/data/basic/stock_individual_fund_flow_rank.csv')
 app_decision_df = app_decision_df.merge(stock_individual_fund_flow_rank_df[['symbol', 'big_money_net_inflow_ratio_10d']], how='left', on='symbol')
+
+# add board tags
+board_li = ["MSCI A Share", "沪深300"]  # boards to track
+board_path = os.path.join(PROJECT_PATH, 'data/board', 'board_concat.csv')
+if os.path.exists(board_path):
+    board_df = pd.read_csv(board_path)
+    board_df = board_df[board_df["board_name"].isin(board_li)]
+    if not board_df.empty:
+        symbol_boards_df = board_df.groupby("symbol")["board_name"].apply(lambda x: ",".join(x)).reset_index()
+        symbol_boards_df.columns = ["symbol", "boards"]
+        app_decision_df = app_decision_df.merge(symbol_boards_df, on="symbol", how="left")
+        app_decision_df["boards"] = app_decision_df["boards"].fillna("")
+    else:
+        app_decision_df["boards"] = ""
+else:
+    app_decision_df["boards"] = ""
 
 # fillna with 0
 dividend_cols = [col for col in app_decision_df.columns if 'dividend' in col]

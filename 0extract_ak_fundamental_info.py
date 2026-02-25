@@ -16,7 +16,7 @@ from utils.constants import PROJECT_PATH
 from utils.common import get_file_paths_pathlib, extract_stock_symbol_from_path
 
 
-PROGRAM_PATH = f'{PROJECT_PATH}/data_ak_fundamental'
+PROGRAM_PATH = f'{PROJECT_PATH}/data/ak_fundamental'
 PATH_TO_INFO_CSV= f'{PROGRAM_PATH}/0stock_info.csv'
 decision_df = pd.read_csv(f'{PROJECT_PATH}/0decision.csv')
 # critical_df = decision_df.loc[decision_df.overall_signal_count==0].copy()

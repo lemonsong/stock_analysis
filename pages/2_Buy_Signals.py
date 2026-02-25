@@ -1,6 +1,8 @@
 """
 页面2: A股买卖信号展示
 """
+import re
+
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -52,6 +54,25 @@ def setup_sidebar(df):
     """设置侧边栏筛选条件并返回筛选后的数据"""
     # 1. 股票筛选 (Refactored)
     filtered_df = render_filter_sidebar(df, default_filter_mode=1)
+
+    # 2. 板块筛选 (regex on boards column)
+    if "boards" in filtered_df.columns:
+        with st.sidebar.expander("板块筛选", expanded=True):
+            boards_regex = st.text_input(
+                "板块正则筛选",
+                value="MSCI|沪深300",
+                key="filter_boards_regex",
+                help="正则匹配 boards 列，例如: MSCI|沪深300。留空显示全部"
+            )
+        if boards_regex.strip():
+            try:
+                filtered_df = filtered_df[
+                    filtered_df["boards"].astype(str).str.contains(
+                        boards_regex, case=False, na=False, regex=True
+                    )
+                ]
+            except re.error:
+                st.sidebar.warning("正则表达式无效，已忽略板块筛选")
 
     st.sidebar.markdown("#### 📊 数值列筛选")
 

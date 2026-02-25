@@ -16,9 +16,9 @@ from zipline.data.bundles.csvdir import csvdir_equities
 from datetime import datetime
 
 start_session = pd.Timestamp('2020-12-01')
-# end_session = pd.Timestamp('2025-10-29')
+end_session = pd.Timestamp('2026-02-24')
 
-end_session = pd.Timestamp(datetime.now().strftime('%Y-%m-%d'))
+# end_session = pd.Timestamp(datetime.now().strftime('%Y-%m-%d'))
 
 is_test = False
 if is_test:
