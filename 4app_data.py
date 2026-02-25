@@ -53,11 +53,12 @@ stock_individual_fund_flow_rank_df = pd.read_csv(f'{PROJECT_PATH}/data/basic/sto
 app_decision_df = app_decision_df.merge(stock_individual_fund_flow_rank_df[['symbol', 'big_money_net_inflow_ratio_10d']], how='left', on='symbol')
 
 # add board tags
-board_li = ["MSCI A Share", "沪深300"]  # boards to track
+# board_li = ["MSCI A Share", "沪深300"]  # boards to track
 board_path = os.path.join(PROJECT_PATH, 'data/board', 'board_concat.csv')
+
 if os.path.exists(board_path):
     board_df = pd.read_csv(board_path)
-    board_df = board_df[board_df["board_name"].isin(board_li)]
+    # board_df = board_df[board_df["board_name"].isin(board_li)]
     if not board_df.empty:
         symbol_boards_df = board_df.groupby("symbol")["board_name"].apply(lambda x: ",".join(x)).reset_index()
         symbol_boards_df.columns = ["symbol", "boards"]
