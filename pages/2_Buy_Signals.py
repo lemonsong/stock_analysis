@@ -60,7 +60,7 @@ def setup_sidebar(df):
         with st.sidebar.expander("板块筛选", expanded=True):
             boards_regex = st.text_input(
                 "板块正则筛选",
-                value="MSCI|沪深300",
+                value="MSCI|沪深300|科创|高盛|贝莱德",
                 key="filter_boards_regex",
                 help="正则匹配 boards 列，例如: MSCI|沪深300。留空显示全部"
             )

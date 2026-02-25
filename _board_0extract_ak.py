@@ -1,4 +1,5 @@
 """
+unused
 Extract board constituent stock data from akshare.
 Saves one CSV per board in data_other/board_industry/ with columns: board_name, symbol.
 """

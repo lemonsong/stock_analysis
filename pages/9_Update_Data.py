@@ -102,6 +102,14 @@ choice_industry_category_name = st.segmented_control('Pick one industry_category
                                                  width="stretch",
                                                  default='All'
                                                )
+
+options_industry_sub_category_name = ['All']+[str(item) for item in stock_filtered_df.industry_sub_category_name.unique()]
+choice_industry_sub_category_name = st.segmented_control('Pick one industry_sub_category_name',
+                                               options_industry_sub_category_name,
+                                               selection_mode="single",
+                                                 width="stretch",
+                                                 default='All'
+                                               )
 with st.container(height=300):
     # st.subheader("Overal Industry Type")
     options_industry_type_name = ['All']+[str(item) for item in stock_filtered_df.industry_type_name.unique()]
@@ -111,6 +119,14 @@ with st.container(height=300):
                                                  width="stretch",
                                                  default='All'
                                                    )
+boards_regex = st.text_input(
+                "板块正则筛选",
+                value="MSCI|沪深300|科创|高盛|贝莱德",
+                key="filter_boards_regex",
+                help="正则匹配 boards 列，例如: MSCI|沪深300。留空显示全部"
+            )
+
+
 choice_row_range = st.segmented_control('Pick stock range',
                                                    ['All', '0-30','30-60','60-90','90-120','120-150','150-180'],
                                                    selection_mode="single", width="stretch",
@@ -120,9 +136,12 @@ text_stock_list = st.text_input("Enter list of stocks separated by comma", "")
 st.write(f"Get data for:")
 st.write(f"Buy/Sell Signal Count: {choice_overall_signal_count}")
 st.write(f"Industry Category: {choice_industry_category_name}")
+st.write(f"Industry Sub Category: {choice_industry_sub_category_name}")
 st.write(f"Industry Type: {choice_industry_type_name}")
-st.write(f"Customized Stock List: {text_stock_list}")
+st.write(f"Board Regex: {boards_regex}")
 st.write(f"Row Range: {choice_row_range}")
+st.write(f"Customized Stock List: {text_stock_list}")
+
 # 2. Start Button
 log_placeholder = st.empty()
 if st.button("Run CN Stock - Fundamental Pipeline", icon="📊", type="primary"):
@@ -150,7 +169,9 @@ if st.button("Run CN Stock - Fundamental Pipeline", icon="📊", type="primary")
             if script['file'] == "0extract_ak_fundamental_by_yearly.py":
                 cmd.extend(["--choice_overall_signal_count", choice_overall_signal_count,
                             "--choice_industry_category_name", choice_industry_category_name,
+                            "--choice_industry_sub_category_name", choice_industry_sub_category_name,
                             "--choice_industry_type_name", choice_industry_type_name,
+                            "--boards_regex", boards_regex,
                             "--choice_row_range", choice_row_range,
                             "--text_stock_list", text_stock_list])
 

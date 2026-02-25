@@ -11,3 +11,5 @@
 /data/tushare_kline/0daily_data_write_log.csv
 /data/tushare_kline/all_current_stock.csv
 /data/tushare_kline/kline_download/
+/data/board/board_concat.csv
+/data/dwa/app_decision.csv
