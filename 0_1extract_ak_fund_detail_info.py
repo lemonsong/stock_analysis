@@ -15,17 +15,23 @@ import akshare as ak
 import pandas as pd
 from utils.constants import PROJECT_PATH
 
-PROGRAM_PATH = f'{PROJECT_PATH}/data_ak_fund_detail_info_xq'
-all_fund_df = pd.read_csv(f'{PROJECT_PATH}/0_all_fund.csv',
+PROGRAM_PATH = f'{PROJECT_PATH}/data/ak_fund_info'
+all_fund_df = pd.read_csv(f'{PROGRAM_PATH}/0_all_fund.csv',
                           dtype={'基金代码': str} # read fund symbol as string
                           )
 # subset of funds to fetch info
 ## TODO: change when needed ##
-fetch_fund_df = all_fund_df.loc[(all_fund_df['基金类型'].str.contains('债券'))
+fetch_fund_df = all_fund_df.loc[
+                        # #---债券---
+                        # (all_fund_df['基金类型'].str.contains('债券'))
+                        # & (all_fund_df['基金简称'].str.contains("易方达|南方|招商"))
+                        # & (all_fund_df['基金简称'].str.contains("A"))
+                        # # extra filter to complete one category comparison
+                        # & (all_fund_df['基金类型']!='债券型-中短债')
+                        #-----货币----
+(all_fund_df['基金类型'].str.contains('货币'))
                         & (all_fund_df['基金简称'].str.contains("易方达|南方|招商"))
                         & (all_fund_df['基金简称'].str.contains("A"))
-# extra filter to complete one category comparison
-& (all_fund_df['基金类型']!='债券型-中短债')
 ]
 ############
 fetch_fund_li = fetch_fund_df['基金代码'].unique().tolist()
@@ -36,7 +42,7 @@ for fund in fetch_fund_li:
     random_sleep_time = random.randint(11, 30)
     # balance sheet
     logging.info(f"Fetching detailed info of {fund}")
-    path_to_fund = f'{PROGRAM_PATH}/{fund}.csv'
+    path_to_fund = f'{PROGRAM_PATH}/single/{fund}.csv'
     if os.path.isfile(path_to_fund):
         logging.info(f"Detailed info of {fund} existed")
         continue
