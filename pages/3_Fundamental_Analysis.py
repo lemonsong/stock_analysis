@@ -19,8 +19,8 @@ setup_page_config()
 st.title("📊 A股基本面分析和比较")
 
 # 数据文件路径
-fundamental_file = Path(PROJECT_PATH) / 'data_ak_fundamental' / 'fundamental_calculated_metrics.csv'
-industry_file = Path(PROJECT_PATH) / 'data_app' / 'app_decision.csv'
+fundamental_file = Path(PROJECT_PATH) / 'data/ak_fundamental' / 'fundamental_calculated_metrics.csv'
+industry_file = Path(PROJECT_PATH) / 'data/dwa' / 'app_decision.csv'
 
 if not fundamental_file.exists():
     st.error(f"未找到基本面数据文件: {fundamental_file}")
@@ -67,7 +67,7 @@ def filter_stock_data(_df, symbols, year_range):
 
 def load_kline_data(symbol):
     """加载单只股票的日K线数据"""
-    file_path = Path(PROJECT_PATH) / 'data_tushare' / 'daily' / f'{symbol}.csv'
+    file_path = Path(PROJECT_PATH) / 'data' / 'tushare_kline' / 'daily' / f'{symbol}.csv'
     if file_path.exists():
         try:
             df = pd.read_csv(file_path)

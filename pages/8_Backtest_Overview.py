@@ -16,8 +16,8 @@ st.title("📈 Backtest Overview")
 
 # File Paths
 # Try using relative paths from CWD (Repo Root)
-BACKTEST_FILE = Path('data_zipline_backtest/zipline_summary.csv')
-INDUSTRY_FILE = Path('data_app/app_decision.csv')
+BACKTEST_FILE = Path('data/dwa/zipline_summary.csv')
+INDUSTRY_FILE = Path('data/dwa/app_decision.csv')
 
 # Strategies and Metrics definitions (for parsing)
 STRATEGIES = [

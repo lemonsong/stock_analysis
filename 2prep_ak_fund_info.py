@@ -16,8 +16,8 @@ from utils.common import get_file_paths_pathlib, extract_stock_symbol_from_path
 import pandas as pd
 from utils.constants import PROJECT_PATH
 
-PROGRAM_PATH = f'{PROJECT_PATH}/data_ak_fund_detail_info_xq'
-file_list = get_file_paths_pathlib(PROGRAM_PATH)
+PROGRAM_PATH = f'{PROJECT_PATH}/data/ak_fund_info'
+file_list = get_file_paths_pathlib(f'{PROGRAM_PATH}/single')
 fund_symbol_li = [extract_stock_symbol_from_path(i, from_format='number', to_format='number')
                    for i in file_list]
 logging.info(f'{fund_symbol_li=}')
@@ -55,14 +55,14 @@ def agg_fund_detail(symbol, df_original):
 
 funds_df = pd.DataFrame()
 for symbol in fund_symbol_li:
-    fund_df = pd.read_csv(f"{PROGRAM_PATH}/{symbol}.csv")
+    fund_df = pd.read_csv(f"{PROGRAM_PATH}/single/{symbol}.csv")
     fund_df_converted = agg_fund_detail(symbol, fund_df)
     funds_df = pd.concat([funds_df, fund_df_converted], axis=0, ignore_index=True)
 
-all_fund_df = pd.read_csv(f'{PROJECT_PATH}/0_all_fund.csv', dtype={'基金代码': str})
+all_fund_df = pd.read_csv(f'{PROGRAM_PATH}/0_all_fund.csv', dtype={'基金代码': str})
 funds_df = all_fund_df.merge(funds_df, on ="基金代码", how='inner')
 funds_df = funds_df.sort_values(by=["基金类型", "其他费用之和"], ascending=True)
-funds_df.to_csv(f'{PROJECT_PATH}/0_all_fund_info.csv', index='utf-8', encoding=False)
+funds_df.to_csv(f'{PROGRAM_PATH}/0_all_fund_info.csv', index='utf-8', encoding=False)
 
 
 

@@ -17,9 +17,9 @@ from utils.constants import PROJECT_PATH
 
 def rank_fundamental():
     # Define paths
-    input_path = f'{PROJECT_PATH}/data_ak_fundamental/fundamental_calculated_metrics.csv'
-    output_pred_path = f'{PROJECT_PATH}/data_ak_fundamental/fundamental_rank_prediction.csv'
-    output_model_path = f'{PROJECT_PATH}/data_ak_fundamental/fundamental_rank_model.pkl'
+    input_path = f'{PROJECT_PATH}/data/ak_fundamental/fundamental_calculated_metrics.csv'
+    output_pred_path = f'{PROJECT_PATH}/data/ak_fundamental/fundamental_rank_prediction.csv'
+    output_model_path = f'{PROJECT_PATH}/data/ak_fundamental/fundamental_rank_model.pkl'
 
     # Load data
     if not os.path.exists(input_path):

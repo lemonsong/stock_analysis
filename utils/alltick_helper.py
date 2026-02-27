@@ -117,14 +117,14 @@ def get_all_stock_list():
     :return: list
     '''
     alltick_stock_df = pd.read_excel(
-        '/Users/yilin/Documents/Projects/stock_analysis/data_all_list/Alltick Supported products(产品列表).xlsx', header=1,
+        '/Users/yilin/Documents/Projects_stock/stock_analysis/data_all_list/Alltick Supported products(产品列表).xlsx', header=1,
         sheet_name='A股code（China stocks code）')
     alltick_stock_df = alltick_stock_df.loc[
         pd.notna(alltick_stock_df['Code']) & alltick_stock_df['Code'].str.startswith(('3', '0', '6'))].copy()
     alltick_stock_df_list = alltick_stock_df.Code.unique().tolist()
     return alltick_stock_df_list
 def get_extracted_stock_list(path_to_stock_csv_folder):
-    path_to_stock_csv = '/Users/yilin/Documents/Projects/stock_analysis/zipline_data/daily'
+    path_to_stock_csv = '/Users/yilin/Documents/Projects_stock/stock_analysis/zipline_data/daily'
     file_list = get_file_paths_pathlib(path_to_stock_csv_folder)
     extracted_stock_list = [extract_stock_symbol_from_path(i, from_format='number_MARKET', to_format='number.MARKET') for i in file_list]
     return extracted_stock_list

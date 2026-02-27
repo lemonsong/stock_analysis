@@ -16,7 +16,7 @@ from functools import reduce
 
 # ref: https://www.tidy-finance.org/python/financial-statement-analysis.html#combining-financial-ratios
 
-PROGRAM_PATH = f'{PROJECT_PATH}/data_ak_dividend'
+PROGRAM_PATH = f'{PROJECT_PATH}/data/ak_dividend'
 # get current date as baseline date
 current_date = pd.Timestamp(datetime.now().date())
 # load data

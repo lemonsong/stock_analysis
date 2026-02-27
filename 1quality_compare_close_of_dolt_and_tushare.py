@@ -17,8 +17,8 @@ logging.basicConfig(
     level=logging.INFO, # DEBUG,INFO,WARNING, ERROR, CRITICAL
 )
 
-PROGRAM_PATH = f'{PROJECT_PATH}/data_tushare'
-new_kline_trade_date_str='20251030'
+PROGRAM_PATH = f'{PROJECT_PATH}/data/tushare_kline'
+new_kline_trade_date_str='20260224'
 new_kline_file_path = f'{PROGRAM_PATH}/kline_{new_kline_trade_date_str}.csv'
 
 
@@ -38,7 +38,7 @@ else:
 
 # TODO
 # exam whether historical 20251030 value is unmatched.
-# If yes, download the stock full data_all_list to the f'{PROJECT_PATH}/data_tushare/daily_to_confirm'. Then manually compare and save
+# If yes, download the stock full data_all_list to the f'{PROJECT_PATH}/data/tushare_kline/daily_to_confirm'. Then manually compare and save
 file_list = get_file_paths_pathlib(f'{PROGRAM_PATH}/daily')
 date_to_compare = datetime.strptime(new_kline_trade_date_str, '%Y%m%d').strftime('%Y-%m-%d')
 unmatched_stock_li = []

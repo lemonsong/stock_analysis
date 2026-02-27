@@ -29,13 +29,13 @@ if len(sys.argv) > 1:
     logging.info(f"Fetching data via sys argument parser: {start_date} to {end_date}")
     # TODO:add end_date validation step or automate start & end data input to avoid mistakes
 else:
-    start_date = "2026-02-03"  # TODO
-    end_date = '2026-02-03'  # TODO
+    start_date = "2026-02-25"  # TODO
+    end_date = '2026-02-25'  # TODO
     logging.info(f"Fetching data via manual input: {start_date} to {end_date}")
 
 
-PROGRAM_PATH = f'{PROJECT_PATH}/data_tushare'
-kline_file_path = f'{PROGRAM_PATH}/0kline_{start_date}_to_{end_date}.csv'
+PROGRAM_PATH = f'{PROJECT_PATH}/data/tushare_kline'
+kline_file_path = f'{PROGRAM_PATH}/kline_download/0kline_{start_date}_to_{end_date}.csv'
 write_log_file_path = f'{PROGRAM_PATH}/0daily_data_write_log.csv'
 
 is_test = False # TODO

@@ -34,7 +34,7 @@ if len(sys.argv) > 1:
     end_date_str = args.end
     logging.info(f"Fetching data via sys argument parser: {end_date_str}")
 else:
-    end_date_str = '2026-02-03' # TODO:
+    end_date_str = '2026-02-25' # TODO:
     logging.info(f"Fetching data via manual input: {end_date_str}")
 end_date_d = datetime.strptime(end_date_str, '%Y-%m-%d').date()
 
@@ -45,7 +45,7 @@ else:
     daily_folder = 'daily'
 # list of symbol identified having problem based on 1data_quality_dolt_daily_kline_by_stock
 
-PROGRAM_PATH = f'{PROJECT_PATH}/data_tushare'
+PROGRAM_PATH = f'{PROJECT_PATH}/data/tushare_kline'
 write_log_file_path = f'{PROGRAM_PATH}/0daily_data_write_log.csv'
 # TODO: automate this step
 # symbol_li = ['SZ000430', 'SH000905', 'SH600169', 'SZ002387', 'SH000906', 'SZ300277',

@@ -66,8 +66,8 @@ class RSIStrategy(BaseStrategy):
         super().__init__(stock_symbol, rolling_window=20)
 
     def handle_data(self, context, data):
-        price_hist = data.history(context.stock, ["open", "high", "low", "close", "volume"], context.rolling_window, "1d").copy()
-        price_hist['amount'] = price_hist['volume'] * price_hist['close']
+        price_hist = data.history(context.stock, ["open", "high", "low", "close"], context.rolling_window, "1d").copy()
+        # price_hist['amount'] = price_hist['volume'] * price_hist['close']
         # print(f"DEBUG: columns={price_hist.columns}")
         stock = sdf.retype(price_hist)
         rsi = stock.get('rsi_12')
@@ -82,8 +82,8 @@ class MACDCrossoverStrategy(BaseStrategy):
         super().__init__(stock_symbol, rolling_window=20)
 
     def handle_data(self, context, data):
-        price_hist = data.history(context.stock, ["open", "high", "low", "close", "volume"], context.rolling_window, "1d").copy()
-        price_hist['amount'] = price_hist['volume'] * price_hist['close']
+        price_hist = data.history(context.stock, ["open", "high", "low", "close"], context.rolling_window, "1d").copy()
+        # price_hist['amount'] = price_hist['volume'] * price_hist['close']
         stock = sdf.retype(price_hist)
         signal = stock['macds']
         macd = stock['macd']
@@ -98,8 +98,8 @@ class RSIMACDStrategy(BaseStrategy):
         super().__init__(stock_symbol, rolling_window=20)
 
     def handle_data(self, context, data):
-        price_hist = data.history(context.stock, ["open", "high", "low", "close", "volume"], context.rolling_window, "1d").copy()
-        price_hist['amount'] = price_hist['volume'] * price_hist['close']
+        price_hist = data.history(context.stock, ["open", "high", "low", "close"], context.rolling_window, "1d").copy()
+        # price_hist['amount'] = price_hist['volume'] * price_hist['close']
         stock = sdf.retype(price_hist)
         rsi = stock.get('rsi_12')
         signal = stock['macds']
@@ -115,8 +115,8 @@ class TRIXStrategy(BaseStrategy):
         super().__init__(stock_symbol, rolling_window=20)
 
     def handle_data(self, context, data):
-        price_hist = data.history(context.stock, ["open", "high", "low", "close", "volume"], context.rolling_window, "1d").copy()
-        price_hist['amount'] = price_hist['volume'] * price_hist['close']
+        price_hist = data.history(context.stock, ["open", "high", "low", "close"], context.rolling_window, "1d").copy()
+        # price_hist['amount'] = price_hist['volume'] * price_hist['close']
         stock = sdf.retype(price_hist)
         trix = stock.get('trix')
 
@@ -130,8 +130,8 @@ class WilliamsRStrategy(BaseStrategy):
         super().__init__(stock_symbol, rolling_window=20)
 
     def handle_data(self, context, data):
-        price_hist = data.history(context.stock, ["open", "high", "low", "close", "volume"], context.rolling_window, "1d").copy()
-        price_hist['amount'] = price_hist['volume'] * price_hist['close']
+        price_hist = data.history(context.stock, ["open", "high", "low", "close"], context.rolling_window, "1d").copy()
+        # price_hist['amount'] = price_hist['volume'] * price_hist['close']
         stock = sdf.retype(price_hist)
         wr = stock.get('wr_6')
 
@@ -288,15 +288,15 @@ if __name__ == "__main__":
             # # , 'SH000905'
             #                       ]
                         )
-    parser.add_argument("--input_dir", default="data_tushare", help="Input directory for stock data")
-    parser.add_argument("--output_dir", default="data_zipline_backtest", help="Output directory for results")
+    parser.add_argument("--input_dir", default="data/tushare_kline", help="Input directory for stock data")
+    parser.add_argument("--output_dir", default="data/zipline_backtest", help="Output directory for results")
     parser.add_argument("--start_date", default="2023-01-01", help="Start date (YYYY-MM-DD)")
-    parser.add_argument("--end_date", default="2026-01-23", help="End date (YYYY-MM-DD)")
+    parser.add_argument("--end_date", default="2026-02-24", help="End date (YYYY-MM-DD)")
 
     args = parser.parse_args()
 
     input_dir = args.input_dir
-    # Handle if input_dir is data_tushare but data is in data_tushare/daily
+    # Handle if input_dir is data/tushare_kline but data is in data/tushare_kline/daily
     if os.path.isdir(os.path.join(input_dir, "daily")):
         scan_dir = os.path.join(input_dir, "daily")
     else:

@@ -1,0 +1,15 @@
+/.env
+/data/ak_dividend/single_file/
+/data/ak_dividend/stock_dividend.csv
+/data/dwa/kline_analysis.csv
+/data/dwa/my_holding.csv
+/data/basic/stock_individual_fund_flow_rank.csv
+/data/basic/2025年上半年上市公司行业分类结果（按股票代码排序）.pdf
+/data/ak_fundamental/single_file/
+/data/tushare_kline/daily/
+/data/tushare_kline/0compare.csv
+/data/tushare_kline/0daily_data_write_log.csv
+/data/tushare_kline/all_current_stock.csv
+/data/tushare_kline/kline_download/
+/data/board/board_concat.csv
+/data/dwa/app_decision.csv

@@ -19,7 +19,7 @@ logging.basicConfig(
 )
 
 
-PROGRAM_PATH = f'{PROJECT_PATH}/data_ak_dividend'
+PROGRAM_PATH = f'{PROJECT_PATH}/data/ak_dividend'
 
 dividends_file_list = get_file_paths_pathlib(f'{PROGRAM_PATH}/single_file')
 all_dividends_df = pd.DataFrame()

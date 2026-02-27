@@ -16,9 +16,9 @@ from zipline.data.bundles.csvdir import csvdir_equities
 from datetime import datetime
 
 start_session = pd.Timestamp('2020-12-01')
-# end_session = pd.Timestamp('2025-10-29')
+end_session = pd.Timestamp('2026-02-24')
 
-end_session = pd.Timestamp(datetime.now().strftime('%Y-%m-%d'))
+# end_session = pd.Timestamp(datetime.now().strftime('%Y-%m-%d'))
 
 is_test = False
 if is_test:
@@ -33,7 +33,7 @@ register(
     csvdir_equities(
         ['daily'],
         # change toyour path to the daily folder
-        '/Users/yilin/Documents/Projects/stock_analysis/data_dolt',
+        '/Users/yilin/Documents/Projects_stock/stock_analysis/data/tushare_kline',
     ),
     calendar_name='XSHG',  # China mainland stock market calendar
     start_session=start_session,

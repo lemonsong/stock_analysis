@@ -16,29 +16,42 @@ import argparse, sys
 if len(sys.argv) > 1:
     # read arguments: choice_overall_signal_count, choice_industry_category_name, choice_industry_type_name, choice_row_range
     parser = argparse.ArgumentParser()
+    parser.add_argument('--boards_regex', type=str, required=False)
     parser.add_argument('--choice_overall_signal_count', type=str, required=True)
     parser.add_argument('--choice_industry_category_name', type=str, required=True)
+    parser.add_argument('--choice_industry_sub_category_name', type=str, required=True)
     parser.add_argument('--choice_industry_type_name', type=str, required=True)
     parser.add_argument('--choice_row_range', type=str, required=True)
     parser.add_argument('--text_stock_list', type=str, required=True)
 
     args = parser.parse_args()
     logging.info(f"Get data for:")
+    logging.info(f"Boards regex: {args.boards_regex}")
     logging.info(f"Buy/Sell Signal Count: {args.choice_overall_signal_count}")
     logging.info(f"Industry Category: {args.choice_industry_category_name}")
+    logging.info(f"Industry Sub Category: {args.choice_industry_sub_category_name}")
     logging.info(f"Industry Type: {args.choice_industry_type_name}")
     logging.info(f"Row Range: {args.choice_row_range}")
     logging.info(f"Customized Stock List: {args.text_stock_list}")
     # filter data based on arguments
     if len(args.text_stock_list) == 0:
         logging.info(f"Fetching data via field&value filter")
-        stock_filtered_df = pd.read_csv(f"{PROJECT_PATH}/data_app/app_decision.csv")
+        stock_filtered_df = pd.read_csv(f"{PROJECT_PATH}/data/dwa/app_decision.csv")
+        if args.boards_regex.strip():
+            stock_filtered_df = stock_filtered_df[
+                stock_filtered_df["boards"].astype(str).str.contains(
+                    args.boards_regex, case=False, na=False, regex=True
+                )
+            ]
         if args.choice_overall_signal_count != 'All':
             stock_filtered_df = stock_filtered_df.loc[
                 stock_filtered_df.overall_signal_count == int(args.choice_overall_signal_count)]
         if args.choice_industry_category_name != 'All':
             stock_filtered_df = stock_filtered_df.loc[
                 stock_filtered_df.industry_category_name == args.choice_industry_category_name]
+        if args.choice_industry_sub_category_name != 'All':
+            stock_filtered_df = stock_filtered_df.loc[
+                stock_filtered_df.industry_sub_category_name == args.choice_industry_sub_category_name]
         if args.choice_industry_type_name != 'All':
             stock_filtered_df = stock_filtered_df.loc[
                 stock_filtered_df.industry_type_name == args.choice_industry_type_name]
@@ -52,15 +65,15 @@ if len(sys.argv) > 1:
 else:
     logging.info(f"Fetching data via manual input")
 
-    # decision_df = pd.read_csv(f'{PROJECT_PATH}/0decision.csv')
-    # critical_df = decision_df.loc[decision_df.overall_signal_count == 1].copy()
+    # decision_df = pd.read_csv(f'{PROJECT_PATH}/data/dwa/kline_analysis.csv')
+    # critical_df = decision_df.loc[decision_df.overall_signal_count == 1].head(160).copy()
     # stock_li = critical_df.symbol.tolist()
 
     # OR
 
-    decision_df = pd.read_csv(f'{PROJECT_PATH}/0decision2.csv')
-    critical_df = decision_df.iloc[400:450,:].copy()
-    stock_li = critical_df.symbol.tolist()
+    # decision_df = pd.read_csv(f'{PROJECT_PATH}/data/dwa/kline_analysis.csv')
+    # critical_df = decision_df.iloc[400:450,:].copy()
+    # stock_li = critical_df.symbol.tolist()
 
     # stock list to fetch fundamentals data_all_list
     # stock_li = ['SZ300377','SZ300468']
@@ -69,11 +82,11 @@ else:
     # stock_li = ['SZ002105','SH605001']
     # stock_li = ['SZ002555','SZ002315','SH603444','SZ300533','SH601360']
     # stock_li = ['SH600901','SH601077','SH601318','SZ002142','SH601555']
-    # stock_li = ['SZ002264']
+    stock_li = ['SH603308']
 logging.info(f"{stock_li=}")
 
 
-PROGRAM_PATH = f'{PROJECT_PATH}/data_ak_fundamental/single_file/'
+PROGRAM_PATH = f'{PROJECT_PATH}/data/ak_fundamental/single_file/'
 
 ###########################
 # DONE level 1: get file name all files in the path. only fetch and write data_all_list if the symbol_xx_sheet not existed.

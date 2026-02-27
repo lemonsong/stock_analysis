@@ -67,14 +67,22 @@ def format_stock_symbol(symbol_name, from_format, to_format):
     elif from_format == 'number':
         if to_format == 'MARKETnumber':
             symbol_name = str(symbol_name).split('.')[0].zfill(6)
-            if symbol_name.startswith('6') or symbol_name.startswith('9'):
+            if symbol_name.startswith(('6', '900')):
                 return f"SH{symbol_name}"
-            elif symbol_name.startswith('0') or symbol_name.startswith('3'):
+            elif symbol_name.startswith(('0', '3', '2')):
                 return f"SZ{symbol_name}"
-            elif symbol_name.startswith('4') or symbol_name.startswith('8'):
+            elif symbol_name.startswith(('4', '8', '920')):
                 return f"BJ{symbol_name}"
             else:
                 return symbol_name
+            # if symbol_name.startswith('6') or symbol_name.startswith('9'):
+            #     return f"SH{symbol_name}"
+            # elif symbol_name.startswith('0') or symbol_name.startswith('3'):
+            #     return f"SZ{symbol_name}"
+            # elif symbol_name.startswith('4') or symbol_name.startswith('8'):
+            #     return f"BJ{symbol_name}"
+            # else:
+            #     return symbol_name
         else:
             print('The to_format input does not exist')
             sys.exit()
