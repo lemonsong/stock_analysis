@@ -10,11 +10,11 @@ import os
 # read stock_name_industry.csv to map symbol to company and industry
 symbol_to_company_df = pd.read_csv(f"{PROJECT_PATH}/data/basic/stock_name_industry.csv")[['symbol', 'company', 'industry_category_name', 'industry_sub_category_name', 'industry_type_name']]
 # buy/sell signal
-stock_decision_metrics_df = pd.read_csv(f'{PROJECT_PATH}/data/dwa/kline_analysis.csv')[['symbol','close','overall_signal_count','buy_signal_count','sell_signal_count'] + BUY_SIGNAL_COLS + SELL_SIGNAL_COLS + ['growth_1Y','growth_2Y','growth_3Y']]
+stock_kline_analysis_metrics_df = pd.read_csv(f'{PROJECT_PATH}/data/dwa/kline_analysis.csv')[['symbol','close','overall_signal_count','buy_signal_count','sell_signal_count'] + BUY_SIGNAL_COLS + SELL_SIGNAL_COLS + ['growth_1Y','growth_2Y','growth_3Y']]
 # dividends
 stock_cash_dividend_yield_by_periods_df = pd.read_csv(f"{PROJECT_PATH}/data/ak_dividend/stock_cash_dividend_yield_by_periods.csv")
 # create decision signal
-app_decision_df = symbol_to_company_df.merge(stock_decision_metrics_df, how='right',on='symbol')
+app_decision_df = symbol_to_company_df.merge(stock_kline_analysis_metrics_df, how='right',on='symbol')
 app_decision_df = app_decision_df.merge(stock_cash_dividend_yield_by_periods_df, how='left', on='symbol')
 # # TODO: need to run _dividend pipeline when we need to refresh dividend calcualtion (around every half year)
 

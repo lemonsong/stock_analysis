@@ -7,6 +7,7 @@ from datetime import datetime, date, timedelta
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 import logging
+import os
 from utils.constants import BUY_SIGNAL_COLS, SELL_SIGNAL_COLS
 
 logging.basicConfig(
@@ -28,8 +29,8 @@ from utils.alltick_helper import (calculate_ndays, get_single_stock_price_hist,
 # path_to_stock_csv = f'{PROJECT_PATH}/data/zipline/daily_test'
 # path_to_stock_csv = f'{PROJECT_PATH}/data/dolt/daily'
 path_to_stock_csv = f'{PROJECT_PATH}/data/tushare_kline/daily'
-
-
+dwa_path = f'{PROJECT_PATH}/data/dwa'
+update_date = None
 
 file_list = get_file_paths_pathlib(path_to_stock_csv)
 close_col = 'close' # TODO: close or adjclose
@@ -112,33 +113,66 @@ def get_stock_metrics(stock_df, stock_symbol):
 
 all_stock_metrics = pd.DataFrame()
 
-for file_path in file_list:
-    stock_symbol = extract_stock_symbol_from_path(file_path, from_format='MARKETnumber',to_format='MARKETnumber') # use MARKETnumber for data_dolt, number_MARKET for zipline_data folder
-    logging.info(f'Reading stock {stock_symbol}')
-    stock_df = pd.read_csv(file_path)
-    stock_df['date'] = pd.to_datetime(stock_df['date'])
-    stock_df = stock_df[["date", "open", "high", "low", close_col]]
-    stock_df = stock_df.rename(columns={close_col: 'close'})
-    stock_metrics = get_stock_metrics(stock_df, stock_symbol)
-    all_stock_metrics = pd.concat([all_stock_metrics, stock_metrics], axis=0, ignore_index=True)
+if not file_list:
+    logging.warning("No stock files found. Please ensure data is present.")
+else:
+    for file_path in file_list:
+        stock_symbol = extract_stock_symbol_from_path(file_path, from_format='MARKETnumber',to_format='MARKETnumber') # use MARKETnumber for data_dolt, number_MARKET for zipline_data folder
+        logging.info(f'Reading stock {stock_symbol}')
+        stock_df = pd.read_csv(file_path)
+        stock_df['date'] = pd.to_datetime(stock_df['date'])
+        stock_df = stock_df[["date", "open", "high", "low", close_col]]
+        stock_df = stock_df.rename(columns={close_col: 'close'})
+        stock_metrics = get_stock_metrics(stock_df, stock_symbol)
+        all_stock_metrics = pd.concat([all_stock_metrics, stock_metrics], axis=0, ignore_index=True)
+        # use the first stock_df to identify the update date for the kline analysis
+        if not update_date:
+            update_date = stock_df['date'].max()
+if not all_stock_metrics.empty:
+    col = all_stock_metrics.pop('symbol')
+    all_stock_metrics.insert(0, 'symbol', col)
 
-col = all_stock_metrics.pop('symbol')
-all_stock_metrics.insert(0, 'symbol', col)
+    # strategy use one row to decide buy or sell
+    all_stock_metrics['rsi_less_than_10_buy'] = all_stock_metrics.rsi_12<10
+    all_stock_metrics['rsi_more_than_90_sell'] = all_stock_metrics.rsi_12>90
+    all_stock_metrics['close_less_than_boll_lb_buy'] = all_stock_metrics.close < all_stock_metrics.boll_lb
+    all_stock_metrics['close_more_than_boll_ub_sell'] = all_stock_metrics.close > all_stock_metrics.boll_ub
+    all_stock_metrics['wr_less_than_10_sell'] = all_stock_metrics.wr_6<10
+    all_stock_metrics['wr_more_than_90_buy'] = all_stock_metrics.wr_6>90
+    all_stock_metrics['ewm_short_term_more_than_long_term_buy'] = all_stock_metrics.rolling_mean_short_term>all_stock_metrics.rolling_mean_long_term
+    all_stock_metrics['ewm_short_term_less_than_long_term_sell'] = all_stock_metrics.rolling_mean_short_term<=all_stock_metrics.rolling_mean_long_term
+    # overall signal count
+    all_stock_metrics['buy_signal_count'] = all_stock_metrics[BUY_SIGNAL_COLS].sum(axis=1)
+    all_stock_metrics['sell_signal_count'] = all_stock_metrics[SELL_SIGNAL_COLS].sum(axis=1)
+    all_stock_metrics['overall_signal_count'] = all_stock_metrics['buy_signal_count'] - all_stock_metrics['sell_signal_count']
 
-# strategy use one row to decide buy or sell
-all_stock_metrics['rsi_less_than_10_buy'] = all_stock_metrics.rsi_12<10
-all_stock_metrics['rsi_more_than_90_sell'] = all_stock_metrics.rsi_12>90
-all_stock_metrics['close_less_than_boll_lb_buy'] = all_stock_metrics.close < all_stock_metrics.boll_lb
-all_stock_metrics['close_more_than_boll_ub_sell'] = all_stock_metrics.close > all_stock_metrics.boll_ub
-all_stock_metrics['wr_less_than_10_sell'] = all_stock_metrics.wr_6<10
-all_stock_metrics['wr_more_than_90_buy'] = all_stock_metrics.wr_6>90
-all_stock_metrics['ewm_short_term_more_than_long_term_buy'] = all_stock_metrics.rolling_mean_short_term>all_stock_metrics.rolling_mean_long_term
-all_stock_metrics['ewm_short_term_less_than_long_term_sell'] = all_stock_metrics.rolling_mean_short_term<=all_stock_metrics.rolling_mean_long_term
-# overall signal count
-all_stock_metrics['buy_signal_count'] = all_stock_metrics[BUY_SIGNAL_COLS].sum(axis=1)
-all_stock_metrics['sell_signal_count'] = all_stock_metrics[SELL_SIGNAL_COLS].sum(axis=1)
-all_stock_metrics['overall_signal_count'] = all_stock_metrics['buy_signal_count'] - all_stock_metrics['sell_signal_count']
+    all_stock_metrics = all_stock_metrics.sort_values('overall_signal_count', ascending=False)
+    all_stock_metrics['update_date'] = update_date
+    # Save current analysis
+    all_stock_metrics.to_csv(f'{dwa_path}/kline_analysis.csv', index=False, encoding='utf-8')
 
-all_stock_metrics = all_stock_metrics.sort_values('overall_signal_count', ascending=False)
+    # --- Save History ---
+    # We assume 'date' is present in all_stock_metrics because get_stock_metrics returned the row with date
+    history_path = f'{dwa_path}/kline_analysis_history.csv'
 
-all_stock_metrics.to_csv(f'{PROJECT_PATH}/data/dwa/kline_analysis.csv', index=False, encoding='utf-8')
+    if os.path.exists(history_path):
+        history_df = pd.read_csv(history_path)
+        # Append new data
+        history_df = pd.concat([history_df, all_stock_metrics], axis=0, ignore_index=True)
+
+        # Deduplicate
+        if 'update_date' in history_df.columns:
+            history_df['update_date'] = pd.to_datetime(history_df['update_date']).dt.date
+
+        # Drop duplicates
+        history_df = history_df.drop_duplicates(subset=['symbol', 'update_date'], keep='last')
+    else:
+        history_df = all_stock_metrics.copy()
+        if 'update_date' in history_df.columns:
+            history_df['update_date'] = pd.to_datetime(history_df['update_date']).dt.date
+
+    # Save history
+    history_df.to_csv(history_path, index=False, encoding='utf-8')
+    logging.info(f"Saved history to {history_path}, total rows: {len(history_df)}")
+else:
+    logging.warning("No metrics calculated.")
