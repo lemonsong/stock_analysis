@@ -289,7 +289,7 @@ def display_metrics(filtered_df):
         with col_chart:
             st.warning("综合信号数据不可用")
 
-def display_charts(filtered_df):
+def display_charts(filtered_df, raw_df):
     """显示图表"""
     st.markdown("### 📊 行业信号分布")
 
@@ -326,23 +326,62 @@ def display_charts(filtered_df):
         # fig_count.update_xaxes(tickangle=45)
         st.plotly_chart(fig_count, use_container_width=True)
 
-    # Chart 2: Signal Distribution per Industry (Stacked Bar)
+    # Chart 2: Signal Distribution per Industry (Stacked Bar, Percentage relative to Total Industry Count)
     with col2:
         if 'overall_signal_count' in filtered_df.columns:
-            # Prepare data for stacked bar
-            # We want percentage of each signal type within each industry
+            # 1. Calculate Total Count per Industry from RAW data
+            if selected_industry_col in raw_df.columns:
+                total_counts = raw_df[selected_industry_col].value_counts().reset_index()
+                total_counts.columns = [selected_industry_col, 'total_count']
+            else:
+                st.warning("原始数据中缺少行业列，无法计算总数。")
+                return
+
+            # 2. Calculate Filtered Counts per Industry & Signal
             chart_df = filtered_df.copy()
             chart_df['overall_signal_str'] = chart_df['overall_signal_count'].astype(str)
-
-            # Group by Industry and Signal, then count
             grouped = chart_df.groupby([selected_industry_col, 'overall_signal_str']).size().reset_index(name='count')
 
-            # Calculate percentages
-            grouped['percentage'] = grouped.groupby(selected_industry_col)['count'].transform(lambda x: x / x.sum() * 100)
+            # 3. Merge Total Counts into Grouped
+            grouped = grouped.merge(total_counts, on=selected_industry_col, how='left')
 
-            # Sort signals numerically for consistent legend
-            sorted_signals = sorted(filtered_df['overall_signal_count'].unique())
-            sorted_signals_str = [str(x) for x in sorted_signals]
+            # 4. Calculate "Filtered Out" (Missing) Count for each Industry
+            # Sum filtered counts per industry
+            filtered_totals = grouped.groupby(selected_industry_col)['count'].sum().reset_index(name='filtered_sum')
+            filtered_totals = filtered_totals.merge(total_counts, on=selected_industry_col, how='left')
+            filtered_totals['missing_count'] = filtered_totals['total_count'] - filtered_totals['filtered_sum']
+
+            # Create rows for "Filtered Out"
+            missing_rows = []
+            for _, row in filtered_totals.iterrows():
+                if row['missing_count'] > 0:
+                    missing_rows.append({
+                        selected_industry_col: row[selected_industry_col],
+                        'overall_signal_str': 'Filtered Out',
+                        'count': row['missing_count'],
+                        'total_count': row['total_count']
+                    })
+
+            if missing_rows:
+                missing_df = pd.DataFrame(missing_rows)
+                grouped = pd.concat([grouped, missing_df], ignore_index=True)
+
+            # 5. Calculate Percentage
+            grouped['percentage'] = (grouped['count'] / grouped['total_count']) * 100
+
+            # 6. Sort signals numerically for consistent legend, keep "Filtered Out" separate or at end
+            unique_signals = [s for s in grouped['overall_signal_str'].unique() if s != 'Filtered Out']
+            try:
+                sorted_signals = sorted(unique_signals, key=lambda x: float(x))
+            except:
+                sorted_signals = sorted(unique_signals)
+
+            # Add Filtered Out to the end
+            category_orders = sorted_signals + ['Filtered Out']
+
+            # Define colors
+            # Use default plotly colors for signals, force grey for Filtered Out
+            color_map = {'Filtered Out': 'lightgrey'}
 
             fig_dist = px.bar(
                 grouped,
@@ -355,11 +394,28 @@ def display_charts(filtered_df):
                     'percentage': '百分比 (%)',
                     'overall_signal_str': '综合信号'
                 },
-                category_orders={'overall_signal_str': sorted_signals_str},
+                category_orders={'overall_signal_str': category_orders},
+                color_discrete_map=color_map, # This maps specific keys
                 height=500,
-                # barmode='stack' # Default is stack
             )
-            # fig_dist.update_xaxes(tickangle=45)
+            # Ensure other colors are still assigned automatically if not in map?
+            # px.bar uses color_discrete_sequence if map doesn't cover all.
+            # But mixing map and sequence is tricky.
+            # Better to not use map if we want dynamic colors for numbers, or build a full map.
+            # Let's try update_traces to override specific trace color? No, easier to just not map specific values if possible or use a trick.
+            # Plotly Express: if color_discrete_map is provided, keys missing from it will likely be black or default?
+            # Let's verify. Usually it's better to build the full map or use a sequence and ensure order.
+
+            # Alternative: Assign specific color to 'Filtered Out' via marker settings?
+            # Or build a map for all known signals.
+            # Since signals are integers (mostly), we can use a qualitative sequence.
+
+            if 'Filtered Out' in grouped['overall_signal_str'].values:
+                 # Update traces for 'Filtered Out' to be grey
+                 fig_dist.for_each_trace(
+                     lambda t: t.update(marker_color='lightgrey') if t.name == 'Filtered Out' else None
+                 )
+
             st.plotly_chart(fig_dist, use_container_width=True)
         else:
             st.warning("综合信号数据不可用")
@@ -652,7 +708,7 @@ def main():
     # df['big_money_net_inflow_ratio_10d'] = df['big_money_net_inflow_ratio_10d'].astype(float)
     filtered_df = setup_sidebar(df)
     display_metrics(filtered_df)
-    display_charts(filtered_df)
+    display_charts(filtered_df, df)
     display_detailed_data(filtered_df)
 
 if __name__ == "__main__":
