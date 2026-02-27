@@ -82,7 +82,7 @@ else:
     # stock_li = ['SZ002105','SH605001']
     # stock_li = ['SZ002555','SZ002315','SH603444','SZ300533','SH601360']
     # stock_li = ['SH600901','SH601077','SH601318','SZ002142','SH601555']
-    stock_li = ['SZ000528']
+    stock_li = ['SH603308']
 logging.info(f"{stock_li=}")
 
 
