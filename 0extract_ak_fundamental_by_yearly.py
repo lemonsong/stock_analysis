@@ -16,27 +16,33 @@ import argparse, sys
 if len(sys.argv) > 1:
     # read arguments: choice_overall_signal_count, choice_industry_category_name, choice_industry_type_name, choice_row_range
     parser = argparse.ArgumentParser()
+    parser.add_argument('--boards_regex', type=str, required=False)
     parser.add_argument('--choice_overall_signal_count', type=str, required=True)
     parser.add_argument('--choice_industry_category_name', type=str, required=True)
     parser.add_argument('--choice_industry_sub_category_name', type=str, required=True)
     parser.add_argument('--choice_industry_type_name', type=str, required=True)
     parser.add_argument('--choice_row_range', type=str, required=True)
-    parser.add_argument('--boards_regex', type=str, required=False)
     parser.add_argument('--text_stock_list', type=str, required=True)
 
     args = parser.parse_args()
     logging.info(f"Get data for:")
+    logging.info(f"Boards regex: {args.boards_regex}")
     logging.info(f"Buy/Sell Signal Count: {args.choice_overall_signal_count}")
     logging.info(f"Industry Category: {args.choice_industry_category_name}")
     logging.info(f"Industry Sub Category: {args.choice_industry_sub_category_name}")
     logging.info(f"Industry Type: {args.choice_industry_type_name}")
-    logging.info(f"Boards regex: {args.boards_regex}")
     logging.info(f"Row Range: {args.choice_row_range}")
     logging.info(f"Customized Stock List: {args.text_stock_list}")
     # filter data based on arguments
     if len(args.text_stock_list) == 0:
         logging.info(f"Fetching data via field&value filter")
         stock_filtered_df = pd.read_csv(f"{PROJECT_PATH}/data/dwa/app_decision.csv")
+        if args.boards_regex.strip():
+            stock_filtered_df = stock_filtered_df[
+                stock_filtered_df["boards"].astype(str).str.contains(
+                    args.boards_regex, case=False, na=False, regex=True
+                )
+            ]
         if args.choice_overall_signal_count != 'All':
             stock_filtered_df = stock_filtered_df.loc[
                 stock_filtered_df.overall_signal_count == int(args.choice_overall_signal_count)]
@@ -49,12 +55,6 @@ if len(sys.argv) > 1:
         if args.choice_industry_type_name != 'All':
             stock_filtered_df = stock_filtered_df.loc[
                 stock_filtered_df.industry_type_name == args.choice_industry_type_name]
-        if args.boards_regex.strip():
-            stock_filtered_df = stock_filtered_df[
-                stock_filtered_df["boards"].astype(str).str.contains(
-                    args.boards_regex, case=False, na=False, regex=True
-                )
-            ]
         if args.choice_row_range != 'All':
             row_range = [int(item) for item in args.choice_row_range.split('-')]
             stock_filtered_df = stock_filtered_df.iloc[row_range[0]:row_range[1],:]
@@ -82,7 +82,7 @@ else:
     # stock_li = ['SZ002105','SH605001']
     # stock_li = ['SZ002555','SZ002315','SH603444','SZ300533','SH601360']
     # stock_li = ['SH600901','SH601077','SH601318','SZ002142','SH601555']
-    stock_li = ['SZ000410']
+    stock_li = ['SZ000528']
 logging.info(f"{stock_li=}")
 
 
