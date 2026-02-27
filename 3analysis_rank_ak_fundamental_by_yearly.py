@@ -12,7 +12,7 @@ import numpy as np
 from sklearn.preprocessing import MinMaxScaler
 import joblib
 import os
-from utils.constants import PROJECT_PATH, FUNDAMENTAL_KEY_COLS
+from utils.constants import PROJECT_PATH
 
 
 def rank_fundamental():
@@ -29,7 +29,7 @@ def rank_fundamental():
     df = pd.read_csv(input_path)
     
     # Features configuration
-    features = FUNDAMENTAL_KEY_COLS
+    features = ['roe', 'netcash_operate_over_net_profit', 'debt_to_asset', 'inventory_turnover', 'ev_over_ebitda']
     # Directions: True for "Higher is Better", False for "Lower is Better"
     directions = {
         'roe': True,

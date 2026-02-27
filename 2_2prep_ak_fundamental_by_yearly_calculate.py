@@ -141,8 +141,7 @@ metrics_to_show_cols =[
     'revenue','gross_profit','net_profit', 'asset_turnover', 'inventory_turnover', 'receivables_turnover',
     'gross_margin', 'operating_margin', 'profit_margin', 'roe', 'roa',
     'netcash_operate_over_net_profit', 'free_cash_flow_conversion_rate','change_in_working_capital',
-    'net_debt_over_ebitda', 'ev_over_ebitda',
-    'market_cap'
+    'net_debt_over_ebitda', 'ev_over_ebitda'
 ]
 must_cols = ['symbol', 'SECURITY_NAME_ABBR', 'fiscal_year', 'ORG_TYPE']
 fundamental_df_cleaned[must_cols + metrics_to_show_cols].to_csv(f'{PROGRAM_PATH}/fundamental_calculated_metrics.csv', encoding='utf-8', index=False)

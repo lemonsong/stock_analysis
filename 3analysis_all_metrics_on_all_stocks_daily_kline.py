@@ -30,7 +30,7 @@ from utils.alltick_helper import (calculate_ndays, get_single_stock_price_hist,
 # path_to_stock_csv = f'{PROJECT_PATH}/data/dolt/daily'
 path_to_stock_csv = f'{PROJECT_PATH}/data/tushare_kline/daily'
 dwa_path = f'{PROJECT_PATH}/data/dwa'
-update_date = None
+
 
 file_list = get_file_paths_pathlib(path_to_stock_csv)
 close_col = 'close' # TODO: close or adjclose
@@ -125,9 +125,7 @@ else:
         stock_df = stock_df.rename(columns={close_col: 'close'})
         stock_metrics = get_stock_metrics(stock_df, stock_symbol)
         all_stock_metrics = pd.concat([all_stock_metrics, stock_metrics], axis=0, ignore_index=True)
-        # use the first stock_df to identify the update date for the kline analysis
-        if not update_date:
-            update_date = stock_df['date'].max()
+
 if not all_stock_metrics.empty:
     col = all_stock_metrics.pop('symbol')
     all_stock_metrics.insert(0, 'symbol', col)
@@ -147,7 +145,7 @@ if not all_stock_metrics.empty:
     all_stock_metrics['overall_signal_count'] = all_stock_metrics['buy_signal_count'] - all_stock_metrics['sell_signal_count']
 
     all_stock_metrics = all_stock_metrics.sort_values('overall_signal_count', ascending=False)
-    all_stock_metrics['update_date'] = update_date
+
     # Save current analysis
     all_stock_metrics.to_csv(f'{dwa_path}/kline_analysis.csv', index=False, encoding='utf-8')
 
@@ -161,15 +159,15 @@ if not all_stock_metrics.empty:
         history_df = pd.concat([history_df, all_stock_metrics], axis=0, ignore_index=True)
 
         # Deduplicate
-        if 'update_date' in history_df.columns:
-            history_df['update_date'] = pd.to_datetime(history_df['update_date']).dt.date
+        if 'date' in history_df.columns:
+            history_df['date'] = pd.to_datetime(history_df['date']).dt.date
 
         # Drop duplicates
-        history_df = history_df.drop_duplicates(subset=['symbol', 'update_date'], keep='last')
+        history_df = history_df.drop_duplicates(subset=['symbol', 'date'], keep='last')
     else:
         history_df = all_stock_metrics.copy()
-        if 'update_date' in history_df.columns:
-            history_df['update_date'] = pd.to_datetime(history_df['update_date']).dt.date
+        if 'date' in history_df.columns:
+            history_df['date'] = pd.to_datetime(history_df['date']).dt.date
 
     # Save history
     history_df.to_csv(history_path, index=False, encoding='utf-8')

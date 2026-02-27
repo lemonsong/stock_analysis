@@ -24,7 +24,7 @@ This project is a comprehensive platform for analyzing Chinese A-shares, monitor
 *   `pages/`: Streamlit pages.
     *   `2_Buy_Signals.py`: Daily Signal Monitor.
     *   `4_Period_Buy_Signals.py`: **[NEW]** Historical Signal Analysis.
-    *   `5Homepage.py`: **[NEW]** Data Pipeline Manager GUI.
+    *   `5app_monitor.py`: **[NEW]** Data Pipeline Manager GUI.
 *   `utils/`: Helper functions.
 *   `*.py`:
     *   `0extract_*.py`: Data fetchers.
@@ -42,7 +42,7 @@ This project is a comprehensive platform for analyzing Chinese A-shares, monitor
 
 2.  **Run the App**:
     ```bash
-    streamlit run 5Homepage.py
+    streamlit run 5app_monitor.py
     ```
     Use this page to trigger data updates:
     *   **Daily Kline Pipeline**: Updates price data and recalculates signals.
