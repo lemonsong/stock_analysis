@@ -337,6 +337,9 @@ def display_charts(filtered_df):
             # Group by Industry and Signal, then count
             grouped = chart_df.groupby([selected_industry_col, 'overall_signal_str']).size().reset_index(name='count')
 
+            # Calculate percentages
+            grouped['percentage'] = grouped.groupby(selected_industry_col)['count'].transform(lambda x: x / x.sum() * 100)
+
             # Sort signals numerically for consistent legend
             sorted_signals = sorted(filtered_df['overall_signal_count'].unique())
             sorted_signals_str = [str(x) for x in sorted_signals]
@@ -344,12 +347,12 @@ def display_charts(filtered_df):
             fig_dist = px.bar(
                 grouped,
                 x=selected_industry_col,
-                y='count',
+                y='percentage',
                 color='overall_signal_str',
-                title=f'各{selected_industry_label}综合信号分布(数量)',
+                title=f'各{selected_industry_label}综合信号分布(%)',
                 labels={
                     selected_industry_col: selected_industry_label,
-                    'count': '股票数量',
+                    'percentage': '百分比 (%)',
                     'overall_signal_str': '综合信号'
                 },
                 category_orders={'overall_signal_str': sorted_signals_str},
