@@ -346,7 +346,7 @@ def display_charts(filtered_df):
                 x=selected_industry_col,
                 y='count',
                 color='overall_signal_str',
-                title=f'各{selected_industry_label}综合信号分布 (数量)',
+                title=f'各{selected_industry_label}综合信号分布(数量)',
                 labels={
                     selected_industry_col: selected_industry_label,
                     'count': '股票数量',
