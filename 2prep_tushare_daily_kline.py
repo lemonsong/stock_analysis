@@ -33,6 +33,9 @@ PROGRAM_PATH = f'{PROJECT_PATH}/data/tushare_kline'
 write_log_file_path = f'{PROGRAM_PATH}/0daily_data_write_log.csv'
 
 def get_end_date():
+    # this is the end date of single stock kline files.
+    # It should be the last date of signle stock kline file.
+    # Or else the kline after this date will be removed in the clean_daily_by_dates() step
     if len(sys.argv) > 1:
         parser = argparse.ArgumentParser()
         parser.add_argument('--end', type=str, required=True)
@@ -40,7 +43,7 @@ def get_end_date():
         end_date_str = args.end
         logging.info(f"Fetching data via sys argument parser: {end_date_str}")
     else:
-        end_date_str = '2026-02-25' # TODO:
+        end_date_str = '2026-02-26' # TODO:
         logging.info(f"Fetching data via manual input: {end_date_str}")
     return datetime.strptime(end_date_str, '%Y-%m-%d').date()
 

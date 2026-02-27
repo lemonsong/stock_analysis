@@ -13,3 +13,14 @@
 /data/tushare_kline/kline_download/
 /data/board/board_concat.csv
 /data/dwa/app_decision.csv
+/data/ak_fund_info/
+/data/ak_fundamental/0latest_stock_price_by_yearly.csv
+/data/ak_fundamental/fundamental.csv
+/data/ak_fundamental/fundamental_calculated.csv
+/data/ak_fundamental/fundamental_calculated_metrics.csv
+/data/ak_fundamental/fundamental_cleaned.csv
+/data/ak_fundamental/fundamental_rank_model.pkl
+/data/ak_fundamental/fundamental_rank_prediction.csv
+/data/dolt/
+/data/tushare_kline/kline_20260224.csv
+/data/dwa/kline_analysis_history.csv

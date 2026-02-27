@@ -370,7 +370,7 @@ def display_detailed_data(filtered_df):
     display_df = filtered_df.copy()
     # 列分组定义
     col_groups = {
-        "基本信息": ['symbol_url', 'company', 'close', 'latest_yearly_close'], # Added latest_yearly_close
+        "基本信息": ['symbol_url', 'company', 'close', 'market_cap'], # 使用symbol_url替代symbol
         "行业信息": ['industry_category_name', 'industry_sub_category_name', 'industry_type_name'],
         "信号指标": [col for col in filtered_df.columns if 'signal' in col.lower()],
         "分红指标": [col for col in filtered_df.columns if 'total_dividend' in col and 'yield' not in col],
@@ -497,12 +497,12 @@ def display_detailed_data(filtered_df):
         "close": st.column_config.NumberColumn(
             "收盘价",
             help="close",
-            format="%.2f"
+            format="¥%.2f"
         ),
-        "latest_yearly_close": st.column_config.NumberColumn(
-            "年报日收盘价",
-            help="最近一年年报发布日的收盘价",
-            format="%.2f"
+        "market_cap": st.column_config.NumberColumn(
+            "市值",
+            help="最近一年年报发布日的总股本*最近股价",
+            format="¥%.0e"
         ),
         "industry_category_name": st.column_config.Column(
             "门类",
@@ -621,6 +621,7 @@ def display_detailed_data(filtered_df):
         column_config=column_config,
         hide_index=True
     )
+
 
     # 显示统计和下载
     st.markdown("#### 📊 数据统计")
