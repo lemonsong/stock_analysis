@@ -311,20 +311,41 @@ def display_charts(filtered_df, raw_df):
 
     # Chart 1: Stock Count per Industry (Bar Chart)
     with col1:
-        # Aggregate data
-        count_df = filtered_df[selected_industry_col].value_counts().reset_index()
-        count_df.columns = [selected_industry_col, 'count']
+        # 确保overall_signal_count作为分类变量进行堆叠
+        chart_df = filtered_df.copy()
+        chart_df['overall_signal_str'] = chart_df['overall_signal_count'].astype(str)
 
-        fig_count = px.bar(
-            count_df,
-            x=selected_industry_col,
-            y='count',
-            title=f'各{selected_industry_label}股票数量',
-            labels={selected_industry_col: selected_industry_label, 'count': '数量'},
-            height=500
+        # 为了图例排序，我们可以指定category_orders
+        sorted_signals = sorted(filtered_df['overall_signal_count'].unique())
+        sorted_signals_str = [str(x) for x in sorted_signals]
+
+        fig_industry = px.histogram(
+            chart_df,
+            y=selected_industry_col,  # 行业名称改到 y 轴
+            x=None,  # histogram 默认会对 y 进行计数，x 保持 None 即可
+            color='overall_signal_str',
+            orientation='h',  # 设置为横向显示
+            title=f'各{selected_industry_label}综合信号分布(%)',
+            labels={
+                selected_industry_col: selected_industry_label,
+                'count': '股票数量',
+                'overall_signal_str': '综合信号'
+            },
+            height=600,
+            category_orders={'overall_signal_str': sorted_signals_str},
+            barmode='group'  # https://plotly.github.io/plotly.py-docs/generated/plotly.express.histogram.html
+
         )
-        # fig_count.update_xaxes(tickangle=45)
-        st.plotly_chart(fig_count, use_container_width=True)
+
+        # 优化 UI：在条形图上显示具体数值，并让 y 轴标签更易读
+        fig_industry.update_traces(texttemplate='%{x}', textposition='inside')
+        fig_industry.update_layout(
+            xaxis_title="股票数量",
+            yaxis_title="行业分类",
+            yaxis={'categoryorder': 'total ascending'}  # 按总量从小到大排序，方便查看
+        )
+
+        st.plotly_chart(fig_industry, use_container_width=True)
 
     # Chart 2: Signal Distribution per Industry (Stacked Bar, Percentage relative to Total Industry Count)
     with col2:
@@ -385,9 +406,11 @@ def display_charts(filtered_df, raw_df):
 
             fig_dist = px.bar(
                 grouped,
-                x=selected_industry_col,
-                y='percentage',
+                x='percentage',
+                y=selected_industry_col,
                 color='overall_signal_str',
+            orientation='h',  # 设置为横向显示
+
                 title=f'各{selected_industry_label}综合信号分布(%)',
                 labels={
                     selected_industry_col: selected_industry_label,
@@ -396,8 +419,26 @@ def display_charts(filtered_df, raw_df):
                 },
                 category_orders={'overall_signal_str': category_orders},
                 color_discrete_map=color_map, # This maps specific keys
-                height=500,
+                height=600,
+            barmode='group'  # https://plotly.github.io/plotly.py-docs/generated/plotly.express.histogram.html
+
             )
+            # fig_dist = px.bar(
+            #     grouped,
+            #     x=selected_industry_col,
+            #     y='percentage',
+            #     color='overall_signal_str',
+            #     title=f'各{selected_industry_label}综合信号分布(%)',
+            #     labels={
+            #         selected_industry_col: selected_industry_label,
+            #         'percentage': '百分比 (%)',
+            #         'overall_signal_str': '综合信号'
+            #     },
+            #     category_orders={'overall_signal_str': category_orders},
+            #     color_discrete_map=color_map,  # This maps specific keys
+            #     height=500,
+            # )
+
             # Ensure other colors are still assigned automatically if not in map?
             # px.bar uses color_discrete_sequence if map doesn't cover all.
             # But mixing map and sequence is tricky.
@@ -429,7 +470,7 @@ def display_detailed_data(filtered_df):
     display_df = filtered_df.copy()
     # 列分组定义
     col_groups = {
-        "基本信息": ['symbol_url', 'company', 'close', 'latest_yearly_close'], # Added latest_yearly_close
+        "基本信息": ['symbol_url', 'company', 'close', 'market_cap'], # 使用symbol_url替代symbol
         "行业信息": ['industry_category_name', 'industry_sub_category_name', 'industry_type_name'],
         "信号指标": [col for col in filtered_df.columns if 'signal' in col.lower()],
         "分红指标": [col for col in filtered_df.columns if 'total_dividend' in col and 'yield' not in col],
@@ -556,12 +597,12 @@ def display_detailed_data(filtered_df):
         "close": st.column_config.NumberColumn(
             "收盘价",
             help="close",
-            format="%.2f"
+            format="¥%.2f"
         ),
-        "latest_yearly_close": st.column_config.NumberColumn(
-            "年报日收盘价",
-            help="最近一年年报发布日的收盘价",
-            format="%.2f"
+        "market_cap": st.column_config.NumberColumn(
+            "市值",
+            help="最近一年年报发布日的总股本*最近股价",
+            format="¥%.0e"
         ),
         "industry_category_name": st.column_config.Column(
             "门类",

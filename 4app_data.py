@@ -10,11 +10,11 @@ import os
 # read stock_name_industry.csv to map symbol to company and industry
 symbol_to_company_df = pd.read_csv(f"{PROJECT_PATH}/data/basic/stock_name_industry.csv")[['symbol', 'company', 'industry_category_name', 'industry_sub_category_name', 'industry_type_name']]
 # buy/sell signal
-stock_decision_metrics_df = pd.read_csv(f'{PROJECT_PATH}/data/dwa/kline_analysis.csv')[['symbol','close','overall_signal_count','buy_signal_count','sell_signal_count'] + BUY_SIGNAL_COLS + SELL_SIGNAL_COLS + ['growth_1Y','growth_2Y','growth_3Y']]
+stock_kline_analysis_metrics_df = pd.read_csv(f'{PROJECT_PATH}/data/dwa/kline_analysis.csv')[['symbol','close','overall_signal_count','buy_signal_count','sell_signal_count'] + BUY_SIGNAL_COLS + SELL_SIGNAL_COLS + ['growth_1Y','growth_2Y','growth_3Y']]
 # dividends
 stock_cash_dividend_yield_by_periods_df = pd.read_csv(f"{PROJECT_PATH}/data/ak_dividend/stock_cash_dividend_yield_by_periods.csv")
 # create decision signal
-app_decision_df = symbol_to_company_df.merge(stock_decision_metrics_df, how='right',on='symbol')
+app_decision_df = symbol_to_company_df.merge(stock_kline_analysis_metrics_df, how='right',on='symbol')
 app_decision_df = app_decision_df.merge(stock_cash_dividend_yield_by_periods_df, how='left', on='symbol')
 # # TODO: need to run _dividend pipeline when we need to refresh dividend calcualtion (around every half year)
 
@@ -68,20 +68,6 @@ if os.path.exists(board_path):
         app_decision_df["boards"] = ""
 else:
     app_decision_df["boards"] = ""
-
-# --- Add Latest Market Value (Price) ---
-market_value_path = os.path.join(PROJECT_PATH, 'data/ak_fundamental', '0latest_stock_price_by_yearly.csv')
-if os.path.exists(market_value_path):
-    market_value_df = pd.read_csv(market_value_path)
-    # Get latest year's price for each symbol
-    latest_market_value_df = market_value_df.sort_values('fiscal_year').groupby('symbol').tail(1)
-    # Rename close to latest_yearly_close to avoid conflict or clarify source
-    latest_market_value_df = latest_market_value_df[['symbol', 'close']].rename(columns={'close': 'latest_yearly_close'})
-
-    app_decision_df = app_decision_df.merge(latest_market_value_df, on='symbol', how='left')
-    print(f"Merged latest market value from {market_value_path}")
-else:
-    print(f"Warning: {market_value_path} not found.")
 
 # fillna with 0
 dividend_cols = [col for col in app_decision_df.columns if 'dividend' in col]
