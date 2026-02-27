@@ -1,25 +1,61 @@
-## Pipeline
+# Stock Analysis & Monitoring Platform
 
-### Fundamentals
-1. *Extract Step*[0extract_ak_fundamental_by_yearly.py](0extract_ak_fundamental_by_yearly.py): fetch fundamental data according to the critical stock symbols in 0decision.csv
+This project is a comprehensive platform for analyzing Chinese A-shares, monitoring buy/sell signals, and backtesting strategies. It leverages data from various sources (Tushare, Akshare) and provides a Streamlit-based user interface.
 
+## Key Features
 
-### Daily kline
-1. [0extract_tushare_daily_kline.py](0extract_tushare_daily_kline.py): extract daily kline and write into individual stock csv
-2. [1quality_dolt_daily_kline_by_date.py](1quality_dolt_daily_kline_by_date.py): check kline data quality
-2.0 update end_date_str then run
-2.1 If a lot of stocks have missing date, delete the csv file downloaded and waite until 8pm to rerun the first step
-2.2 run zipline to check missing/extra date
-2.3 If the data looks normal, and only need to ffill kline for ST and delete duplicated date, go to step 3
-3. [2prep_tushare_daily_kline.py](2prep_tushare_daily_kline.py):ffill and clean data by date
-4. [3analysis_all_metrics_on_all_stocks_daily_kline.py](3analysis_all_metrics_on_all_stocks_daily_kline.py): calculate multiple buy/sell signal for all stocks
-5. [0extract_ak_fundamental_by_yearly.py](0extract_ak_fundamental_by_yearly.py): get fundamental data
-5.1 usually we check [0decision.csv](0decision.csv), and get the highest value of *overall_signal_count* column
-5.2 then get fundamental data for the stock with highest *overall_signal_count* by editing [0extract_ak_fundamental_by_yearly.py](0extract_ak_fundamental_by_yearly.py)
-6. [2_0prep_ak_fundamental_by_yearly_concat.py](2_0prep_ak_fundamental_by_yearly_concat.py): concatenate fundamental data
-7. [2_1prep_ak_fundamental_market_value.py](2_1prep_ak_fundamental_market_value.py): fetch latest stock price in each year by stock to calculate market value
-8. [2_2prep_ak_fundamental_by_yearly_calculate.py](2_2prep_ak_fundamental_by_yearly_calculate.py): calculate financial metrics
+*   **Data Pipeline**: Automated scripts to fetch, clean, and process daily stock price data (Tushare) and fundamental financial data (Akshare).
+*   **Parallel Processing**: Optimized data preparation scripts (`2_0prep...` and `2prep...`) use multi-processing to handle thousands of stocks efficiently.
+*   **Buy/Sell Signals**: Calculates technical indicators (RSI, MACD, Bollinger Bands, etc.) to generate daily buy/sell signals.
+    *   **Real-time Monitoring**: `pages/2_Buy_Signals.py` displays the latest signals with advanced filtering (Industry, Fundamental Rank, etc.).
+    *   **Period Analysis**: `pages/4_Period_Buy_Signals.py` allows analyzing signals over a specific date range to catch trends.
+*   **Fundamental Analysis**:
+    *   `pages/3_Fundamental_Analysis.py` for deep dives into financial metrics.
+    *   `3analysis_rank_ak_fundamental_by_yearly.py` ranks stocks based on key fundamental indicators (ROE, Net Cash, Debt/Asset, etc.).
+*   **Backtesting**: Integration with Zipline for backtesting strategies (see `pages/8_Backtest_Overview.py`).
+*   **Portfolio Monitoring**: `pages/6_My_Holdings.py` to track your personal portfolio performance against generated signals.
 
-### TODO
-[3analysis_all_metrics_on_all_stocks_daily_kline.py](3analysis_all_metrics_on_all_stocks_daily_kline.py)
-add update date as column. so that streamlit app can display
+## Project Structure
+
+*   `data/`: Stores raw and processed data (CSV files).
+    *   `ak_fundamental/`: Fundamental data (Balance Sheet, Profit, Cash Flow).
+    *   `tushare_kline/`: Daily price data.
+    *   `dwa/`: Data Warehouse for App (processed signals, decision tables).
+*   `pages/`: Streamlit pages.
+    *   `2_Buy_Signals.py`: Daily Signal Monitor.
+    *   `4_Period_Buy_Signals.py`: **[NEW]** Historical Signal Analysis.
+    *   `5app_monitor.py`: **[NEW]** Data Pipeline Manager GUI.
+*   `utils/`: Helper functions.
+*   `*.py`:
+    *   `0extract_*.py`: Data fetchers.
+    *   `2prep_*.py`: Data cleaning and preparation (Parallelized).
+    *   `3analysis_*.py`: Logic for metric calculation and ranking.
+    *   `4app_data.py`: Final data aggregation for the App.
+
+## Getting Started
+
+1.  **Environment Setup**:
+    ```bash
+    pip install -r requirements.txt
+    # Ensure you have .env file with TUSHARE_API_KEY
+    ```
+
+2.  **Run the App**:
+    ```bash
+    streamlit run 5app_monitor.py
+    ```
+    Use this page to trigger data updates:
+    *   **Daily Kline Pipeline**: Updates price data and recalculates signals.
+    *   **Fundamentals Pipeline**: Updates financial reports and recalculates fundamental scores.
+
+3.  **Explore Analysis**:
+    Navigate to `2_Buy_Signals` or `4_Period_Buy_Signals` in the sidebar to view actionable insights.
+
+## Recent Updates
+
+*   **Performance**: `2_0prep_ak_fundamental_by_yearly_concat.py` and `2prep_tushare_daily_kline.py` rewritten to use multi-processing, significantly reducing run time.
+*   **Robustness**: Fundamental data prep now automatically attempts to fetch missing sheets.
+*   **Features**:
+    *   Added "Period Buy Signals" page.
+    *   Added "Latest Market Value" to decision data.
+    *   Enhanced visualization in Buy Signals page (Industry distribution charts).

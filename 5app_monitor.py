@@ -1,36 +1,23 @@
 import streamlit as st
-from utils.streamlit_helper import clear_cache, clean_expired_cache, setup_page_config
+import subprocess
+import sys, logging
 
+from datetime import datetime
+import pandas as pd
+from utils.constants import PROJECT_PATH
+# page config
+from utils.streamlit_helper import setup_page_config, clear_cache, clean_expired_cache
 
+setup_page_config()
 
-# 页面配置只在主文件设置一次
-setup_page_config(
-    page_title="投资监测分析平台",
-    page_icon="💰",
-    layout="wide",
-    initial_sidebar_state="expanded"
-)
+class StreamlitLogHandler(logging.Handler):
+    def __init__(self, widget_update_func):
+        super().__init__()
+        self.widget_update_func = widget_update_func
 
-
-
-
-# 侧边栏导航和设置
-st.sidebar.title("💰 投资监测分析平台")
-st.sidebar.markdown("---")
-
-# 页面导航（Streamlit会自动识别pages目录下的文件）
-st.sidebar.markdown("### 📑 页面导航")
-st.sidebar.markdown("""
-- 🌍 [世界主要资产](1_world_assets)
-- 📊 [A股买卖信号](2_ashare_signals)
-- 📈 [A股基本面分析](3_fundamental_analysis)
-- 🤖 [AI投资顾问](4_llm_advisor)
-""")
-
-st.sidebar.markdown("---")
-
-# 全局设置
-st.sidebar.markdown("### ⚙️ 全局设置")
+    def emit(self, record):
+        msg = self.format(record)
+        self.widget_update_func(msg)
 
 # 缓存管理
 with st.sidebar.expander("缓存管理", expanded=False):
@@ -42,46 +29,170 @@ with st.sidebar.expander("缓存管理", expanded=False):
         clear_cache()
         st.sidebar.success("已清除所有缓存")
 
-st.sidebar.markdown("---")
+st.title("💦 Data Refresh Pipeline")
 
-# 主页面内容
-st.title("💰 投资监测分析平台")
-st.markdown("欢迎使用投资监测分析平台！")
 
-st.markdown("""
-### 📋 功能概览
+######################### Section 1 #########################
+st.header("Daily Kline Pipeline", divider=True)
 
-本平台提供以下功能：
+# 1. Date Input Boxes
+col_daily_kline_start, col_daily_kline_end = st.columns(2)
+with col_daily_kline_start:
+    daily_kline_start_date = st.date_input("Start Date", value=datetime(2026, 1, 1))
+with col_daily_kline_end:
+    daily_kline_end_date = st.date_input("End Date", value=datetime.now())
 
-1. **🌍 世界主要资产变动监测**
-   - 实时监测全球主要指数、商品、ETF的变动
-   - 支持日/周/月/季/半年/年/三年等多种时间周期
-   - 提供交互式图表和数据表格
+# 2. Start Button
+if st.button("Run CN Stock - Daily Kline Pipeline", icon="📈", type="primary"):
+    # Convert dates to strings
+    start_str = daily_kline_start_date.strftime("%Y-%m-%d")
+    end_str = daily_kline_end_date.strftime("%Y-%m-%d")
 
-2. **📊 A股买卖信号监测**
-   - 基于技术指标生成买卖信号
-   - 支持多维度筛选和排序
-   - 可视化信号分布和对比
+    scripts = [
+        {"file": "0extract_tushare_daily_kline.py", "desc": "Fetch daily kline data"},
+        {"file": "2prep_tushare_daily_kline.py", "desc": "Append newest kline data to each single stock CSV file (Parallel Optimized)"},
+        {"file": "3analysis_all_metrics_on_all_stocks_daily_kline.py", "desc": "Calculate buy/sell metrics & Update History"},
+        {"file": "4app_data.py", "desc": "Format data for App"}
+    ]
 
-3. **📈 A股基本面分析**
-   - 多股票财务指标对比
-   - 财务指标趋势分析
-   - 关键指标雷达图
+    progress_bar = st.progress(0)
+    status_text = st.empty()
 
-4. **🤖 AI投资顾问**
-   - 基于LLM的智能投资建议
-   - 投资相关问题问答
-   - 市场数据分析
+    try:
+        for i, script in enumerate(scripts):
+            status_text.info(f"Step {i + 1}/{len(scripts)}: {script['desc']}...")
 
-### 🚀 快速开始
+            # Prepare the command.
+            # We pass dates to A.py as arguments.
+            # If B and C also need dates, add them to the list below.
+            cmd = [sys.executable, script['file']]
+            if script['file'] == "0extract_tushare_daily_kline.py":
+                cmd.extend(["--start", start_str, "--end", end_str])
+            if script['file'] == "2prep_tushare_daily_kline.py":
+                cmd.extend(["--end", end_str])
 
-请使用左侧导航栏选择您需要的功能页面。
-""")
+            # Run the script and wait for it to finish
 
-# 页脚
-st.markdown("---")
-st.markdown(
-    "<div style='text-align: center; color: gray;'>投资监测分析平台 | 数据仅供参考，投资有风险</div>",
-    unsafe_allow_html=True
-)
+            # logger = get_logger("daily kline")
+            # logger.handlers.clear()
+            # handler = StreamlitLogHandler(st.empty().code)
+            # logger.addHandler(handler)
 
+            result = subprocess.run(cmd, capture_output=True, text=True, check=True)
+
+            # Update progress
+            progress_bar.progress((i + 1) / len(scripts))
+            st.write(f"✅ {script['file']} finished successfully.")
+
+        st.success("🎉 All scripts executed successfully!")
+
+    except subprocess.CalledProcessError as e:
+        st.error(f"❌ Error in {script['file']}: {e.stderr}")
+
+######################### Section 2 #########################
+st.divider()  # 👈 Draws a horizontal rule
+
+st.header("Fundamentals Pipeline", divider=True)
+# 1. Filter Input
+stock_filtered_df = pd.read_csv(f"{PROJECT_PATH}/data/dwa/app_decision.csv")
+boards_regex = st.text_input(
+                "板块正则筛选",
+                value="MSCI|沪深300|科创|高盛|贝莱德",
+                key="filter_boards_regex",
+                help="正则匹配 boards 列，例如: MSCI|沪深300。留空显示全部"
+            )
+# st.subheader("Overal Buy/Sell count")
+options_overall_signal_count = ['All']+[str(item) for item in stock_filtered_df.overall_signal_count.unique()]
+choice_overall_signal_count = st.segmented_control('Pick one overall_signal_count',
+                                                   options_overall_signal_count,
+                                                   selection_mode="single",
+                                                   width="stretch",
+                                                   default='All'
+                                                   )
+# st.subheader("Overal Industry Category")
+options_industry_category_name = ['All']+[str(item) for item in stock_filtered_df.industry_category_name.unique()]
+choice_industry_category_name = st.segmented_control('Pick one industry_category_name',
+                                               options_industry_category_name,
+                                               selection_mode="single",
+                                                 width="stretch",
+                                                 default='All'
+                                               )
+
+options_industry_sub_category_name = ['All']+[str(item) for item in stock_filtered_df.industry_sub_category_name.unique()]
+choice_industry_sub_category_name = st.segmented_control('Pick one industry_sub_category_name',
+                                               options_industry_sub_category_name,
+                                               selection_mode="single",
+                                                 width="stretch",
+                                                 default='All'
+                                               )
+with st.container(height=300):
+    # st.subheader("Overal Industry Type")
+    options_industry_type_name = ['All']+[str(item) for item in stock_filtered_df.industry_type_name.unique()]
+    choice_industry_type_name = st.segmented_control('Pick one industry_type_name',
+                                                   options_industry_type_name,
+                                                   selection_mode="single",
+                                                 width="stretch",
+                                                 default='All'
+                                                   )
+
+
+choice_row_range = st.segmented_control('Pick stock range',
+                                                   ['All', '0-30','30-60','60-90','90-120','120-150','150-180'],
+                                                   selection_mode="single", width="stretch",
+                                        default='All'
+                                                   )
+text_stock_list = st.text_input("Enter list of stocks separated by comma", "")
+st.write(f"Get data for:")
+st.write(f"Board Regex: {boards_regex}")
+st.write(f"Buy/Sell Signal Count: {choice_overall_signal_count}")
+st.write(f"Industry Category: {choice_industry_category_name}")
+st.write(f"Industry Sub Category: {choice_industry_sub_category_name}")
+st.write(f"Industry Type: {choice_industry_type_name}")
+st.write(f"Row Range: {choice_row_range}")
+st.write(f"Customized Stock List: {text_stock_list}")
+
+# 2. Start Button
+log_placeholder = st.empty()
+if st.button("Run CN Stock - Fundamental Pipeline", icon="📊", type="primary"):
+    scripts = [
+        {"file": "0extract_ak_fundamental_by_yearly.py", "desc": "Fetch fundamental data stock by stock"},
+        {"file": "2_0prep_ak_fundamental_by_yearly_concat.py", "desc": "Concatenate fundamentals (Parallel + Auto-fetch missing)"},
+        {"file": "2_1prep_ak_fundamental_market_value.py", "desc": "Calculate yearly latest market value"},
+        {"file": "2_2prep_ak_fundamental_by_yearly_calculate.py", "desc": "Calculate fundamental metrics"},
+        {"file": "3analysis_rank_ak_fundamental_by_yearly.py", "desc": "Rank key fundamental metrics"},
+        {"file": "4app_data.py", "desc": "Format data for App"}
+
+    ]
+
+    progress_bar = st.progress(0)
+    status_text = st.empty()
+
+    try:
+        for i, script in enumerate(scripts):
+            status_text.info(f"Step {i + 1}/{len(scripts)}: {script['desc']}...")
+
+            # Prepare the command.
+            # We pass dates to A.py as arguments.
+            # If B and C also need dates, add them to the list below.
+            cmd = [sys.executable, script['file']]
+            if script['file'] == "0extract_ak_fundamental_by_yearly.py":
+                cmd.extend(["--boards_regex", boards_regex,
+                            "--choice_overall_signal_count", choice_overall_signal_count,
+                            "--choice_industry_category_name", choice_industry_category_name,
+                            "--choice_industry_sub_category_name", choice_industry_sub_category_name,
+                            "--choice_industry_type_name", choice_industry_type_name,
+                            "--choice_row_range", choice_row_range,
+                            "--text_stock_list", text_stock_list])
+
+            result = subprocess.run(cmd, capture_output=True, text=True, check=True)
+
+            # Update progress
+            progress_bar.progress((i + 1) / len(scripts))
+            st.write(f"✅ {script['file']} finished successfully.")
+
+
+
+        st.success("🎉 All scripts executed successfully!")
+
+    except subprocess.CalledProcessError as e:
+        st.error(f"❌ Error in {script['file']}: {e.stderr}")

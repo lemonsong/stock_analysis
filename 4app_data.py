@@ -69,6 +69,20 @@ if os.path.exists(board_path):
 else:
     app_decision_df["boards"] = ""
 
+# --- Add Latest Market Value (Price) ---
+market_value_path = os.path.join(PROJECT_PATH, 'data/ak_fundamental', '0latest_stock_price_by_yearly.csv')
+if os.path.exists(market_value_path):
+    market_value_df = pd.read_csv(market_value_path)
+    # Get latest year's price for each symbol
+    latest_market_value_df = market_value_df.sort_values('fiscal_year').groupby('symbol').tail(1)
+    # Rename close to latest_yearly_close to avoid conflict or clarify source
+    latest_market_value_df = latest_market_value_df[['symbol', 'close']].rename(columns={'close': 'latest_yearly_close'})
+
+    app_decision_df = app_decision_df.merge(latest_market_value_df, on='symbol', how='left')
+    print(f"Merged latest market value from {market_value_path}")
+else:
+    print(f"Warning: {market_value_path} not found.")
+
 # fillna with 0
 dividend_cols = [col for col in app_decision_df.columns if 'dividend' in col]
 app_decision_df[dividend_cols+['big_money_net_inflow_ratio_10d']] = app_decision_df[dividend_cols+['big_money_net_inflow_ratio_10d']].fillna(0)

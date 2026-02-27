@@ -10,7 +10,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 import json
 from pathlib import Path
-from utils.constants import FUNDAMENTAL_KEY_COLS, SEQUENTIAL_COLOR, PROJECT_PATH
+from utils.constants import FUNDAMENTAL_KEY_COLS, SEQUENTIAL_COLOR, PROJECT_PATH, INDUSTRY_COL_DICT
 from utils.streamlit_helper import clear_cache, clean_expired_cache, setup_page_config, render_filter_sidebar
 
 setup_page_config()
@@ -251,97 +251,116 @@ def setup_sidebar(df):
 def display_metrics(filtered_df):
     """显示统计指标"""
     st.markdown("### 📈 信号统计")
-    col1, col2, col3, col4 = st.columns(4)
 
-    with col1:
-        st.metric("总股票数", len(filtered_df))
-    with col2:
-        if 'buy_signal_count' in filtered_df.columns:
-            avg_buy = filtered_df['buy_signal_count'].mean()
-            st.metric("平均买入信号", f"{avg_buy:.1f}")
-    with col3:
-        if 'sell_signal_count' in filtered_df.columns:
-            avg_sell = filtered_df['sell_signal_count'].mean()
-            st.metric("平均卖出信号", f"{avg_sell:.1f}")
-    with col4:
-        if 'overall_signal_count' in filtered_df.columns:
-            avg_overall = filtered_df['overall_signal_count'].mean()
-            st.metric("平均综合信号", f"{avg_overall:.1f}")
+    # Use columns to layout metrics and the first chart
+    col_metrics, col_chart = st.columns([1, 1])
 
-def display_charts(filtered_df):
-    """显示图表"""
-    st.markdown("### 📊 信号分布")
-    # with st.container(height=500):
-    col1, col2 = st.columns(2)
+    with col_metrics:
+        m1, m2, m3, m4 = st.columns(4)
+        with m1:
+            st.metric("总股票数", len(filtered_df))
+        with m2:
+            if 'buy_signal_count' in filtered_df.columns:
+                avg_buy = filtered_df['buy_signal_count'].mean()
+                st.metric("平均买入信号", f"{avg_buy:.1f}")
+        with m3:
+            if 'sell_signal_count' in filtered_df.columns:
+                avg_sell = filtered_df['sell_signal_count'].mean()
+                st.metric("平均卖出信号", f"{avg_sell:.1f}")
+        with m4:
+            if 'overall_signal_count' in filtered_df.columns:
+                avg_overall = filtered_df['overall_signal_count'].mean()
+                st.metric("平均综合信号", f"{avg_overall:.1f}")
 
-    # 1. 综合信号数量分布
+    # 1. 综合信号数量分布 (Placed next to Metrics)
     if 'overall_signal_count' in filtered_df.columns:
-        with col1:
+        with col_chart:
             fig_overall = px.histogram(
                 filtered_df,
                 x='overall_signal_count',
-                height=600,
+                height=300, # Smaller height to fit better
                 nbins=9,
                 title='综合信号数量分布',
                 labels={'overall_signal_count': '综合信号数量', 'count': '股票数量'}
             )
+            fig_overall.update_layout(margin=dict(l=20, r=20, t=40, b=20))
             st.plotly_chart(fig_overall, use_container_width=True)
-
-        # 2. 各行业综合信号分布
-        if 'industry_category_name' in filtered_df.columns:
-            with col2:
-                # 确保overall_signal_count作为分类变量进行堆叠
-                chart_df = filtered_df.copy()
-                chart_df['overall_signal_str'] = chart_df['overall_signal_count'].astype(str)
-
-                # 为了图例排序，我们可以指定category_orders
-                sorted_signals = sorted(filtered_df['overall_signal_count'].unique())
-                sorted_signals_str = [str(x) for x in sorted_signals]
-
-                # fig_industry = px.histogram(
-                #     chart_df,
-                #     x='industry_category_name',
-                #     color='overall_signal_str',
-                #     title='各行业综合信号分布',
-                #     labels={
-                #         'industry_category_name': '行业分类',
-                #         'count': '股票数量',
-                #         'overall_signal_str': '综合信号数量'
-                #     },
-                #     category_orders={'overall_signal_str': sorted_signals_str},
-                #     barmode='overlay'
-                # )
-
-                fig_industry = px.histogram(
-                    chart_df,
-                    y='industry_category_name',  # 行业名称改到 y 轴
-                    x=None,  # histogram 默认会对 y 进行计数，x 保持 None 即可
-                    color='overall_signal_str',
-                    orientation='h',  # 设置为横向显示
-                    title='各行业综合信号分布',
-                    labels={
-                        'industry_category_name': '行业分类',
-                        'count': '股票数量',
-                        'overall_signal_str': '综合信号'
-                    },
-                    height=600,
-                    category_orders={'overall_signal_str': sorted_signals_str},
-                    barmode='group' #https://plotly.github.io/plotly.py-docs/generated/plotly.express.histogram.html
-
-                )
-
-                # 优化 UI：在条形图上显示具体数值，并让 y 轴标签更易读
-                fig_industry.update_traces(texttemplate='%{x}', textposition='inside')
-                fig_industry.update_layout(
-                    xaxis_title="股票数量",
-                    yaxis_title="行业分类",
-                    yaxis={'categoryorder': 'total ascending'}  # 按总量从小到大排序，方便查看
-                )
-
-                st.plotly_chart(fig_industry, use_container_width=True)
-
     else:
-        st.warning("综合信号数据不可用")
+        with col_chart:
+            st.warning("综合信号数据不可用")
+
+def display_charts(filtered_df):
+    """显示图表"""
+    st.markdown("### 📊 行业信号分布")
+
+    # Industry Selection Filter
+    industry_options = {label: col for col, label in INDUSTRY_COL_DICT.items()}
+    selected_industry_label = st.radio(
+        "选择行业分类标准:",
+        options=list(industry_options.keys()),
+        index=0, # Default to the first one (e.g., Category/门类)
+        horizontal=True
+    )
+    selected_industry_col = industry_options[selected_industry_label]
+
+    if selected_industry_col not in filtered_df.columns:
+        st.warning(f"数据中缺少列: {selected_industry_col}")
+        return
+
+    col1, col2 = st.columns(2)
+
+    # Chart 1: Stock Count per Industry (Bar Chart)
+    with col1:
+        # Aggregate data
+        count_df = filtered_df[selected_industry_col].value_counts().reset_index()
+        count_df.columns = [selected_industry_col, 'count']
+
+        fig_count = px.bar(
+            count_df,
+            x=selected_industry_col,
+            y='count',
+            title=f'各{selected_industry_label}股票数量',
+            labels={selected_industry_col: selected_industry_label, 'count': '数量'},
+            height=500
+        )
+        # fig_count.update_xaxes(tickangle=45)
+        st.plotly_chart(fig_count, use_container_width=True)
+
+    # Chart 2: Signal Distribution per Industry (Stacked Bar)
+    with col2:
+        if 'overall_signal_count' in filtered_df.columns:
+            # Prepare data for stacked bar
+            # We want percentage of each signal type within each industry
+            chart_df = filtered_df.copy()
+            chart_df['overall_signal_str'] = chart_df['overall_signal_count'].astype(str)
+
+            # Group by Industry and Signal, then count
+            grouped = chart_df.groupby([selected_industry_col, 'overall_signal_str']).size().reset_index(name='count')
+
+            # Sort signals numerically for consistent legend
+            sorted_signals = sorted(filtered_df['overall_signal_count'].unique())
+            sorted_signals_str = [str(x) for x in sorted_signals]
+
+            fig_dist = px.bar(
+                grouped,
+                x=selected_industry_col,
+                y='count',
+                color='overall_signal_str',
+                title=f'各{selected_industry_label}综合信号分布 (数量)',
+                labels={
+                    selected_industry_col: selected_industry_label,
+                    'count': '股票数量',
+                    'overall_signal_str': '综合信号'
+                },
+                category_orders={'overall_signal_str': sorted_signals_str},
+                height=500,
+                # barmode='stack' # Default is stack
+            )
+            # fig_dist.update_xaxes(tickangle=45)
+            st.plotly_chart(fig_dist, use_container_width=True)
+        else:
+            st.warning("综合信号数据不可用")
+
 
 def display_detailed_data(filtered_df):
     """显示详细数据表格"""
@@ -351,7 +370,7 @@ def display_detailed_data(filtered_df):
     display_df = filtered_df.copy()
     # 列分组定义
     col_groups = {
-        "基本信息": ['symbol_url', 'company', 'close'], # 使用symbol_url替代symbol
+        "基本信息": ['symbol_url', 'company', 'close', 'latest_yearly_close'], # Added latest_yearly_close
         "行业信息": ['industry_category_name', 'industry_sub_category_name', 'industry_type_name'],
         "信号指标": [col for col in filtered_df.columns if 'signal' in col.lower()],
         "分红指标": [col for col in filtered_df.columns if 'total_dividend' in col and 'yield' not in col],
@@ -478,6 +497,11 @@ def display_detailed_data(filtered_df):
         "close": st.column_config.NumberColumn(
             "收盘价",
             help="close",
+            format="%.2f"
+        ),
+        "latest_yearly_close": st.column_config.NumberColumn(
+            "年报日收盘价",
+            help="最近一年年报发布日的收盘价",
             format="%.2f"
         ),
         "industry_category_name": st.column_config.Column(

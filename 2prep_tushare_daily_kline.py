@@ -16,170 +16,139 @@ from utils.common import format_stock_symbol, get_file_paths_pathlib, extract_st
 from utils.dolt_helper import clean_daily_by_dates
 from datetime import datetime
 import logging
+from concurrent.futures import ProcessPoolExecutor, as_completed
+import argparse, sys
+
+# Configure logging
+# Note: Logging from multiple processes to a single file/stderr can be messy.
+# For simplicity, we'll keep the basic config, but be aware lines might interleave.
 logging.basicConfig(
     format="{asctime} - {levelname} - {message}",
     style="{",
     datefmt="%Y-%m-%d %H:%M",
     level=logging.INFO, # DEBUG,INFO,WARNING, ERROR, CRITICAL
 )
-import argparse, sys
-
-# this is the end date of single stock kline files.
-# It should be the last date of signle stock kline file.
-# Or else the kline after this date will be removed in the clean_daily_by_dates() step
-if len(sys.argv) > 1:
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--end', type=str, required=True)
-    args = parser.parse_args()
-    end_date_str = args.end
-    logging.info(f"Fetching data via sys argument parser: {end_date_str}")
-else:
-    end_date_str = '2026-02-25' # TODO:
-    logging.info(f"Fetching data via manual input: {end_date_str}")
-end_date_d = datetime.strptime(end_date_str, '%Y-%m-%d').date()
-
-is_test = False # TODO
-if is_test:
-    daily_folder='daily_test'
-else:
-    daily_folder = 'daily'
-# list of symbol identified having problem based on 1data_quality_dolt_daily_kline_by_stock
 
 PROGRAM_PATH = f'{PROJECT_PATH}/data/tushare_kline'
 write_log_file_path = f'{PROGRAM_PATH}/0daily_data_write_log.csv'
-# TODO: automate this step
-# symbol_li = ['SZ000430', 'SH000905', 'SH600169', 'SZ002387', 'SH000906', 'SZ300277',
-#              'SH603843', 'SH603897', 'SH600319', 'SH000985', 'SZ300353', 'SZ300018',
-#              'SH688588', 'SZ300424', 'SH603118', 'SH000852', 'SZ399300', 'SZ300131',
-#              'SZ000407', 'SH000300']
-file_list = get_file_paths_pathlib(f'{PROGRAM_PATH}/{daily_folder}')
-symbol_li = [extract_stock_symbol_from_path(file_path, from_format='MARKETnumber',
-                                                  to_format='MARKETnumber') for file_path in file_list]
 
-### write new kline to single stock file ###
-# get log data_all_list file to record how single stock were changed
-if os.path.isfile(write_log_file_path):
-    write_log_df = pd.read_csv(write_log_file_path)
-else:
-    write_log_df = pd.DataFrame()
-#
-ts_api = ts.pro_api(TUSHARE_API_KEY)
-# for stock_symbol in ['SZ000430']:
-for stock_symbol in symbol_li:
+def get_end_date():
+    if len(sys.argv) > 1:
+        parser = argparse.ArgumentParser()
+        parser.add_argument('--end', type=str, required=True)
+        args = parser.parse_args()
+        end_date_str = args.end
+        logging.info(f"Fetching data via sys argument parser: {end_date_str}")
+    else:
+        end_date_str = '2026-02-25' # TODO:
+        logging.info(f"Fetching data via manual input: {end_date_str}")
+    return datetime.strptime(end_date_str, '%Y-%m-%d').date()
+
+def process_single_stock(stock_symbol, daily_folder, end_date_d):
+    """
+    Reads, cleans, and saves a single stock's daily kline data.
+    Returns a dictionary with log info or None on failure.
+    """
     stock_kline_file_path = f'{PROGRAM_PATH}/{daily_folder}/{stock_symbol}.csv'
-    logging.info(f'Read {stock_kline_file_path}')
-    #
-    stock_kline_df = pd.read_csv(stock_kline_file_path)
-    stock_kline_df['date'] = pd.to_datetime(stock_kline_df['date']).dt.date
 
-    # Check old data
-    n_row_old = len(stock_kline_df)
-    if n_row_old > 0:
-        old_min_date = stock_kline_df['date'].min()
-        old_max_date = stock_kline_df['date'].max()
+    try:
+        # logging.info(f'Read {stock_kline_file_path}')
+        stock_kline_df = pd.read_csv(stock_kline_file_path)
+        stock_kline_df['date'] = pd.to_datetime(stock_kline_df['date']).dt.date
+
+        # Check old data
+        n_row_old = len(stock_kline_df)
+        if n_row_old > 0:
+            old_min_date = stock_kline_df['date'].min()
+            old_max_date = stock_kline_df['date'].max()
+        else:
+            old_min_date = None
+            old_max_date = None
+
+        # logging.info(f'Clean {stock_symbol}')
+        stock_kline_df = clean_daily_by_dates(
+            stock_kline_df,
+            stock_symbol,
+            calendar_name='XSHG',
+            calender_start="2020-12-01",
+            calendar_end=end_date_d,
+            must_end_date=end_date_d
+        )
+
+        # Check new data
+        n_row_new = len(stock_kline_df)
+        if n_row_new > 0:
+            new_min_date = stock_kline_df['date'].min()
+            new_max_date = stock_kline_df['date'].max()
+        else:
+            new_min_date = None
+            new_max_date = None
+
+        # logging.info(f'Save to {stock_kline_file_path}')
+        stock_kline_df.to_csv(stock_kline_file_path, index=False, encoding='utf-8')
+
+        return {
+            'folder': daily_folder,
+            'symbol': stock_symbol,
+            'old_count': n_row_old,
+            'old_min_date': old_min_date,
+            'old_max_date': old_max_date,
+            'new_count': n_row_new,
+            'new_min_date': new_min_date,
+            'new_max_date': new_max_date,
+            'update_time': datetime.now(),
+            'method': 'clean'
+        }
+
+    except Exception as e:
+        logging.error(f"Error processing {stock_symbol}: {e}")
+        return None
+
+def main():
+    end_date_d = get_end_date()
+
+    is_test = False # TODO
+    if is_test:
+        daily_folder='daily_test'
     else:
-        old_min_date = None
-        old_max_date = None
+        daily_folder = 'daily'
 
-    logging.info(f'Clean {stock_symbol}')
-    # logging.info(stock_kline_df.tail(5))
-    stock_kline_df = clean_daily_by_dates(stock_kline_df, stock_symbol, calendar_name='XSHG',
-                                          calender_start="2020-12-01",
-                                          calendar_end=end_date_d,
-                                          must_end_date=end_date_d)
+    # Get file list
+    file_list = get_file_paths_pathlib(f'{PROGRAM_PATH}/{daily_folder}')
+    symbol_li = [extract_stock_symbol_from_path(file_path, from_format='MARKETnumber',
+                                                      to_format='MARKETnumber') for file_path in file_list]
 
-    # Check new data
-    n_row_new = len(stock_kline_df)
-    if n_row_new > 0:
-        new_min_date = stock_kline_df['date'].min()
-        new_max_date = stock_kline_df['date'].max()
+    logging.info(f"Found {len(symbol_li)} stocks to process.")
+
+    # Prepare log dataframe
+    if os.path.isfile(write_log_file_path):
+        write_log_df = pd.read_csv(write_log_file_path)
     else:
-        new_min_date = None
-        new_max_date = None
+        write_log_df = pd.DataFrame()
 
-    logging.info(f'Save to {stock_kline_file_path}')
-    stock_kline_df.to_csv(stock_kline_file_path, index=False, encoding='utf-8')
-    # update write log
-    write_log_df_sub = pd.DataFrame({
-        'folder': daily_folder,
-        'symbol': [stock_symbol],
-        'old_count': [n_row_old],
-        'old_min_date': [old_min_date],
-        'old_max_date': [old_max_date],
-        'new_count': [n_row_new],
-        'new_min_date': [new_min_date],
-        'new_max_date': [new_max_date],
-        'update_time': datetime.now(),
-        'method': 'clean'
-    })
-    # append wrote stock symbol to write_log_df_sub for reference
-    write_log_df = pd.concat([write_log_df, write_log_df_sub], axis=0, ignore_index=True)
-# save the write log to csv
-write_log_df.to_csv(write_log_file_path, index=False, encoding='utf-8')
+    new_logs = []
 
+    # Process in parallel
+    with ProcessPoolExecutor() as executor:
+        # Map futures to symbols
+        futures = {executor.submit(process_single_stock, sym, daily_folder, end_date_d): sym for sym in symbol_li}
 
+        for i, future in enumerate(as_completed(futures)):
+            result = future.result()
+            if result:
+                new_logs.append(result)
 
+            if (i + 1) % 100 == 0:
+                logging.info(f"Processed {i + 1}/{len(symbol_li)} stocks.")
 
+    # Update write log
+    if new_logs:
+        new_log_df = pd.DataFrame(new_logs)
+        write_log_df = pd.concat([write_log_df, new_log_df], axis=0, ignore_index=True)
+        write_log_df.to_csv(write_log_file_path, index=False, encoding='utf-8')
+        logging.info(f"Updated log file with {len(new_logs)} entries.")
+    else:
+        logging.warning("No stocks were successfully processed.")
 
-'''
-The follofwing is
-DEPRECATED
-no data_all_list even after we refetched data_all_list
-'''
-
-# ### fetch daily kline of stocks in symbol_li ###
-# symbol_li_number_dot_market_format = [format_stock_symbol(i, from_format='MARKETnumber', to_format='number.MARKET') for i in symbol_li]
-# symbol_str_number_dot_market_format = ','.join(symbol_li_number_dot_market_format)
-# daily_kline_multi_stocks_file_path = f'{PROGRAM_PATH}/0kline_multi_stock.csv'
-#
-# if os.path.isfile(daily_kline_multi_stocks_file_path):
-#     multi_stock_df = pd.read_csv(daily_kline_multi_stocks_file_path)
-# else:
-#     ts_api = ts.pro_api(TUSHARE_API_KEY)
-#     multi_stock_df = ts_api.query('daily', ts_code=symbol_str_number_dot_market_format, start_date=start_date_ymd, end_date=end_date_ymd)
-#     multi_stock_df = format_tushare_kline_to_dolt_style(multi_stock_df)
-#     # save to CSV
-#     multi_stock_df = multi_stock_df.to_csv(daily_kline_multi_stocks_file_path, index=False, encoding='utf-8')
-#     logging.info('Saved CSV after convert multi_stock_df ')
-# logging.info(multi_stock_df.head())
-
-# ### write new kline to single stock file ###
-# # get log data_all_list file to record how single stock were changed
-# if os.path.isfile(write_log_file_path):
-#     write_log_df = pd.read_csv(write_log_file_path)
-# else:
-#     write_log_df = pd.DataFrame()
-# #
-# ts_api = ts.pro_api(TUSHARE_API_KEY)
-# for stock_symbol in symbol_li[0:2]:
-#     daily_kline_stock_file_path = f'{PROGRAM_PATH}/{daily_folder}/{stock_symbol}.csv'
-#     daily_kline_stock_df = ts_api.query('daily',
-#                             ts_code=format_stock_symbol(stock_symbol, from_format='MARKETnumber', to_format='number.MARKET'),
-#                             start_date=start_date_ymd,
-#                             end_date=end_date_ymd)
-#     logging.info(f'Fetched {stock_symbol}')
-#     daily_kline_stock_df = format_tushare_kline_to_dolt_style(daily_kline_stock_df)
-#     logging.info(f'Formatted {stock_symbol}')
-#     daily_kline_stock_df.to_csv(daily_kline_stock_file_path, index=False, encoding='utf-8')
-#     logging.info(f'Saved CSV to {daily_kline_stock_file_path}')
-#     # update write log
-#     write_log_df_sub = pd.DataFrame({
-#         'folder': daily_folder,
-#         'symbol': [stock_symbol],
-#         'old_data_max_date': None,
-#         'new_date_min_date': [daily_kline_stock_df['date'].min()],
-#         'update_time': datetime.now(),
-#         'method': 'overwrite'
-#     })
-#     # append wrote stock symbol to write_log_df_sub for reference
-#     write_log_df = pd.concat([write_log_df, write_log_df_sub], axis=0, ignore_index=True)
-#     random_sleep_time = random.randint(10, 30)
-#     logging.info(f'Sleep for {random_sleep_time}s')
-#     time.sleep(random_sleep_time)
-# # save the write log to csv
-# write_log_df.to_csv(write_log_file_path, index=False, encoding='utf-8')
-#
-
-
-
-
+if __name__ == "__main__":
+    main()
