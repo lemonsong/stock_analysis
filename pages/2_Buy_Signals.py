@@ -278,30 +278,34 @@ def display_metrics(filtered_df):
             fig_overall = px.histogram(
                 filtered_df,
                 x='overall_signal_count',
-                height=300, # Smaller height to fit better
+                height=150, # Smaller height to fit better
                 nbins=9,
                 title='综合信号数量分布',
                 labels={'overall_signal_count': '综合信号数量', 'count': '股票数量'}
             )
             fig_overall.update_layout(margin=dict(l=20, r=20, t=40, b=20))
+            fig_overall.update_traces(texttemplate='%{y}', textposition='inside')
+
             st.plotly_chart(fig_overall, use_container_width=True)
     else:
         with col_chart:
             st.warning("综合信号数据不可用")
 
 def display_charts(filtered_df, raw_df):
-    """显示图表"""
-    st.markdown("### 📊 行业信号分布")
+    colt, cols = st.columns(2)
+    with colt:
 
-    # Industry Selection Filter
-    industry_options = {label: col for col, label in INDUSTRY_COL_DICT.items()}
-    selected_industry_label = st.radio(
-        "选择行业分类标准:",
-        options=list(industry_options.keys()),
-        index=0, # Default to the first one (e.g., Category/门类)
-        horizontal=True
-    )
-    selected_industry_col = industry_options[selected_industry_label]
+        st.markdown("### 📊 行业信号分布")
+    with cols:
+        # Industry Selection Filter
+        industry_options = {label: col for col, label in INDUSTRY_COL_DICT.items()}
+        selected_industry_label = st.radio(
+            "选择行业分类标准:",
+            options=list(industry_options.keys()),
+            index=0, # Default to the first one (e.g., Category/门类)
+            horizontal=True
+        )
+        selected_industry_col = industry_options[selected_industry_label]
 
     if selected_industry_col not in filtered_df.columns:
         st.warning(f"数据中缺少列: {selected_industry_col}")
@@ -325,7 +329,7 @@ def display_charts(filtered_df, raw_df):
             x=None,  # histogram 默认会对 y 进行计数，x 保持 None 即可
             color='overall_signal_str',
             orientation='h',  # 设置为横向显示
-            title=f'各{selected_industry_label}综合信号分布(%)',
+            title=f'各{selected_industry_label}综合信号分布(#)',
             labels={
                 selected_industry_col: selected_industry_label,
                 'count': '股票数量',
@@ -342,7 +346,7 @@ def display_charts(filtered_df, raw_df):
         fig_industry.update_layout(
             xaxis_title="股票数量",
             yaxis_title="行业分类",
-            yaxis={'categoryorder': 'total ascending'}  # 按总量从小到大排序，方便查看
+            # yaxis={'categoryorder': 'total ascending'}  # 按总量从小到大排序，方便查看
         )
 
         st.plotly_chart(fig_industry, use_container_width=True)
@@ -438,6 +442,7 @@ def display_charts(filtered_df, raw_df):
             #     color_discrete_map=color_map,  # This maps specific keys
             #     height=500,
             # )
+            fig_dist.update_traces(texttemplate='%{x}', textposition='inside')
 
             # Ensure other colors are still assigned automatically if not in map?
             # px.bar uses color_discrete_sequence if map doesn't cover all.
@@ -498,14 +503,14 @@ def display_detailed_data(filtered_df):
     display_df['debt_to_asset'] = display_df['debt_to_asset']*100
 
 
-
-    ### 列选择器 ###
-    st.markdown("#### 列选择")
-    col_selection_mode = st.radio(
-        "显示模式",
-        options=["显示默认列", "显示所有列", "自定义选择"],
-        horizontal=True
-    )
+    col_col_selection_mode, col_sort_by, col_ascending = st.columns(3)
+    with col_col_selection_mode:
+        ### 列选择器 ###
+        col_selection_mode = st.radio(
+            "显示模式",
+            options=["显示默认列", "显示所有列", "自定义选择"],
+            horizontal=True
+        )
 
     # 默认显示的列
     default_display_cols = []
@@ -560,8 +565,10 @@ def display_detailed_data(filtered_df):
     if 'overall_signal_count' in sort_options:
         default_sort_index = sort_options.index('overall_signal_count')
 
-    sort_by = st.selectbox("排序方式", options=sort_options, index=default_sort_index)
-    ascending = st.checkbox("升序", value=False)
+    with col_sort_by:
+        sort_by = st.selectbox("排序方式", options=sort_options, index=default_sort_index)
+    with col_ascending:
+        ascending = st.checkbox("升序", value=False)
 
     display_df_sorted = display_df.sort_values(sort_by, ascending=ascending)
     display_df_final = display_df_sorted[final_display_cols]
