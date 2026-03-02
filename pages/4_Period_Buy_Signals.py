@@ -12,23 +12,47 @@ from utils.streamlit_helper import setup_page_config, clear_cache, clean_expired
 setup_page_config()
 
 @st.cache_data
-def load_history_data():
-    """加载历史信号数据"""
-    history_file = Path(PROJECT_PATH) / 'data/dwa/kline_analysis_history.csv'
+def load_history_data(start_date, end_date):
+    """加载指定日期范围的历史信号数据"""
+    history_dir = Path(PROJECT_PATH) / 'data/dwa/kline_analysis_history'
 
-    if not history_file.exists():
-        st.error(f"未找到历史数据文件: {history_file}")
+    if not history_dir.exists() or not history_dir.is_dir():
+        st.error(f"未找到历史数据文件夹: {history_dir}")
         return None
 
-    try:
-        df = pd.read_csv(history_file)
-        # Ensure date column is datetime
-        if 'date' in df.columns:
-            df['date'] = pd.to_datetime(df['date']).dt.date
-        return df
-    except Exception as e:
-        st.error(f"读取历史数据文件失败: {e}")
-        return None
+    # Load all CSVs in the date range
+    df_list = []
+
+    start_str = start_date.strftime('%Y-%m-%d')
+    end_str = end_date.strftime('%Y-%m-%d')
+
+    for file_path in history_dir.glob("*.csv"):
+        # Extract date from filename: YYYY-MM-DD.csv
+        file_date_str = file_path.stem
+        # Ensure it falls within the range
+        if start_str <= file_date_str <= end_str:
+            try:
+                df = pd.read_csv(file_path)
+
+                # We need overall_signal_count > 0 as required
+                if 'overall_signal_count' in df.columns:
+                    df = df[df['overall_signal_count'] > 0]
+
+                if 'date' in df.columns:
+                    df['date'] = pd.to_datetime(df['date']).dt.date
+                elif 'update_date' in df.columns:
+                    df['date'] = pd.to_datetime(df['update_date']).dt.date
+
+                if not df.empty:
+                    df_list.append(df)
+            except Exception as e:
+                st.error(f"读取历史数据文件失败 {file_path}: {e}")
+
+    if not df_list:
+        return pd.DataFrame()
+
+    merged_df = pd.concat(df_list, ignore_index=True)
+    return merged_df
 
 @st.cache_data
 def load_basic_info():
@@ -38,21 +62,26 @@ def load_basic_info():
         return None
     return pd.read_csv(info_file)
 
-def filter_data(df, start_date, end_date, min_signal_count, industry_filter):
+def filter_data(df, min_signal_count, industry_filter):
     """
-    根据日期范围和信号强度筛选数据
+    根据信号强度和行业筛选数据
     Deduplication logic: Keep the latest signal for each symbol within the period
     """
-    # Date filter
-    mask = (df['date'] >= start_date) & (df['date'] <= end_date)
-    filtered = df.loc[mask].copy()
+    if df.empty:
+        return df
+
+    filtered = df.copy()
 
     # Signal Strength filter
     if 'overall_signal_count' in filtered.columns:
         filtered = filtered[filtered['overall_signal_count'] >= min_signal_count]
 
-    # Deduplicate: sort by date descending, then drop duplicates keeping first (latest)
-    filtered = filtered.sort_values('date', ascending=False)
+    # Deduplicate: sort by date descending (to get latest update date), then drop duplicates keeping first (latest)
+    if 'date' in filtered.columns:
+        filtered = filtered.sort_values('date', ascending=False)
+    elif 'update_date' in filtered.columns:
+        filtered = filtered.sort_values('update_date', ascending=False)
+
     filtered = filtered.drop_duplicates(subset=['symbol'], keep='first')
 
     # Join with Industry Info if available
@@ -93,7 +122,7 @@ def main():
     min_signal = st.sidebar.slider("最小综合信号值 (Overall Signal >=)", min_value=1, max_value=10, value=1)
 
     # Load Data
-    df_history = load_history_data()
+    df_history = load_history_data(start_date, end_date)
     if df_history is None:
         st.stop()
 
@@ -107,7 +136,7 @@ def main():
     industry_selected = st.sidebar.selectbox("行业筛选 (门类)", options=industry_options)
 
     # --- Process Data ---
-    result_df = filter_data(df_history, start_date, end_date, min_signal, industry_selected)
+    result_df = filter_data(df_history, min_signal, industry_selected)
 
     # --- Display ---
     st.markdown(f"### 🔍 筛选结果 ({start_date} 至 {end_date})")

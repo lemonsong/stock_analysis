@@ -147,32 +147,23 @@ if not all_stock_metrics.empty:
     all_stock_metrics['overall_signal_count'] = all_stock_metrics['buy_signal_count'] - all_stock_metrics['sell_signal_count']
 
     all_stock_metrics = all_stock_metrics.sort_values('overall_signal_count', ascending=False)
-    all_stock_metrics['update_date'] = update_date
+    # ensure date format for update_date
+    if isinstance(update_date, pd.Timestamp):
+        update_date_str = update_date.strftime('%Y-%m-%d')
+    else:
+        update_date_str = pd.to_datetime(update_date).strftime('%Y-%m-%d')
+
+    all_stock_metrics['update_date'] = update_date_str
     # Save current analysis
     all_stock_metrics.to_csv(f'{dwa_path}/kline_analysis.csv', index=False, encoding='utf-8')
 
     # --- Save History ---
-    # We assume 'date' is present in all_stock_metrics because get_stock_metrics returned the row with date
-    history_path = f'{dwa_path}/kline_analysis_history.csv'
+    # Save each day's analysis as an individual file
+    history_dir = f'{dwa_path}/kline_analysis_history'
+    os.makedirs(history_dir, exist_ok=True)
 
-    if os.path.exists(history_path):
-        history_df = pd.read_csv(history_path)
-        # Append new data
-        history_df = pd.concat([history_df, all_stock_metrics], axis=0, ignore_index=True)
-
-        # Deduplicate
-        if 'update_date' in history_df.columns:
-            history_df['update_date'] = pd.to_datetime(history_df['update_date']).dt.date
-
-        # Drop duplicates
-        history_df = history_df.drop_duplicates(subset=['symbol', 'update_date'], keep='last')
-    else:
-        history_df = all_stock_metrics.copy()
-        if 'update_date' in history_df.columns:
-            history_df['update_date'] = pd.to_datetime(history_df['update_date']).dt.date
-
-    # Save history
-    history_df.to_csv(history_path, index=False, encoding='utf-8')
-    logging.info(f"Saved history to {history_path}, total rows: {len(history_df)}")
+    history_path = f'{history_dir}/{update_date_str}.csv'
+    all_stock_metrics.to_csv(history_path, index=False, encoding='utf-8')
+    logging.info(f"Saved history to {history_path}, total rows: {len(all_stock_metrics)}")
 else:
     logging.warning("No metrics calculated.")
