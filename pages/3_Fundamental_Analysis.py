@@ -73,9 +73,33 @@ def load_kline_data(symbol):
             df = pd.read_csv(file_path)
             # 处理日期列名
             df['date'] = pd.to_datetime(df['date'])
+
+            # Load daily market cap data and merge
+            mc_path = Path(PROJECT_PATH) / 'data' / 'ak_fundamental' / 'daily_market_cap.csv'
+            if mc_path.exists():
+                try:
+                    # We might want to optimize this by not reading the huge CSV every time
+                    # But for now, we read it and filter by symbol
+                    # Alternatively, read once globally and cache
+                    mc_df = pd.read_csv(mc_path)
+                    mc_df['date'] = pd.to_datetime(mc_df['date'])
+                    symbol_mc = mc_df[mc_df['symbol'] == symbol][['date', 'market_cap']]
+                    if not symbol_mc.empty:
+                        df = pd.merge(df, symbol_mc, on='date', how='left')
+                except Exception as e:
+                    pass
             return df
         except Exception:
             return None
+    return None
+
+@st.cache_data
+def load_all_market_caps():
+    mc_path = Path(PROJECT_PATH) / 'data' / 'ak_fundamental' / 'daily_market_cap.csv'
+    if mc_path.exists():
+        mc_df = pd.read_csv(mc_path)
+        mc_df['date'] = pd.to_datetime(mc_df['date'])
+        return mc_df
     return None
 
 
@@ -293,6 +317,10 @@ def render_comprehensive_tab(df, selected_symbols, stock_names):
 
             # 4. 日K线展示
             st.markdown("##### 📈 股价走势 (日K线)")
+
+            # Load market caps globally once
+            all_mcs = load_all_market_caps()
+
             kline_cols = st.columns(min(len(selected_symbols), 2))
             for i, symbol in enumerate(selected_symbols):
                 col_idx = i % 2
@@ -303,18 +331,42 @@ def render_comprehensive_tab(df, selected_symbols, stock_names):
                         if 'date' in kline_df.columns:
                             # 确保按日期排序
                             kline_df = kline_df.sort_values('date')
+
+                            fig_k = make_subplots(specs=[[{"secondary_y": True}]])
+
+                            # Add market cap bar chart if available
+                            if all_mcs is not None:
+                                sym_mc = all_mcs[all_mcs['symbol'] == symbol]
+                                if not sym_mc.empty:
+                                    kline_df = pd.merge(kline_df, sym_mc[['date', 'market_cap']], on='date', how='left')
+
+                            if 'market_cap' in kline_df.columns:
+                                fig_k.add_trace(
+                                    go.Bar(x=kline_df['date'], y=kline_df['market_cap'], name="市值 (Market Cap)", opacity=0.3, marker_color='blue'),
+                                    secondary_y=True,
+                                )
+
                             if 'open' in kline_df.columns and 'close' in kline_df.columns and 'high' in kline_df.columns and 'low' in kline_df.columns:
-                                fig_k = go.Figure(data=[go.Candlestick(
+                                fig_k.add_trace(go.Candlestick(
                                     x=kline_df['date'],
                                     open=kline_df['open'],
                                     high=kline_df['high'],
                                     low=kline_df['low'],
-                                    close=kline_df['close']
-                                )])
+                                    close=kline_df['close'],
+                                    name="股价 (Price)"
+                                ), secondary_y=False)
                             else:
-                                fig_k = px.line(kline_df, x='date', y='close')
+                                fig_k.add_trace(go.Scatter(x=kline_df['date'], y=kline_df['close'], name="股价 (Price)", mode='lines'), secondary_y=False)
 
-                            fig_k.update_layout(height=300, margin=dict(l=0, r=0, t=20, b=0))
+                            fig_k.update_layout(
+                                height=300,
+                                margin=dict(l=0, r=0, t=20, b=0),
+                                showlegend=False
+                            )
+                            # Set y-axes titles
+                            fig_k.update_yaxes(title_text="<b>股价 (Price)</b>", secondary_y=False)
+                            fig_k.update_yaxes(title_text="<b>市值 (Market Cap)</b>", secondary_y=True, showgrid=False)
+
                             st.plotly_chart(fig_k, use_container_width=True)
                         else:
                             st.warning("数据缺少日期列，无法绘图")

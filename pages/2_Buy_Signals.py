@@ -313,6 +313,11 @@ def display_charts(filtered_df, raw_df):
 
     col1, col2 = st.columns(2)
 
+    # Determine uniform Y-axis order based on total counts of filtered_df
+    industry_counts = filtered_df[selected_industry_col].value_counts().reset_index()
+    industry_counts.columns = [selected_industry_col, 'count']
+    industry_order = industry_counts.sort_values('count', ascending=True)[selected_industry_col].tolist()
+
     # Chart 1: Stock Count per Industry (Bar Chart)
     with col1:
         # 确保overall_signal_count作为分类变量进行堆叠
@@ -335,8 +340,11 @@ def display_charts(filtered_df, raw_df):
                 'count': '股票数量',
                 'overall_signal_str': '综合信号'
             },
-            height=600,
-            category_orders={'overall_signal_str': sorted_signals_str},
+            height=800,
+            category_orders={
+                'overall_signal_str': sorted_signals_str,
+                selected_industry_col: industry_order
+            },
             barmode='group'  # https://plotly.github.io/plotly.py-docs/generated/plotly.express.histogram.html
 
         )
@@ -346,7 +354,6 @@ def display_charts(filtered_df, raw_df):
         fig_industry.update_layout(
             xaxis_title="股票数量",
             yaxis_title="行业分类",
-            # yaxis={'categoryorder': 'total ascending'}  # 按总量从小到大排序，方便查看
         )
 
         st.plotly_chart(fig_industry, use_container_width=True)
@@ -421,9 +428,12 @@ def display_charts(filtered_df, raw_df):
                     'percentage': '百分比 (%)',
                     'overall_signal_str': '综合信号'
                 },
-                category_orders={'overall_signal_str': category_orders},
+                category_orders={
+                    'overall_signal_str': category_orders,
+                    selected_industry_col: industry_order
+                },
                 color_discrete_map=color_map, # This maps specific keys
-                height=600,
+                height=800,
             barmode='group'  # https://plotly.github.io/plotly.py-docs/generated/plotly.express.histogram.html
 
             )
