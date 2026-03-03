@@ -316,7 +316,7 @@ def display_charts(filtered_df, raw_df):
     # Determine uniform Y-axis order based on total counts of filtered_df
     industry_counts = filtered_df[selected_industry_col].value_counts().reset_index()
     industry_counts.columns = [selected_industry_col, 'count']
-    industry_order = industry_counts.sort_values('count', ascending=True)[selected_industry_col].tolist()
+    industry_order = industry_counts.sort_values('count', ascending=False)[selected_industry_col].tolist()
 
     # Chart 1: Stock Count per Industry (Bar Chart)
     with col1:

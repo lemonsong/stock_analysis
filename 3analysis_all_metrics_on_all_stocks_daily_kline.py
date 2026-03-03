@@ -7,7 +7,7 @@ from datetime import datetime, date, timedelta
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 import logging
-import os
+import os, sys
 from utils.constants import BUY_SIGNAL_COLS, SELL_SIGNAL_COLS
 
 logging.basicConfig(
@@ -30,10 +30,28 @@ from utils.alltick_helper import (calculate_ndays, get_single_stock_price_hist,
 # path_to_stock_csv = f'{PROJECT_PATH}/data/dolt/daily'
 path_to_stock_csv = f'{PROJECT_PATH}/data/tushare_kline/daily'
 dwa_path = f'{PROJECT_PATH}/data/dwa'
-update_date = None
+if len(sys.argv) > 1:
+    logging.info(f"Fetching data via streamlit input")
+    fetch_historical = False
+    update_date = None
+else:
+    logging.info(f"Fetching data via manual input")
+    # when update_date is None, use all data by default,
+    # and refer update with the latest date in kline data,
+    # then save to both kline_analysis.csv and dwa/kline_analysis_history
+    fetch_historical = False
+    update_date = None
+    # fetch_historical = True
+    # update_date = pd.to_datetime('2026-02-27')
+# validation step
+if (fetch_historical and isinstance(update_date, pd.Timestamp)) or (fetch_historical == False and update_date is None):
+    logging.info(f"Correct inputs")
+else:
+    logging.warning(f"Error inputs")
+    exit()
 
 file_list = get_file_paths_pathlib(path_to_stock_csv)
-close_col = 'close' # TODO: close or adjclose
+close_col = 'close' # chose from: close or adjclose
 
 # 3. Define trading days (approximate)
 # 1 Year ≈ 252 days, 3 Years ≈ 756 days, 5 Years ≈ 1260 days
@@ -121,12 +139,18 @@ else:
         logging.info(f'Reading stock {stock_symbol}')
         stock_df = pd.read_csv(file_path)
         stock_df['date'] = pd.to_datetime(stock_df['date'])
+        if not fetch_historical:
+            # when not fetch_historical, use all data
+            stock_df = stock_df[["date", "open", "high", "low", close_col]]
+        else:
+            # when fetch_historical, filter by update_date
+            stock_df = stock_df.loc[stock_df.date <= update_date, ["date", "open", "high", "low", close_col]]
         stock_df = stock_df[["date", "open", "high", "low", close_col]]
         stock_df = stock_df.rename(columns={close_col: 'close'})
         stock_metrics = get_stock_metrics(stock_df, stock_symbol)
         all_stock_metrics = pd.concat([all_stock_metrics, stock_metrics], axis=0, ignore_index=True)
         # use the first stock_df to identify the update date for the kline analysis
-        if not update_date:
+        if not fetch_historical:
             update_date = stock_df['date'].max()
 if not all_stock_metrics.empty:
     col = all_stock_metrics.pop('symbol')
@@ -154,8 +178,11 @@ if not all_stock_metrics.empty:
         update_date_str = pd.to_datetime(update_date).strftime('%Y-%m-%d')
 
     all_stock_metrics['update_date'] = update_date_str
-    # Save current analysis
-    all_stock_metrics.to_csv(f'{dwa_path}/kline_analysis.csv', index=False, encoding='utf-8')
+
+    # --- Save Current ---
+    if not fetch_historical:
+        # Save to current analysis
+        all_stock_metrics.to_csv(f'{dwa_path}/kline_analysis.csv', index=False, encoding='utf-8')
 
     # --- Save History ---
     # Save each day's analysis as an individual file
