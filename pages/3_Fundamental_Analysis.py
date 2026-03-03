@@ -350,6 +350,25 @@ def render_comprehensive_tab(df, selected_symbols, stock_names):
                                     secondary_y=True,
                                 )
 
+                            # Extract gross_profit from baseline data or df
+                            # We can get it from df which is passed to render_comprehensive_tab
+                            if 'gross_profit' in df.columns and 'fiscal_year' in df.columns:
+                                # Get gross_profit for this symbol
+                                sym_gp = df[(df['symbol'] == symbol) & (df['gross_profit'].notna())][['fiscal_year', 'gross_profit']]
+                                if not sym_gp.empty:
+                                    # map kline_df date to year
+                                    kline_df['year'] = kline_df['date'].dt.year
+                                    # merge
+                                    kline_df = pd.merge(kline_df, sym_gp, left_on='year', right_on='fiscal_year', how='left')
+                                    # Since gross profit is yearly, it will be the same for the whole year. We can forward fill it or just plot the points.
+                                    # A step line or normal line works. Let's sort and ffill if needed, but pd.merge already broadcasts to all days in that year.
+                                    if 'gross_profit' in kline_df.columns:
+                                        fig_k.add_trace(
+                                            go.Scatter(x=kline_df['date'], y=kline_df['gross_profit'], name="毛利 (Gross Profit)", mode='lines', line=dict(color='orange')),
+                                            secondary_y=True,
+                                        )
+
+
                             if 'open' in kline_df.columns and 'close' in kline_df.columns and 'high' in kline_df.columns and 'low' in kline_df.columns:
                                 fig_k.add_trace(go.Candlestick(
                                     x=kline_df['date'],
@@ -369,7 +388,7 @@ def render_comprehensive_tab(df, selected_symbols, stock_names):
                             )
                             # Set y-axes titles
                             fig_k.update_yaxes(title_text="<b>股价 (Price)</b>", secondary_y=False)
-                            fig_k.update_yaxes(title_text="<b>市值 (Market Cap)</b>", secondary_y=True, showgrid=False)
+                            fig_k.update_yaxes(title_text="<b>市值 (Market Cap) & 毛利 (Gross Profit)</b>", secondary_y=True, showgrid=False)
 
                             st.plotly_chart(fig_k, use_container_width=True)
                         else:
