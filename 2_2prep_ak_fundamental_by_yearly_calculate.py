@@ -7,7 +7,7 @@ logging.basicConfig(
     level=logging.INFO, # DEBUG,INFO,WARNING, ERROR, CRITICAL
 )
 import pandas as pd
-
+import numpy as np
 from utils.common import get_file_paths_pathlib, extract_stock_symbol_from_path
 from utils.constants import PROJECT_PATH
 from functools import reduce
@@ -16,7 +16,8 @@ from functools import reduce
 
 PROGRAM_PATH = f'{PROJECT_PATH}/data/ak_fundamental'
 fundamental_df_cleaned = pd.read_csv(f'{PROGRAM_PATH}/fundamental_cleaned.csv')
-
+industry_df = pd.read_csv(f'{PROJECT_PATH}/data/basic/stock_name_industry.csv')[['symbol','industry_category_name']]
+fundamental_df_cleaned = fundamental_df_cleaned.merge(industry_df, 'left', 'symbol')
 # extract fiscal_year for following transformations
 # fundamental_df_cleaned['fiscal_year'] =
 fundamental_df_cleaned.insert(2, 'fiscal_year', fundamental_df_cleaned['REPORT_DATE_NAME'].apply(lambda l: int(l[:4])))
@@ -39,7 +40,9 @@ fundamental_df_cleaned = fundamental_df_cleaned.sort_values(
 )
 average_cols = ['TOTAL_ASSETS',  'TOTAL_CURRENT_ASSETS', 'INVENTORY', 'ACCOUNTS_RECE', 'PREPAYMENT','NOTE_RECE',
                 'TOTAL_CURRENT_LIAB', 'ACCOUNTS_PAYABLE','ADVANCE_RECEIVABLES','STAFF_SALARY_PAYABLE','TAX_PAYABLE','OTHER_PAYABLE',
-                 'PARENT_EQUITY_BALANCE', 'TOTAL_PARENT_EQUITY']
+                 'PARENT_EQUITY_BALANCE', 'TOTAL_PARENT_EQUITY',
+                # 银行新增
+                'LOAN_ADVANCE', 'ACCEPT_DEPOSIT']
 average_cols_prior = [i+'_ly' for i in average_cols]
 average_cols_avg = [i+'_avg' for i in average_cols]
 fundamental_df_cleaned[average_cols_prior] = (
@@ -56,31 +59,45 @@ fundamental_df_cleaned = fundamental_df_cleaned.fillna(0)
 # calculate metrics
 fundamental_df_cleaned = (fundamental_df_cleaned
                   .assign(
+    # decide whether is bank, as some metrics are different
+    is_bank = lambda x: x['industry_category_name'] == '金融业',
+
     ### Liquidity Ratios ###
     current_ratio=lambda x: x["TOTAL_CURRENT_ASSETS_avg"] / x["TOTAL_CURRENT_LIAB_avg"],
     quick_ratio=lambda x: (x["TOTAL_CURRENT_ASSETS_avg"] - x["INVENTORY_avg"]) / x["TOTAL_CURRENT_LIAB_avg"],
     cash_ratio=lambda x: x["MONETARYFUNDS"] / x["TOTAL_CURRENT_LIAB_avg"],
 
     ### Leverage Ratios ###
-    total_debt=lambda x: x["SHORT_LOAN"] + x["LONG_LOAN"] + x["BOND_PAYABLE"] + x["NOTE_PAYABLE"] + x["DEFER_INCOME_1YEAR"],
+    # 202603: removed DEFER_INCOME_1YEAR from total_debt
+    total_debt=lambda x: x["SHORT_LOAN"] + x["LONG_LOAN"] + x["BOND_PAYABLE"] + x["NOTE_PAYABLE"],
     net_debt=lambda x: x["total_debt"] - x["MONETARYFUNDS"],
     # total_debt=lambda x: x["SHORT_LOAN"] + x["LONG_LOAN"] + x["NOTE_PAYABLE"],
     debt_to_equity=lambda x: x["total_debt"] / x["TOTAL_EQUITY"],
-    debt_to_asset=lambda x: x["total_debt"] / x["TOTAL_ASSETS"],
+    debt_to_asset=lambda x: np.where(
+        x['is_bank'],
+        (x['TOTAL_PARENT_EQUITY'] - x.get('OTHER_EQUITY_TOOL', 0)) / x['TOTAL_ASSETS'], # we use Core Tier-1 Capital Adequacy Ratio for bank
+        # x['TOTAL_LIABILITIES'] / x['TOTAL_ASSETS'], #<- this is Debt to Asset Ratio for bank
+        x["total_debt"] / x["TOTAL_ASSETS"]
+    ),
     interest_coverage=lambda x: x["OPERATE_INCOME"] / x["FE_INTEREST_EXPENSE"],
 
     ### Efficiency Ratios ###
     # we have OPERATE_INCOME	TOTAL_OPERATE_INCOME	OPERATE_COST	TOTAL_OPERATE_COST	OPERATE_PROFIT	TOTAL_PROFIT	NETPROFIT
     # In the akshare dataset, OPERATE_INCOME = TOTAL_OPERATE_INCOME, but OPERATE_COST < TOTAL_OPERATE_COST
     # I use OPERATE_INCOME as revenue; OPERATE_COST as cost_of_revenue; TOTAL_PROFIT as gross_profit; NETPROFIT as net income
-    revenue=lambda x: x['TOTAL_OPERATE_INCOME'],
-    gross_profit = lambda x: x['TOTAL_OPERATE_INCOME'] - x['OPERATE_COST'],
+    revenue=lambda x: np.where(x['is_bank'], x['OPERATE_INCOME'], x['TOTAL_OPERATE_INCOME']),
+    gross_profit = lambda x: np.where(x['is_bank'], x['OPERATE_INCOME'], x['TOTAL_OPERATE_INCOME'] - x['OPERATE_COST']),
     net_profit = lambda x: x['NETPROFIT'],
     # use average for TOTAL_ASSETS
     asset_turnover=lambda x: x["revenue"] / x["TOTAL_ASSETS_avg"],
     # use OPERATE_COST rather than TOTAL_OPERATE_COST
-    # use average for  inventory
-    inventory_turnover=lambda x: x["OPERATE_COST"] / x["INVENTORY_avg"],
+    # use average for inventory
+    # use Loan-to-Deposit Ratio for bank
+    inventory_turnover=lambda x: np.where(
+        x['is_bank'],
+        x['LOAN_ADVANCE_avg'] / x['ACCEPT_DEPOSIT_avg'],
+        x['OPERATE_COST'] / x['INVENTORY_avg']
+    ),
     # use average for ACCOUNTS_RECE
     receivables_turnover=lambda x: x["revenue"] / x["ACCOUNTS_RECE_avg"],
 
@@ -101,7 +118,20 @@ fundamental_df_cleaned = (fundamental_df_cleaned
     ebit = lambda x: x['OPERATE_PROFIT'] + x['FINANCE_EXPENSE'],
     ebitda = lambda x: x["ebit"] + x['depreciation_and_amortization'],
     net_debt_over_ebitda = lambda x: x['net_debt'] / x['ebitda'],
-    netcash_operate_over_net_profit = lambda x: x['NETCASH_OPERATE'] / x['net_profit'],
+    # netcash_operate_over_net_profit
+    # for bank
+    # 1. 计算 PPOP 数值
+    # 银行使用 OPERATE_PROFIT + CREDIT_IMPAIRMENT_LOSS
+    ppop=lambda x: x['OPERATE_PROFIT'] + x['CREDIT_IMPAIRMENT_LOSS'],
+    # 2. 获取去年的 PPOP (假设你已经按 symbol 和 fiscal_year 排序)
+    ppop_ly=lambda x: x.groupby('symbol')['ppop'].shift(1),
+    # 3. 计算 PPOP 增长率
+    ppop_growth=lambda x: (x['ppop'] - x['ppop_ly']) / x['ppop_ly'],
+    netcash_operate_over_net_profit = lambda x: np.where(
+        x['is_bank'],
+        x['ppop_growth'],
+        x['NETCASH_OPERATE'] / x['net_profit']
+    ),
 
     ## Free Cash Flow Conversion Rate = (Free Cash Flow / EBITDA) ##
     # Free Cash Flow = Cash Flow from Operations minus Capital Expenditures.
@@ -117,8 +147,14 @@ fundamental_df_cleaned = (fundamental_df_cleaned
 
     # ev_over_ebitda
     market_cap = lambda x: x['close'] * x['SHARE_CAPITAL'],
+    # 增加 P/B (市净率)，银行分析的核心
+    pb_ratio = lambda x: x['market_cap'] / x['TOTAL_PARENT_EQUITY'],
     ev = lambda x: x['market_cap'] + x['net_debt'],
-    ev_over_ebitda=lambda x: x['ev'] / x['ebitda'],
+    ev_over_ebitda=lambda x: np.where(
+        x['is_bank'],
+        x['pb_ratio'],
+        x['ev'] / x['ebitda']
+    ),
 
     # # label=lambda x: np.where(x["symbol"].isin(selected_symbols), x["symbol"], np.nan)
 

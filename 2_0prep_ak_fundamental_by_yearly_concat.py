@@ -178,7 +178,7 @@ def main():
 
     # Columns to definitely keep
     keep_cols = ['BOND_PAYABLE', 'DEFER_INCOME_1YEAR','FE_INTEREST_EXPENSE', "FA_IR_DEPR", "OILGAS_BIOLOGY_DEPR", "IR_DEPR"
-                            , "IA_AMORTIZE", "LPE_AMORTIZE", "DEFER_INCOME_AMORTIZE"]
+                            , "IA_AMORTIZE", "LPE_AMORTIZE", "DEFER_INCOME_AMORTIZE", 'LOAN_ADVANCE', 'ACCEPT_DEPOSIT','CREDIT_IMPAIRMENT_LOSS']
 
     check_cols = [i for i in fundamental_df.columns if i not in keep_cols]
 

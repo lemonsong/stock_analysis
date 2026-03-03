@@ -1,5 +1,6 @@
 """
 页面3: A股基本面分析和比较
+DEPRECATED
 """
 import streamlit as st
 import pandas as pd
