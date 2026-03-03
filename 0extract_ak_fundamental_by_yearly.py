@@ -66,7 +66,7 @@ else:
     logging.info(f"Fetching data via manual input")
 
     decision_df = pd.read_csv(f'{PROJECT_PATH}/data/dwa/kline_analysis.csv')
-    critical_df = decision_df.loc[decision_df.overall_signal_count == 1].copy()
+    critical_df = decision_df.loc[decision_df.overall_signal_count == 0].copy()
     stock_li = critical_df.symbol.tolist()
 
     # OR

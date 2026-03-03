@@ -23,7 +23,6 @@
 /data/ak_fundamental/fundamental_rank_prediction.csv
 /data/dolt/
 /data/tushare_kline/kline_20260224.csv
-/data/dwa/kline_analysis_history.csv
 /data/dwa/kline_analysis_history/
 /data/ak_fundamental/daily_market_cap.csv
 /requirements.txt
