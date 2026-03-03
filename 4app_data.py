@@ -43,7 +43,7 @@ if os.path.exists(rank_path):
     latest_rank_df = fundamental_df.sort_values('fiscal_year').groupby('symbol').tail(1)
     
     # Rename columns to indicate they are fundamental info
-    latest_rank_df = latest_rank_df[['symbol', 'fundamental_rank']+FUNDAMENTAL_KEY_COLS]
+    latest_rank_df = latest_rank_df[['symbol', 'fundamental_rank','market_cap']+FUNDAMENTAL_KEY_COLS]
     latest_rank_df = latest_rank_df.rename(columns={'fiscal_year': 'fundamental_fiscal_year'})
     
     app_decision_df = app_decision_df.merge(latest_rank_df, on='symbol', how='left')

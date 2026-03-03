@@ -23,15 +23,15 @@ all_fund_df = pd.read_csv(f'{PROGRAM_PATH}/0_all_fund.csv',
 ## TODO: change when needed ##
 fetch_fund_df = all_fund_df.loc[
                         # #---债券---
-                        # (all_fund_df['基金类型'].str.contains('债券'))
-                        # & (all_fund_df['基金简称'].str.contains("易方达|南方|招商"))
-                        # & (all_fund_df['基金简称'].str.contains("A"))
-                        # # extra filter to complete one category comparison
-                        # & (all_fund_df['基金类型']!='债券型-中短债')
-                        #-----货币----
-(all_fund_df['基金类型'].str.contains('货币'))
-                        & (all_fund_df['基金简称'].str.contains("易方达|南方|招商"))
+                        (all_fund_df['基金类型'].str.contains('债券'))
+                        & (all_fund_df['基金简称'].str.contains("易方达|南方|招商|博时|华夏|光大|华商|景顺"))
                         & (all_fund_df['基金简称'].str.contains("A"))
+                        # # extra filter to complete one category comparison
+                        & (all_fund_df['基金类型']!='债券型-中短债')
+                        #-----货币----
+# (all_fund_df['基金类型'].str.contains('货币'))
+#                         & (all_fund_df['基金简称'].str.contains("华夏|天弘|博时|工银|广发|富国"))
+#                         & (all_fund_df['基金简称'].str.contains("A"))
 ]
 ############
 fetch_fund_li = fetch_fund_df['基金代码'].unique().tolist()

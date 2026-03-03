@@ -103,6 +103,8 @@ def load_all_market_caps():
     return None
 
 
+
+
 def render_indicator_help():
     """渲染财务指标帮助信息"""
     with st.expander("📘 财务指标深度解读手册 (点击展开/折叠)", expanded=False):
@@ -314,6 +316,8 @@ def render_comprehensive_tab(df, selected_symbols, stock_names):
                 st.dataframe(display_df.style.background_gradient(cmap=SEQUENTIAL_COLOR), use_container_width=True)
             except:
                 st.dataframe(display_df, use_container_width=True)
+
+            st.divider()
 
             # 4. 日K线展示
             st.markdown("##### 📈 股价走势 (日K线)")
