@@ -1,5 +1,5 @@
 """
-页面3: A股基本面分析和比较
+页面3.2: 财务基本面分析
 """
 import streamlit as st
 import pandas as pd
@@ -11,12 +11,10 @@ from utils.streamlit_helper import setup_page_config, render_filter_sidebar
 from utils.constants import FUNDAMENTAL_KEY_COLS, SEQUENTIAL_COLOR, PROJECT_PATH
 import io, os
 import sys
-# 添加根目录到sys.path以便导入utils
-# sys.path.append(str(Path(__file__).parent.parent))
 
 setup_page_config()
 
-st.title("📊 A股基本面分析和比较")
+st.title("📊 财务基本面分析")
 
 # 数据文件路径
 fundamental_file = Path(PROJECT_PATH) / 'data/ak_fundamental' / 'fundamental_calculated_metrics.csv'
@@ -40,7 +38,8 @@ def load_fundamental_data():
             try:
                 df_ind = pd.read_csv(industry_file)
                 df['symbol'] = df['symbol'].astype(str)
-                df = df.drop('SECURITY_NAME_ABBR', axis=1)
+                if 'SECURITY_NAME_ABBR' in df.columns:
+                    df = df.drop('SECURITY_NAME_ABBR', axis=1)
                 df_ind['symbol'] = df_ind['symbol'].astype(str)
                 df = pd.merge(df, df_ind[
                     ['symbol', 'company', 'industry_category_name', 'industry_sub_category_name', 'industry_type_name']],
@@ -63,46 +62,6 @@ def filter_stock_data(_df, symbols, year_range):
         (_df['fiscal_year'] >= year_range[0]) &
         (_df['fiscal_year'] <= year_range[1])
         ]
-
-
-def load_kline_data(symbol):
-    """加载单只股票的日K线数据"""
-    file_path = Path(PROJECT_PATH) / 'data' / 'tushare_kline' / 'daily' / f'{symbol}.csv'
-    if file_path.exists():
-        try:
-            df = pd.read_csv(file_path)
-            # 处理日期列名
-            df['date'] = pd.to_datetime(df['date'])
-
-            # Load daily market cap data and merge
-            mc_path = Path(PROJECT_PATH) / 'data' / 'ak_fundamental' / 'daily_market_cap.csv'
-            if mc_path.exists():
-                try:
-                    # We might want to optimize this by not reading the huge CSV every time
-                    # But for now, we read it and filter by symbol
-                    # Alternatively, read once globally and cache
-                    mc_df = pd.read_csv(mc_path)
-                    mc_df['date'] = pd.to_datetime(mc_df['date'])
-                    symbol_mc = mc_df[mc_df['symbol'] == symbol][['date', 'market_cap']]
-                    if not symbol_mc.empty:
-                        df = pd.merge(df, symbol_mc, on='date', how='left')
-                except Exception as e:
-                    pass
-            return df
-        except Exception:
-            return None
-    return None
-
-@st.cache_data
-def load_all_market_caps():
-    mc_path = Path(PROJECT_PATH) / 'data' / 'ak_fundamental' / 'daily_market_cap.csv'
-    if mc_path.exists():
-        mc_df = pd.read_csv(mc_path)
-        mc_df['date'] = pd.to_datetime(mc_df['date'])
-        return mc_df
-    return None
-
-
 
 
 def render_indicator_help():
@@ -318,84 +277,6 @@ def render_comprehensive_tab(df, selected_symbols, stock_names):
                 st.dataframe(display_df, use_container_width=True)
 
             st.divider()
-
-            # 4. 日K线展示
-            st.markdown("##### 📈 股价走势 (日K线)")
-
-            # Load market caps globally once
-            all_mcs = load_all_market_caps()
-
-            kline_cols = st.columns(min(len(selected_symbols), 2))
-            for i, symbol in enumerate(selected_symbols):
-                col_idx = i % 2
-                with kline_cols[col_idx]:
-                    kline_df = load_kline_data(symbol)
-                    if kline_df is not None and not kline_df.empty:
-                        st.caption(f"{stock_names.get(symbol, symbol)} - 日K线")
-                        if 'date' in kline_df.columns:
-                            # 确保按日期排序
-                            kline_df = kline_df.sort_values('date')
-
-                            fig_k = make_subplots(specs=[[{"secondary_y": True}]])
-
-                            # Add market cap bar chart if available
-                            if all_mcs is not None:
-                                sym_mc = all_mcs[all_mcs['symbol'] == symbol]
-                                if not sym_mc.empty:
-                                    kline_df = pd.merge(kline_df, sym_mc[['date', 'market_cap']], on='date', how='left')
-
-                            if 'market_cap' in kline_df.columns:
-                                fig_k.add_trace(
-                                    go.Bar(x=kline_df['date'], y=kline_df['market_cap'], name="市值 (Market Cap)", opacity=0.6, marker_color='blue'),
-                                    secondary_y=True,
-                                )
-
-                            # Extract revenue from baseline data or df
-                            # We can get it from df which is passed to render_comprehensive_tab
-                            if 'revenue' in df.columns and 'fiscal_year' in df.columns:
-                                # Get revenue for this symbol
-                                sym_gp = df[(df['symbol'] == symbol) & (df['revenue'].notna())][['fiscal_year', 'revenue']]
-                                if not sym_gp.empty:
-                                    # map kline_df date to year
-                                    kline_df['year'] = kline_df['date'].dt.year
-                                    # merge
-                                    kline_df = pd.merge(kline_df, sym_gp, left_on='year', right_on='fiscal_year', how='left')
-                                    # Since gross profit is yearly, it will be the same for the whole year. We can forward fill it or just plot the points.
-                                    # A step line or normal line works. Let's sort and ffill if needed, but pd.merge already broadcasts to all days in that year.
-                                    if 'revenue' in kline_df.columns:
-                                        fig_k.add_trace(
-                                            go.Scatter(x=kline_df['date'], y=kline_df['revenue'], name="总营收(Revenue)", mode='lines', line=dict(color='orange')),
-                                            secondary_y=True,
-                                        )
-
-
-                            if 'open' in kline_df.columns and 'close' in kline_df.columns and 'high' in kline_df.columns and 'low' in kline_df.columns:
-                                fig_k.add_trace(go.Candlestick(
-                                    x=kline_df['date'],
-                                    open=kline_df['open'],
-                                    high=kline_df['high'],
-                                    low=kline_df['low'],
-                                    close=kline_df['close'],
-                                    name="股价 (Price)"
-                                ), secondary_y=False)
-                            else:
-                                fig_k.add_trace(go.Scatter(x=kline_df['date'], y=kline_df['close'], name="股价 (Price)", mode='lines'), secondary_y=False)
-
-                            fig_k.update_layout(
-                                height=300,
-                                margin=dict(l=0, r=0, t=20, b=0),
-                                showlegend=False
-                            )
-                            # Set y-axes titles
-                            fig_k.update_yaxes(title_text="<b>股价 (Price)</b>", secondary_y=False)
-                            fig_k.update_yaxes(title_text="<b>市值 (Market Cap) & 总营收(Revenue)</b>", secondary_y=True, showgrid=False)
-
-                            st.plotly_chart(fig_k, use_container_width=True)
-                        else:
-                            st.warning("数据缺少日期列，无法绘图")
-                    else:
-                        st.caption(f"{stock_names.get(symbol, symbol)} - 暂无K线数据")
-
 
 def render_trends_tab(df, selected_symbols, selected_metrics, stock_names):
     """渲染趋势与指标 Tab"""
