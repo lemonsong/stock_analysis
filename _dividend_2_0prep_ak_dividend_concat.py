@@ -22,22 +22,27 @@ logging.basicConfig(
 PROGRAM_PATH = f'{PROJECT_PATH}/data/ak_dividend'
 
 dividends_file_list = get_file_paths_pathlib(f'{PROGRAM_PATH}/single_file')
-all_dividends_df = pd.DataFrame()
+dividends_df_list = []
 
 for dividends_file_path in dividends_file_list:
     single_dividends_df = pd.read_csv(dividends_file_path)
     logging.info(f'Read {dividends_file_path}; file has {len(single_dividends_df)=} rows.')
-    all_dividends_df = pd.concat([all_dividends_df, single_dividends_df], axis=0)
+    dividends_df_list.append(single_dividends_df)
+
+if dividends_df_list:
+    all_dividends_df = pd.concat(dividends_df_list, axis=0, ignore_index=True)
+else:
+    all_dividends_df = pd.DataFrame()
 
 # format dataframe
-all_dividends_df = all_dividends_df[['代码', '名称', '送转股份-送转总比例', '送转股份-送转比例', '送转股份-转股比例', '现金分红-现金分红比例',
-      '现金分红-股息率', '除权除息日']]
-all_dividends_df = format_df_column_name(all_dividends_df)
-all_dividends_df['symbol'] = all_dividends_df['symbol'].map(lambda x: format_stock_symbol(x,'number','MARKETnumber'))
-logging.info(f'Before drop_duplicates, file has {len(all_dividends_df)=} rows.')
-all_dividends_df = all_dividends_df.drop_duplicates()
-logging.info(f'After drop_duplicates, file has {len(all_dividends_df)=} rows.')
+if not all_dividends_df.empty:
+    all_dividends_df = all_dividends_df[['代码', '名称', '送转股份-送转总比例', '送转股份-送转比例', '送转股份-转股比例', '现金分红-现金分红比例',
+          '现金分红-股息率', '除权除息日']]
+    all_dividends_df = format_df_column_name(all_dividends_df)
+    all_dividends_df['symbol'] = all_dividends_df['symbol'].map(lambda x: format_stock_symbol(x,'number','MARKETnumber'))
+    logging.info(f'Before drop_duplicates, file has {len(all_dividends_df)=} rows.')
+    all_dividends_df = all_dividends_df.drop_duplicates()
+    logging.info(f'After drop_duplicates, file has {len(all_dividends_df)=} rows.')
 
 # save to csv
 all_dividends_df.to_csv(f'{PROGRAM_PATH}/stock_dividend.csv', index=False, encoding='utf-8')
-
