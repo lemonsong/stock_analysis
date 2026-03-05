@@ -1,5 +1,5 @@
 '''fetch and format net inflow data'''
-import os, random, time
+import os
 import logging
 from utils.common import format_df_column_name,format_stock_symbol
 
