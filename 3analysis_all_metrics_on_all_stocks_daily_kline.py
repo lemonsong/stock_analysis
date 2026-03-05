@@ -94,15 +94,18 @@ def get_stock_metrics(stock_df, stock_symbol):
     stock = sdf.retype(stock_df[["date", "open", "high", "low", "close"]])
     stock_metrics = stock.get(
         ["close", 'rsi_12', "boll", "boll_ub", "boll_lb", "close_xu_close_20_sma", 'close_10_sma_xd_close_50_sma',
-         'macds', 'macd', 'trix', 'wr_6'])
+         'macds', 'macd', 'trix', 'wr_14'])
 
     # metrics need to use the whole historical close price to calculate
     # tech signals are stored in stock_metrics
-    stock_metrics['rolling_mean_short_term'] = stock_metrics['close'].ewm(span=5, adjust=True, ignore_na=True).mean()
-    stock_metrics['rolling_mean_long_term'] = stock_metrics['close'].ewm(span=30, adjust=True, ignore_na=True).mean()
+    stock_metrics['rolling_mean_90d'] = stock_metrics['close'].ewm(span=90, adjust=True, ignore_na=True).mean()
+    # stock_metrics['rolling_mean_20d'] = stock_metrics['close'].ewm(span=20, adjust=True, ignore_na=True).mean()
+
+    stock_metrics['rolling_mean_short_term'] = stock_metrics['rolling_mean_90d'].ewm(span=5, adjust=True, ignore_na=True).mean()
+    stock_metrics['rolling_mean_long_term'] = stock_metrics['rolling_mean_90d'].ewm(span=30, adjust=True, ignore_na=True).mean()
     # growth rate is stored in stock_growth_metrics
-    stock_growth_metrics = calculate_growth_rate(stock_metrics[['close', 'rolling_mean_long_term']],
-                                                 'rolling_mean_long_term')
+    stock_growth_metrics = calculate_growth_rate(stock_metrics[['close', 'rolling_mean_90d']],
+                                                 'rolling_mean_90d')
 
     # metrics need to use the last 2 rows of historical close price to calculate
     # tech signal
@@ -161,8 +164,8 @@ if not all_stock_metrics.empty:
     all_stock_metrics['rsi_more_than_90_sell'] = all_stock_metrics.rsi_12>90
     all_stock_metrics['close_less_than_boll_lb_buy'] = all_stock_metrics.close < all_stock_metrics.boll_lb
     all_stock_metrics['close_more_than_boll_ub_sell'] = all_stock_metrics.close > all_stock_metrics.boll_ub
-    all_stock_metrics['wr_less_than_10_sell'] = all_stock_metrics.wr_6<10
-    all_stock_metrics['wr_more_than_90_buy'] = all_stock_metrics.wr_6>90
+    all_stock_metrics['wr_less_than_10_sell'] = all_stock_metrics.wr_14<10
+    all_stock_metrics['wr_more_than_90_buy'] = all_stock_metrics.wr_14>90
     all_stock_metrics['ewm_short_term_more_than_long_term_buy'] = all_stock_metrics.rolling_mean_short_term>all_stock_metrics.rolling_mean_long_term
     all_stock_metrics['ewm_short_term_less_than_long_term_sell'] = all_stock_metrics.rolling_mean_short_term<=all_stock_metrics.rolling_mean_long_term
     # overall signal count

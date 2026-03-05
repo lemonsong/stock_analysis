@@ -136,8 +136,14 @@ def render_market_cap_charts(df, selected_symbols, stock_names):
                         if 'revenue' in kline_df.columns:
                             fig2.add_trace(
                                 go.Scatter(x=kline_df['date'], y=kline_df['revenue'], name="总营收(Revenue)", mode='lines', line=dict(color='orange')),
-                                secondary_y=True,
+                                secondary_y=False,
                             )
+
+                        fig2.add_trace(
+                            go.Scatter(x=kline_df['date'], y=kline_df['revenue']/kline_df['market_cap'], name="Revenue/Market Cap", mode='lines',
+                                       line=dict(color='red')),
+                            secondary_y=True,
+                        )
 
                         fig2.update_layout(
                             height=300,
@@ -145,8 +151,13 @@ def render_market_cap_charts(df, selected_symbols, stock_names):
                             showlegend=True,
                             legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
                         )
-                        fig2.update_yaxes(title_text="<b>市值 (Market Cap)</b>", secondary_y=False)
-                        fig2.update_yaxes(title_text="<b>总营收(Revenue)</b>", secondary_y=True, showgrid=False)
+                        fig2.update_yaxes(title_text="<b>市值 (Market Cap) & 总营收(Revenue)</b>", secondary_y=False,
+                                          # autorange=False, range=[0,all_mcs.loc[all_mcs.symbol.isin(selected_symbols),['market_cap']].max()]
+                                          )
+                        fig2.update_yaxes(title_text="<b>Revenue/Market Cap</b>", secondary_y=True, showgrid=False,
+                                          # autorange='min', autorangeoptions_minallowed=0
+                                          autorange=False, range=[0,2]
+                                          )
 
                         st.plotly_chart(fig2, use_container_width=True)
 
