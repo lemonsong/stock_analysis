@@ -28,3 +28,8 @@
 /data/ak_fundamental/daily_market_cap.csv
 /requirements.txt
 /environment.yml
+
+# Python cache files
+__pycache__/
+*.py[cod]
+*$py.class
