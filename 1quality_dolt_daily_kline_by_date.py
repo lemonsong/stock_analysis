@@ -2,6 +2,7 @@
 During building Zipline bundle step, use this script to
 examine who doesn't have data_all_list in which trading dates
 '''
+import argparse
 import numpy as np
 import pandas as pd
 from datetime import datetime, date, timedelta
@@ -26,15 +27,18 @@ import pytz
 # path_to_stock_csv = f'{PROJECT_PATH}/data/dolt/daily'
 # check TUSHARE data_all_list
 path_to_stock_csv = f'{PROJECT_PATH}/data/tushare_kline/daily'
-end_date_str = '2026-02-24' # TODO:
 
+parser = argparse.ArgumentParser()
+parser.add_argument('--start', type=str, default="2020-12-01")
+parser.add_argument('--end', type=str, default=get_today_date_string())
+args = parser.parse_args()
+start_date = args.start
+end_date = args.end
 
-print('start')
+print(f'Start quality check from {start_date} to {end_date}')
 xshg = xcals.get_calendar("XSHG")
 
-xshg_dates = xshg.sessions_in_range("2020-12-01", end_date_str
-                                    # datetime.now().strftime('%Y-%m-%d')
-                                    )
+xshg_dates = xshg.sessions_in_range(start_date, end_date)
 xshg_dates_li = [i.strftime('%Y-%m-%d') for i in xshg_dates.tolist()]
 file_list = get_file_paths_pathlib(path_to_stock_csv)
 
