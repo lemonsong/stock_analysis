@@ -8,7 +8,7 @@ import plotly.express as px
 from plotly.subplots import make_subplots
 from pathlib import Path
 from utils.streamlit_helper import clear_cache, clean_expired_cache, setup_page_config, render_filter_sidebar
-from utils.constants import FUNDAMENTAL_KEY_COLS, SEQUENTIAL_COLOR, PROJECT_PATH
+from utils.constants import FUNDAMENTAL_KEY_COLS, SEQUENTIAL_COLOR, DISCRETE_COLOR, PROJECT_PATH
 import io, os
 import sys
 
@@ -337,6 +337,7 @@ def render_trends_tab(df, selected_symbols, selected_metrics, stock_names):
                     x='fiscal_year',
                     y=metric,
                     color='display_name',
+                    color_discrete_sequence=DISCRETE_COLOR,
                     markers=True,
                     labels={'fiscal_year': '年份', metric: metric, 'display_name': '股票'},
                     title=f"{metric} 趋势"
