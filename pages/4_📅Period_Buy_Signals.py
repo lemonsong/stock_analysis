@@ -137,7 +137,7 @@ def main():
     # --- Process Data ---
     result_df = filter_data(df_history, min_signal, industry_selected)
 
-    # Merge app_decision.csv data to get all required columns similar to pages/2_Buy_Signals.py
+    # Merge app_decision.csv data to get all required columns similar to pages/2_💡Buy_Signals.py
     app_decision_file = Path(PROJECT_PATH) / 'data/dwa/app_decision.csv'
     if app_decision_file.exists():
         app_df = pd.read_csv(app_decision_file)

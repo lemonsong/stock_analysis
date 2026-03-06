@@ -39,12 +39,12 @@ st.markdown("Welcome! This platform provides comprehensive tools for A-share ana
 st.markdown("""
 ### 📋 Feature Overview
 
-1.  **📊 Buy Signals** (`pages/2_Buy_Signals.py`)
+1.  **📊 Buy Signals** (`pages/2_💡Buy_Signals.py`)
     *   Monitor daily buy/sell signals based on technical indicators (RSI, MACD, etc.).
     *   Filter by Industry, Fundamental Rank, and Price.
     *   View distribution of signals across industries.
 
-2.  **📅 Period Buy Signals** (`pages/4_Period_Buy_Signals.py`) **[NEW]**
+2.  **📅 Period Buy Signals** (`pages/4_📅Period_Buy_Signals.py`) **[NEW]**
     *   Analyze buy signals over a specific date range.
     *   Identify stocks with consistent positive signals.
 
@@ -52,7 +52,7 @@ st.markdown("""
     *   Deep dive into financial reports and key metrics (ROE, Net Cash, Debt/Asset).
     *   View historical trends and rankings.
 
-4.  **💼 My Holdings** (`pages/6_My_Holdings.py`)
+4.  **💼 My Holdings** (`pages/6_👋My_Holdings.py`)
     *   Track the performance of your portfolio against calculated signals.
 
 5.  **💦 Data Pipeline** (This Page)
