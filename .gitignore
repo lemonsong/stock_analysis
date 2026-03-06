@@ -27,3 +27,9 @@
 /data/ak_fundamental/daily_market_cap.csv
 /requirements.txt
 /environment.yml
+/data/dwa/forecast/
+/data/ETF/US/
+/data/macro/bond_yield/
+/data/macro/US/
+/data/macro/m2.csv
+/lab/us_industry_macro_forecast.ipynb

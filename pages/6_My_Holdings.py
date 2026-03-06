@@ -181,3 +181,7 @@ st.dataframe(
     height=600,
     hide_index=True
 )
+symbol_string = ",".join(display_df["symbol"].astype(str).tolist())
+# 3. Display in a code block with the copy button
+st.write("Click the icon on the right to copy filtered symbols:")
+st.code(symbol_string, language=None)

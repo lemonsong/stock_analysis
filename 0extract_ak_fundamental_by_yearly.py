@@ -65,9 +65,9 @@ if len(sys.argv) > 1:
 else:
     logging.info(f"Fetching data via manual input")
 
-    decision_df = pd.read_csv(f'{PROJECT_PATH}/data/dwa/kline_analysis.csv')
-    critical_df = decision_df.loc[decision_df.overall_signal_count == 0].copy()
-    stock_li = critical_df.symbol.tolist()
+    # decision_df = pd.read_csv(f'{PROJECT_PATH}/data/dwa/kline_analysis.csv')
+    # critical_df = decision_df.loc[decision_df.overall_signal_count == 0].copy()
+    # stock_li = critical_df.symbol.tolist()
 
     # OR
 
@@ -82,7 +82,7 @@ else:
     # stock_li = ['SZ002105','SH605001']
     # stock_li = ['SZ002555','SZ002315','SH603444','SZ300533','SH601360']
     # stock_li = ['SH600901','SH601077','SH601318','SZ002142','SH601555']
-    # stock_li = ['','SH688433','SH688456','SZ300337','SZ300227']
+    stock_li = [  'SH603313', 'SZ300136', 'SZ300502', 'SZ300628', 'SZ300911']
 logging.info(f"{stock_li=}")
 
 
