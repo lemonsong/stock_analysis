@@ -58,12 +58,12 @@ else:
 # write csv of each stock to the folder
 n = 0
 for s in all_symbol_df.symbol.tolist():
-    stock_kline_q = f"""
+    stock_kline_q = """
         SELECT tradedate AS date, high, low, open, close, adjclose, volume, amount
         FROM final_a_stock_eod_price 
         WHERE tradedate>='2020-12-01'
-            AND symbol='{s}'"""
-    stock_kline_df = pd.read_sql(stock_kline_q, mydb)
+            AND symbol=%s"""
+    stock_kline_df = pd.read_sql(stock_kline_q, mydb, params=(s,))
     stock_kline_df = clean_daily_by_dates(stock_kline_df, s, calendar_name = 'XSHG',
                            calender_start = "2020-12-01",
                            calendar_end= '2026-02-24')

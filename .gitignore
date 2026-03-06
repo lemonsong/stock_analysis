@@ -33,3 +33,8 @@
 /data/macro/US/
 /data/macro/m2.csv
 /lab/us_industry_macro_forecast.ipynb
+
+# Python cache files
+__pycache__/
+*.py[cod]
+*$py.class
