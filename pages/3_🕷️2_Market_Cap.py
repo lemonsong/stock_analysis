@@ -98,6 +98,7 @@ def render_market_cap_charts(df, selected_symbols, stock_names):
                             if not sym_gp.empty:
                                 kline_df['year'] = kline_df['date'].dt.year
                                 kline_df = pd.merge(kline_df, sym_gp, left_on='year', right_on='fiscal_year', how='left')
+                                kline_df['revenue'] = kline_df['revenue'].ffill()
 
                         # --- Chart 1: 股价走势 (日K线) ---
                         st.markdown("##### 股价走势 (日K线)")
@@ -140,7 +141,7 @@ def render_market_cap_charts(df, selected_symbols, stock_names):
                             )
 
                         fig2.add_trace(
-                            go.Scatter(x=kline_df['date'], y=kline_df['revenue']/kline_df['market_cap'], name="Revenue/Market Cap", mode='lines',
+                            go.Scatter(x=kline_df['date'], y=kline_df['market_cap']/kline_df['revenue'], name="Market Cap/Revenue", mode='lines',
                                        line=dict(color='red')),
                             secondary_y=True,
                         )
@@ -154,7 +155,7 @@ def render_market_cap_charts(df, selected_symbols, stock_names):
                         fig2.update_yaxes(title_text="<b>市值 (Market Cap) & 总营收(Revenue)</b>", secondary_y=False,
                                           # autorange=False, range=[0,all_mcs.loc[all_mcs.symbol.isin(selected_symbols),['market_cap']].max()]
                                           )
-                        fig2.update_yaxes(title_text="<b>Revenue/Market Cap</b>", secondary_y=True, showgrid=False,
+                        fig2.update_yaxes(title_text="<b>Market Cap/Revenue</b>", secondary_y=True, showgrid=False,
                                           # autorange='min', autorangeoptions_minallowed=0
                                           autorange=False, range=[0,2]
                                           )
