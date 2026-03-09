@@ -60,7 +60,7 @@ n = 0
 for s in all_symbol_df.symbol.tolist():
     stock_kline_q = """
         SELECT tradedate AS date, high, low, open, close, adjclose, volume, amount
-        FROM final_a_stock_eod_price 
+        FROM final_a_stock_eod_price
         WHERE tradedate>='2020-12-01'
             AND symbol=%s"""
     stock_kline_df = pd.read_sql(stock_kline_q, mydb, params=(s,))

@@ -3,10 +3,11 @@
 """
 import streamlit as st
 import pandas as pd
+import math
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 from pathlib import Path
-from utils.streamlit_helper import setup_page_config, render_filter_sidebar
+from utils.streamlit_helper import setup_page_config, render_filter_sidebar, clear_cache, clean_expired_cache
 from utils.constants import PROJECT_PATH
 import sys
 
@@ -73,7 +74,7 @@ def load_all_market_caps():
 def render_market_cap_charts(df, selected_symbols, stock_names):
     """渲染日K线和市值图表"""
     all_mcs = load_all_market_caps()
-
+    PS_range = None
     kline_cols = st.columns(min(len(selected_symbols), 2) if len(selected_symbols) > 0 else 1)
     for i, symbol in enumerate(selected_symbols):
         col_idx = i % 2
@@ -99,6 +100,11 @@ def render_market_cap_charts(df, selected_symbols, stock_names):
                                 kline_df['year'] = kline_df['date'].dt.year
                                 kline_df = pd.merge(kline_df, sym_gp, left_on='year', right_on='fiscal_year', how='left')
                                 kline_df['revenue'] = kline_df['revenue'].ffill()
+                                kline_df['PS'] = kline_df['market_cap']/kline_df['revenue']
+                                if not PS_range:
+                                    PS_range = max(math.ceil(kline_df['PS'].max()*1.2),20)
+                                # else:
+                                #     PS_range = max(PS_range, math.ceil(kline_df['PS'].max()*1.2))
 
                         # --- Chart 1: 股价走势 (日K线) ---
                         st.markdown("##### 股价走势 (日K线)")
@@ -157,7 +163,7 @@ def render_market_cap_charts(df, selected_symbols, stock_names):
                                           )
                         fig2.update_yaxes(title_text="<b>Market Cap/Revenue</b>", secondary_y=True, showgrid=False,
                                           # autorange='min', autorangeoptions_minallowed=0
-                                          autorange=False, range=[0,2]
+                                          autorange=False, range=[0,PS_range ]
                                           )
 
                         st.plotly_chart(fig2, use_container_width=True)
@@ -188,3 +194,13 @@ if not selected_symbols:
     st.stop()
 
 render_market_cap_charts(df, selected_symbols, stock_names)
+
+# 缓存管理
+with st.sidebar.expander("缓存管理", expanded=False):
+    if st.button("🔄 清理过期缓存", use_container_width=True):
+        clean_expired_cache()
+        st.sidebar.success("已清理过期缓存")
+
+    if st.button("🗑️ 清除所有缓存", use_container_width=True):
+        clear_cache()
+        st.sidebar.success("已清除所有缓存")
