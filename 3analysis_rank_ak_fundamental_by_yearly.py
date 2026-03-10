@@ -33,10 +33,18 @@ def rank_fundamental():
     # Directions: True for "Higher is Better", False for "Lower is Better"
     directions = {
         'roe': True,
+        'operating_margin': True,
+        'net_profit': True,
+        'free_cash_flow_conversion_rate': True,
         'netcash_operate_over_net_profit': True,
-        'debt_to_asset': False, 
+        'asset_turnover': True,
         'inventory_turnover': True,
-        'ev_over_ebitda': False
+        'TOTAL_OPERATE_INCOME_YOY': True,
+        'NETPROFIT_YOY': True,
+        'ev_over_ebitda': False,
+        'pb_ratio': False,
+        'debt_to_equity': False,
+        'net_debt_over_ebitda': False
     }
 
     # Result dataframe
@@ -49,58 +57,43 @@ def rank_fundamental():
     for year in years:
         df_year = df[df['fiscal_year'] == year].copy()
         
-        # Handle missing values: Fill with median of the year, then 0
-        for col in features:
-            median_val = df_year[col].median()
-            if pd.isna(median_val):
-                median_val = 0
-            df_year[col] = df_year[col].fillna(median_val)
+        # Process by industry within the year
+        df_year_processed = []
+        for industry, df_group in df_year.groupby('industry_category_name'):
+            df_group = df_group.copy()
+
+            # Replace inf with nan
+            for col in features:
+                df_group[col] = df_group[col].replace([np.inf, -np.inf], np.nan)
+
+            # Fill NaN with industry-specific median
+            for col in features:
+                median_val = df_group[col].median()
+                if pd.isna(median_val):
+                    median_val = 0
+                df_group[col] = df_group[col].fillna(median_val)
+
+            X = df_group[features].copy()
+
+            # Scale within this specific industry
+            scaler = MinMaxScaler()
+            X_scaled = pd.DataFrame(scaler.fit_transform(X), columns=features, index=df_group.index)
+
+            # Adjust for direction: if Lower is Better, score = (1 - scaled_value)
+            for col, higher_is_better in directions.items():
+                if not higher_is_better:
+                    X_scaled[col] = 1 - X_scaled[col]
+
+            df_group['fundamental_score'] = X_scaled.sum(axis=1)
+            df_year_processed.append(df_group)
         
-        # Prepare data for scaling
-        X = df_year[features].copy()
-        
-        # Invert "Lower is Better" features so that higher value becomes better (for the score)
-        # We can negate them before scaling, or just subtract the scaled value later.
-        # Let's negate them here so StandardScaler treats them correctly (higher original -> lower negated -> lower score, wait.)
-        # If lower is better (e.g. debt 10 vs 20), we want 10 to score higher.
-        # If we Negate: -10 vs -20. -10 is higher than -20. So Higher negated value is better.
-        # So we can just negate "Lower is Better" features and then sum everything.
-
-        # 检查是否有无穷大
-        logging.info(f"Contains inf: {np.isinf(X).values.any()}")
-        # 检查是否有空值
-        logging.info(f"Contains NaN: {X.isnull().values.any()}")
-        # 查找具体哪一列有问题
-        logging.info(X.replace([np.inf, -np.inf], np.nan).isnull().sum())
-
-        for col, higher_is_better in directions.items():
-            if not higher_is_better:
-                X[col] = X[col] * -1
-            # 所有小于 0 的值替换为 0
-            X[col] = X[col].clip(lower=0)
-            # 1. 将 inf 替换为 NaN，以便计算最大值
-            temp_series = X[col].replace([np.inf, -np.inf], np.nan)
-            # 2. 获取该列的最大非无穷数值
-            max_val = temp_series.max()
-            X[col] = X[col].replace([np.inf], max_val)
-
-        #
-        logging.info("after preprocess")
-        # 查找具体哪一列有问题
-        logging.info(X.replace([np.inf, -np.inf], np.nan).isnull().sum())
-
-
-
-        # Scale
-        scaler = MinMaxScaler()
-        X_scaled = scaler.fit_transform(X)
-        scalers[year] = scaler
-        
-        # Calculate Score (Sum of scaled features)
-        # You might want weights, but equal weights is a standard starting point
-        df_year['fundamental_score'] = X_scaled.sum(axis=1)
+        if df_year_processed:
+            df_year = pd.concat(df_year_processed)
+        else:
+            df_year['fundamental_score'] = 0
         
         # Rank (Higher score is better -> Rank 1)
+        # We rank across all industries in the year
         df_year['fundamental_rank'] = df_year['fundamental_score'].rank(ascending=False, method='min')
         
         results.append(df_year[['symbol', 'fiscal_year', 'fundamental_score', 'fundamental_rank']])

@@ -52,7 +52,14 @@ SELL_SIGNAL_COLS = ['rsi_more_than_90_sell', 'close_more_than_boll_ub_sell',
                     'trix_sell','wr_less_than_10_sell']
 
 #
-FUNDAMENTAL_KEY_COLS = ['roe','netcash_operate_over_net_profit','debt_to_asset','inventory_turnover','ev_over_ebitda']
+FUNDAMENTAL_KEY_COLS = [
+    'roe', 'operating_margin', 'net_profit',
+    'free_cash_flow_conversion_rate', 'netcash_operate_over_net_profit',
+    'asset_turnover', 'inventory_turnover',
+    'TOTAL_OPERATE_INCOME_YOY', 'NETPROFIT_YOY',
+    'ev_over_ebitda', 'pb_ratio',
+    'debt_to_equity', 'net_debt_over_ebitda'
+]
 INDUSTRY_COL_DICT = {
             'industry_category_name': '门类',
             'industry_sub_category_name': '次类',
