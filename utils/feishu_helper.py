@@ -8,7 +8,7 @@ from utils.constants import FEISHU_APP_ID, FEISHU_APP_KEY
 def load_feishu_quarterly_eval_data():
     """
     Fetch the Quarterly Eval sheet from Feishu and return a DataFrame
-    containing 'symbol' and 'quarterly_fundamental_score'.
+    containing 'symbol' and 'quarterly_financial_score'.
     """
 
     if not FEISHU_APP_ID or not FEISHU_APP_KEY:
@@ -73,14 +73,14 @@ def load_feishu_quarterly_eval_data():
 
         df = pd.DataFrame(data, columns=header)
 
-        # We only need symbol and quarterly_fundamental_score
-        if 'symbol' in df.columns and 'quarterly_fundamental_score' in df.columns:
-            df = df[['symbol', 'quarterly_fundamental_score']]
+        # We only need symbol and quarterly_financial_score
+        if 'symbol' in df.columns and 'quarterly_financial_score' in df.columns:
+            df = df[['symbol', 'quarterly_financial_score']].drop_duplicates(subset=["symbol"], keep='last')
 
             # Ensure symbol is a string (Feishu API might sometimes return rich text/lists)
             df['symbol'] = df['symbol'].apply(lambda x: str(x[0]) if isinstance(x, list) else str(x) if pd.notnull(x) else x)
 
-            df['quarterly_fundamental_score'] = pd.to_numeric(df['quarterly_fundamental_score'], errors='coerce')
+            df['quarterly_financial_score'] = pd.to_numeric(df['quarterly_financial_score'], errors='coerce')
             # Remove rows where symbol is missing
             df = df.dropna(subset=['symbol'])
             return df

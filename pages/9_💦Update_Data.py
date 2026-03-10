@@ -225,3 +225,38 @@ if st.button("Run CN Stock - Fundamental Pipeline", icon="📊", type="primary")
 
     except subprocess.CalledProcessError as e:
         st.error(f"❌ Error in {script['file']}: {e.stderr}")
+
+######################### Section 3 #########################
+st.header("Realtime Price", divider=True)
+
+# 2. Start Button
+if st.button("Run CN Stock - Realtime Price Pipeline", icon="📈", type="primary"):
+    scripts = [
+        {"file": "_realtime_0extract_ak.py", "desc": "Fetch realtime stock price"}
+    ]
+
+    progress_bar = st.progress(0)
+    status_text = st.empty()
+
+    try:
+        for i, script in enumerate(scripts):
+            status_text.info(f"Step {i + 1}/{len(scripts)}: {script['desc']}...")
+            cmd = [sys.executable, script['file']]
+
+            # Run the script and wait for it to finish
+
+            logger = get_logger("realtime price")
+            logger.handlers.clear()
+            handler = StreamlitLogHandler(st.empty().code)
+            logger.addHandler(handler)
+
+            result = subprocess.run(cmd, capture_output=True, text=True, check=True)
+
+            # Update progress
+            progress_bar.progress((i + 1) / len(scripts))
+            st.write(f"✅ {script['file']} finished successfully.")
+
+        st.success("🎉 All scripts executed successfully!")
+
+    except subprocess.CalledProcessError as e:
+        st.error(f"❌ Error in {script['file']}: {e.stderr}")

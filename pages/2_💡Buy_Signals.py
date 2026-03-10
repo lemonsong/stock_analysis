@@ -35,7 +35,8 @@ def load_decision_data():
             df = df.merge(feishu_df, on='symbol', how='left')
 
         realtime_df = pd.read_csv(realtime_price_file)[['symbol','最新价','涨跌幅']]
-        df = df.merge(realtime_df, how='left', on='symbol')
+        if not realtime_df.empty:
+            df = df.merge(realtime_df, how='left', on='symbol')
         return df
     except Exception as e:
         st.error(f"读取数据文件失败: {e}")
@@ -147,19 +148,19 @@ def setup_sidebar(df):
                 key="filter_fundamental_rank"
             )
 
-        quarterly_fundamental_score_range = None
-        if 'quarterly_fundamental_score' in df.columns:
-            q_min = float(df['quarterly_fundamental_score'].min())
-            q_max = df['quarterly_fundamental_score'].replace([np.inf, -np.inf], np.nan).max()
+        quarterly_financial_score_range = None
+        if 'quarterly_financial_score' in df.columns:
+            q_min = float(df['quarterly_financial_score'].min())
+            q_max = df['quarterly_financial_score'].replace([np.inf, -np.inf], np.nan).max()
             if not pd.isna(q_min) and not pd.isna(q_max):
                 if q_min == q_max:
                     q_max = q_min + 1.0
-                quarterly_fundamental_score_range = st.slider(
+                quarterly_financial_score_range = st.slider(
                     "季度基本面评分(Feishu)",
                     min_value=q_min,
                     max_value=q_max,
                     value=(q_min, q_max),
-                    key="filter_quarterly_fundamental_score"
+                    key="filter_quarterly_financial_score"
                 )
 
     # 5. 其他筛选
@@ -239,17 +240,17 @@ def setup_sidebar(df):
                 (filtered_df['fundamental_rank'] <= fundamental_rank_range[1])
             ]
 
-    if quarterly_fundamental_score_range:
+    if quarterly_financial_score_range:
         if include_null_value:
             filtered_df = filtered_df[
-                ((filtered_df['quarterly_fundamental_score'] >= quarterly_fundamental_score_range[0]) &
-                (filtered_df['quarterly_fundamental_score'] <= quarterly_fundamental_score_range[1])) |
-                filtered_df['quarterly_fundamental_score'].isna()
+                ((filtered_df['quarterly_financial_score'] >= quarterly_financial_score_range[0]) &
+                (filtered_df['quarterly_financial_score'] <= quarterly_financial_score_range[1])) |
+                filtered_df['quarterly_financial_score'].isna()
             ]
         else:
             filtered_df = filtered_df[
-                (filtered_df['quarterly_fundamental_score'] >= quarterly_fundamental_score_range[0]) &
-                (filtered_df['quarterly_fundamental_score'] <= quarterly_fundamental_score_range[1])
+                (filtered_df['quarterly_financial_score'] >= quarterly_financial_score_range[0]) &
+                (filtered_df['quarterly_financial_score'] <= quarterly_financial_score_range[1])
             ]
 
 
@@ -526,7 +527,7 @@ def display_detailed_data(filtered_df):
     display_df = filtered_df.copy()
     # 列分组定义
     col_groups = {
-        "基本信息": ['symbol_url', 'company', 'close', '最新价','涨跌幅','market_cap'], # 使用symbol_url替代symbol
+        "基本信息": ['symbol_url', 'company', 'close', '最新价', '涨跌幅', 'quarterly_financial_score', 'market_cap'], # 使用symbol_url替代symbol
         "行业信息": ['industry_category_name', 'industry_sub_category_name', 'industry_type_name'],
         "信号指标": [col for col in filtered_df.columns if 'signal' in col.lower()],
         "分红指标": [col for col in filtered_df.columns if 'total_dividend' in col and 'yield' not in col],
@@ -637,13 +638,20 @@ def display_detailed_data(filtered_df):
             col_min = display_df_final[col].min()
             col_max = display_df_final[col].max()
             if col_max != col_min:
-                # 使用背景色渐变（绿色=低值，红色=高值）
-                styled_display = styled_display.background_gradient(
-                    subset=[col],
-                    cmap=SEQUENTIAL_COLOR,
-                    vmin=col_min,
-                    vmax=col_max
-                )
+                if col !='涨跌幅':
+                    styled_display = styled_display.background_gradient(
+                        subset=[col],
+                        cmap=SEQUENTIAL_COLOR,
+                        vmin=col_min,
+                        vmax=col_max
+                    )
+                else:
+                    styled_display = styled_display.background_gradient(
+                        subset=[col],
+                        cmap='RdYlGn_r',
+                        vmin=-5,
+                        vmax=5,
+                    )
 
     # 配置列
     column_config = {
@@ -661,6 +669,16 @@ def display_detailed_data(filtered_df):
             "收盘价",
             help="close",
             format="¥%.2f"
+        ),
+        "最新价": st.column_config.NumberColumn(
+            "最新价",
+            help="最新价",
+            format="¥%.2f"
+        ),
+        "涨跌幅": st.column_config.NumberColumn(
+            "涨跌幅",
+            help="当日涨跌",
+            format="%.2f%%"
         ),
         "market_cap": st.column_config.NumberColumn(
             "市值",
@@ -733,10 +751,11 @@ def display_detailed_data(filtered_df):
             help="基于各项财务指标的综合评分（越高越好）",
             format="%.2f"
         ),
-        "quarterly_fundamental_score": st.column_config.NumberColumn(
-            "季度基本面评分",
+        "quarterly_financial_score": st.column_config.NumberColumn(
+            "季度财务评分",
             help="季度财务评分",
-            format="%.0f"
+            format="%.0f",
+            width="small"
         ),
         "fundamental_rank": st.column_config.NumberColumn(
             "基本面排名",
