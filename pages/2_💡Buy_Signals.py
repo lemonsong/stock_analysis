@@ -19,6 +19,7 @@ setup_page_config()
 def load_decision_data():
     """加载决策数据"""
     decision_file = Path(PROJECT_PATH) / 'data/dwa/app_decision.csv'
+    realtime_price_file = Path(PROJECT_PATH) / 'data/basic/realtime_price.csv'
 
     if not decision_file.exists():
         st.error(f"未找到数据文件: {decision_file}")
@@ -26,6 +27,8 @@ def load_decision_data():
 
     try:
         df = pd.read_csv(decision_file)
+        realtime_df = pd.read_csv(realtime_price_file)[['symbol','最新价','涨跌幅']]
+        df = df.merge(realtime_df, how='left', on='symbol')
         return df
     except Exception as e:
         st.error(f"读取数据文件失败: {e}")
@@ -485,7 +488,7 @@ def display_detailed_data(filtered_df):
     display_df = filtered_df.copy()
     # 列分组定义
     col_groups = {
-        "基本信息": ['symbol_url', 'company', 'close', 'market_cap'], # 使用symbol_url替代symbol
+        "基本信息": ['symbol_url', 'company', 'close', '最新价','涨跌幅','market_cap'], # 使用symbol_url替代symbol
         "行业信息": ['industry_category_name', 'industry_sub_category_name', 'industry_type_name'],
         "信号指标": [col for col in filtered_df.columns if 'signal' in col.lower()],
         "分红指标": [col for col in filtered_df.columns if 'total_dividend' in col and 'yield' not in col],
