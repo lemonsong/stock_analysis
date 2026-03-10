@@ -47,7 +47,7 @@ def get_end_date():
         logging.info(f"Fetching data via manual input: {end_date_str}")
     return datetime.strptime(end_date_str, '%Y-%m-%d').date()
 
-def process_single_stock(stock_symbol, daily_folder, end_date_d):
+def process_single_stock(stock_symbol, daily_folder, end_date_d, list_date_d=None):
     """
     Reads, cleans, and saves a single stock's daily kline data.
     Returns a dictionary with log info or None on failure.
@@ -77,6 +77,9 @@ def process_single_stock(stock_symbol, daily_folder, end_date_d):
             calendar_end=end_date_d,
             must_end_date=end_date_d
         )
+
+        if list_date_d is not None and pd.notnull(list_date_d):
+            stock_kline_df = stock_kline_df[stock_kline_df['date'] >= list_date_d]
 
         # Check new data
         n_row_new = len(stock_kline_df)
@@ -116,6 +119,16 @@ def main():
     else:
         daily_folder = 'daily'
 
+    # Load list_date from stock_name_industry.csv
+    stock_info_path = f'{PROJECT_PATH}/data/basic/stock_name_industry.csv'
+    list_date_dict = {}
+    if os.path.isfile(stock_info_path):
+        stock_info_df = pd.read_csv(stock_info_path)
+        if 'list_date' in stock_info_df.columns and 'symbol' in stock_info_df.columns:
+            stock_info_df['list_date'] = pd.to_datetime(stock_info_df['list_date']).dt.date
+            list_date_dict = dict(zip(stock_info_df['symbol'], stock_info_df['list_date']))
+            logging.info(f"Loaded list_date for {len(list_date_dict)} stocks.")
+
     # Get file list
     file_list = get_file_paths_pathlib(f'{PROGRAM_PATH}/{daily_folder}')
     symbol_li = [extract_stock_symbol_from_path(file_path, from_format='MARKETnumber',
@@ -134,7 +147,7 @@ def main():
     # Process in parallel
     with ProcessPoolExecutor() as executor:
         # Map futures to symbols
-        futures = {executor.submit(process_single_stock, sym, daily_folder, end_date_d): sym for sym in symbol_li}
+        futures = {executor.submit(process_single_stock, sym, daily_folder, end_date_d, list_date_dict.get(sym)): sym for sym in symbol_li}
 
         for i, future in enumerate(as_completed(futures)):
             result = future.result()

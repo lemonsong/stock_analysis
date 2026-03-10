@@ -133,6 +133,7 @@ def format_df_column_name(df):
     return df.rename(columns={"代码": 'symbol',
                               '名称': 'company',
                              '股票代码': 'symbol',
+                              '代码': 'symbol',
                               '股票简称': 'company',
                               '上市公司代码':'symbol',
                               '上市公司简称': 'company',
