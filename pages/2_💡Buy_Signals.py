@@ -12,6 +12,7 @@ import json
 from pathlib import Path
 from utils.constants import FUNDAMENTAL_KEY_COLS, SEQUENTIAL_COLOR, PROJECT_PATH, INDUSTRY_COL_DICT
 from utils.streamlit_helper import clear_cache, clean_expired_cache, setup_page_config, render_filter_sidebar
+from utils.feishu_helper import load_feishu_quarterly_eval_data
 
 setup_page_config()
 
@@ -26,6 +27,12 @@ def load_decision_data():
 
     try:
         df = pd.read_csv(decision_file)
+
+        # Merge Feishu quarterly fundamental score
+        feishu_df = load_feishu_quarterly_eval_data()
+        if not feishu_df.empty:
+            df = df.merge(feishu_df, on='symbol', how='left')
+
         return df
     except Exception as e:
         st.error(f"读取数据文件失败: {e}")
@@ -86,6 +93,8 @@ def setup_sidebar(df):
             if col in df.columns:
                 col_min = float(df[col].min())
                 col_max = float(df[col].max())
+                if col_min == col_max:
+                    col_max = col_min + 1.0 # Ensure min < max
                 signal_filters[col] = st.slider(
                     f"{col}",
                     min_value=col_min,
@@ -103,12 +112,14 @@ def setup_sidebar(df):
         for col in fundamental_cols:
             if col in df.columns:
                 col_min = float(df[col].min())
-                # col_max = float(df[col].max())
-                col_max = df[col].replace([np.inf, -np.inf], np.nan).max()
+                col_max = float(df[col].replace([np.inf, -np.inf], np.nan).max())
 
                 # Handle potential all-NaN column
                 if pd.isna(col_min) or pd.isna(col_max):
                     continue
+
+                if col_min == col_max:
+                    col_max = col_min + 1.0
 
                 fundamental_filters[col] = st.slider(
                     f"{col}",
@@ -123,6 +134,8 @@ def setup_sidebar(df):
         if 'fundamental_rank' in df.columns:
             fundamental_rank_min = float(df['fundamental_rank'].min())
             fundamental_rank_max = float(df['fundamental_rank'].max())
+            if fundamental_rank_min == fundamental_rank_max:
+                fundamental_rank_max = fundamental_rank_min + 1.0
             fundamental_rank_range = st.slider(
                 "基本面排名",
                 min_value=fundamental_rank_min,
@@ -130,6 +143,21 @@ def setup_sidebar(df):
                 value=(fundamental_rank_min, fundamental_rank_max),
                 key="filter_fundamental_rank"
             )
+
+        quarterly_fundamental_score_range = None
+        if 'quarterly_fundamental_score' in df.columns:
+            q_min = float(df['quarterly_fundamental_score'].min())
+            q_max = df['quarterly_fundamental_score'].replace([np.inf, -np.inf], np.nan).max()
+            if not pd.isna(q_min) and not pd.isna(q_max):
+                if q_min == q_max:
+                    q_max = q_min + 1.0
+                quarterly_fundamental_score_range = st.slider(
+                    "季度基本面评分(Feishu)",
+                    min_value=q_min,
+                    max_value=q_max,
+                    value=(q_min, q_max),
+                    key="filter_quarterly_fundamental_score"
+                )
 
     # 5. 其他筛选
     price_range = None
@@ -140,6 +168,7 @@ def setup_sidebar(df):
         with st.sidebar.expander("其他", expanded=False):
             price_min = float(df['close'].min())
             price_max = float(df['close'].max())
+            if price_min == price_max: price_max = price_min + 1.0
             price_range = st.slider(
                 "价格",
                 min_value=price_min,
@@ -149,6 +178,7 @@ def setup_sidebar(df):
             )
             growth_1Y_min = float(df['growth_1Y'].min())
             growth_1Y_max = float(df['growth_1Y'].max())
+            if growth_1Y_min == growth_1Y_max: growth_1Y_max = growth_1Y_min + 1.0
             growth_1Y_range = st.slider(
                 "1年均价增长",
                 min_value=growth_1Y_min,
@@ -156,24 +186,19 @@ def setup_sidebar(df):
                 value=(growth_1Y_min, growth_1Y_max),
                 key="filter_growth_1Y"
             )
-            # big_money_inflow_min = float(df['big_money_net_inflow_ratio_10d'].min())
-            # big_money_inflow_max = float(df['big_money_net_inflow_ratio_10d'].max())
-            # big_money_inflow_range = st.slider(
-            #     "10日主力净流入比",
-            #     min_value=big_money_inflow_min,
-            #     max_value=big_money_inflow_max,
-            #     value=(big_money_inflow_min, big_money_inflow_max),
-            #     key="filter_big_money_inflow"
-            # )
-            total_dividend_yield_1Y_min = float(df['total_dividend_yield_1Y'].min())
-            total_dividend_yield_1Y_max = float(df['total_dividend_yield_1Y'].max())
-            total_dividend_yield_1Y_range = st.slider(
-                "近1年股息率",
-                min_value=total_dividend_yield_1Y_min,
-                max_value=total_dividend_yield_1Y_max,
-                value=(total_dividend_yield_1Y_min, total_dividend_yield_1Y_max),
-                key="filter_total_dividend_yield_1Y"
-            )
+            if 'total_dividend_yield_1Y' in df.columns:
+                total_dividend_yield_1Y_min = float(df['total_dividend_yield_1Y'].min())
+                total_dividend_yield_1Y_max = float(df['total_dividend_yield_1Y'].max())
+                if total_dividend_yield_1Y_min == total_dividend_yield_1Y_max:
+                    total_dividend_yield_1Y_max = total_dividend_yield_1Y_min + 1.0
+                if not pd.isna(total_dividend_yield_1Y_min) and not pd.isna(total_dividend_yield_1Y_max):
+                    total_dividend_yield_1Y_range = st.slider(
+                        "近1年股息率",
+                        min_value=total_dividend_yield_1Y_min,
+                        max_value=total_dividend_yield_1Y_max,
+                        value=(total_dividend_yield_1Y_min, total_dividend_yield_1Y_max),
+                        key="filter_total_dividend_yield_1Y"
+                    )
 
     # --- 应用筛选 ---
     # filtered_df starts as the result of render_filter_sidebar
@@ -209,6 +234,19 @@ def setup_sidebar(df):
             filtered_df = filtered_df[
                 (filtered_df['fundamental_rank'] >= fundamental_rank_range[0]) &
                 (filtered_df['fundamental_rank'] <= fundamental_rank_range[1])
+            ]
+
+    if quarterly_fundamental_score_range:
+        if include_null_value:
+            filtered_df = filtered_df[
+                ((filtered_df['quarterly_fundamental_score'] >= quarterly_fundamental_score_range[0]) &
+                (filtered_df['quarterly_fundamental_score'] <= quarterly_fundamental_score_range[1])) |
+                filtered_df['quarterly_fundamental_score'].isna()
+            ]
+        else:
+            filtered_df = filtered_df[
+                (filtered_df['quarterly_fundamental_score'] >= quarterly_fundamental_score_range[0]) &
+                (filtered_df['quarterly_fundamental_score'] <= quarterly_fundamental_score_range[1])
             ]
 
 
@@ -507,10 +545,15 @@ def display_detailed_data(filtered_df):
     display_df.insert(0, 'symbol_url', "https://xueqiu.com/S/" + display_df['symbol'].astype(str), allow_duplicates=True)
     # display_df['symbol_url'] = "https://xueqiu.com/S/" + display_df['symbol'].astype(str)
     # ratio will display as percentage
-    display_df[col_groups["股价增长(%)"]] = display_df[col_groups["股价增长(%)"]]*100
-    display_df[col_groups["分红率(%)"]] = display_df[col_groups["分红率(%)"]]*100
-    display_df['roe'] = display_df['roe']*100
-    display_df['debt_to_asset'] = display_df['debt_to_asset']*100
+    if col_groups.get("股价增长(%)"):
+        display_df[col_groups["股价增长(%)"]] = display_df[col_groups["股价增长(%)"]]*100
+    if col_groups.get("分红率(%)"):
+        display_df[col_groups["分红率(%)"]] = display_df[col_groups["分红率(%)"]]*100
+
+    if 'roe' in display_df.columns:
+        display_df['roe'] = display_df['roe']*100
+    if 'debt_to_asset' in display_df.columns:
+        display_df['debt_to_asset'] = display_df['debt_to_asset']*100
 
 
     col_col_selection_mode, col_sort_by, col_ascending = st.columns(3)
@@ -685,6 +728,11 @@ def display_detailed_data(filtered_df):
         "fundamental_score": st.column_config.NumberColumn(
             "基本面评分",
             help="基于各项财务指标的综合评分（越高越好）",
+            format="%.2f"
+        ),
+        "quarterly_fundamental_score": st.column_config.NumberColumn(
+            "季度基本面评分",
+            help="来自Feishu的季度基本面评分",
             format="%.2f"
         ),
         "fundamental_rank": st.column_config.NumberColumn(
