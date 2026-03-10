@@ -2,6 +2,7 @@ import requests
 import os
 import pandas as pd
 import streamlit as st
+from utils.constants import FEISHU_APP_ID, FEISHU_APP_KEY
 
 @st.cache_data(ttl=3600)  # Cache for 1 hour to avoid hitting API too often
 def load_feishu_quarterly_eval_data():
@@ -9,17 +10,15 @@ def load_feishu_quarterly_eval_data():
     Fetch the Quarterly Eval sheet from Feishu and return a DataFrame
     containing 'symbol' and 'quarterly_fundamental_score'.
     """
-    app_id = os.environ.get('FEISHU_APP_ID', 'cli_a920fc71c8ba9bc6')
-    app_secret = os.environ.get('FEISHU_APP_KEY')
 
-    if not app_id or not app_secret:
+    if not FEISHU_APP_ID or not FEISHU_APP_KEY:
         print("Feishu credentials not found in environment variables.")
         return pd.DataFrame()
 
     url = "https://open.feishu.cn/open-apis/auth/v3/tenant_access_token/internal"
     payload = {
-        "app_id": app_id,
-        "app_secret": app_secret
+        "app_id": FEISHU_APP_ID,
+        "app_secret": FEISHU_APP_KEY
     }
 
     try:

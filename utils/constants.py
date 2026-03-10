@@ -11,8 +11,8 @@ import plotly.express as px
 PROJECT_PATH = str(Path(__file__).parent.parent)
 
 
-project_dir = os.path.join(os.path.dirname(__file__), os.pardir)
-dotenv_path = os.path.join(project_dir, '.env')
+# project_dir = os.path.join(os.path.dirname(__file__), os.pardir)
+dotenv_path = os.path.join(PROJECT_PATH, '.env')
 dotenv.load_dotenv(dotenv_path)
 
 # QUANDL_API_KEY = os.getenv("QUANDL_API_KEY")
@@ -29,7 +29,11 @@ TUSHARE_API_KEY = os.getenv("TUSHARE_API_KEY")
 # DEEPSEEK_BASE_URL = os.getenv("DEEPSEEK_BASE_URL")
 # DEEPSEEK_ENABLED = os.getenv("DEEPSEEK_ENABLED")
 # ALLTICK_API_KEY = os.getenv("ALLTICK_API_KEY")
-# ALPHAVANTAGE_API_KEY = os.getenv("ALPHAVANTAGE_API_KEY")
+ALPHAVANTAGE_API_KEY = os.getenv("ALPHAVANTAGE_API_KEY")
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+FEISHU_APP_ID = os.getenv("FEISHU_APP_ID")
+FEISHU_APP_KEY = os.getenv("FEISHU_APP_KEY")
+
 
 # plotly chart: https://plotly.com/python/builtin-colorscales/
 SEQUENTIAL_COLOR ='PuBu' #'YlGnBu' #'GnBu'

@@ -732,8 +732,8 @@ def display_detailed_data(filtered_df):
         ),
         "quarterly_fundamental_score": st.column_config.NumberColumn(
             "季度基本面评分",
-            help="来自Feishu的季度基本面评分",
-            format="%.2f"
+            help="季度财务评分",
+            format="%.0f"
         ),
         "fundamental_rank": st.column_config.NumberColumn(
             "基本面排名",
