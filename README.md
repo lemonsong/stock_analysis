@@ -1,6 +1,13 @@
 # Stock Analysis & Monitoring Platform
 
 This project is a comprehensive platform for analyzing Chinese A-shares, monitoring buy/sell signals, and backtesting strategies. It leverages data from various sources (Tushare, Akshare) and provides a Streamlit-based user interface.
+![Buy/Sell Signal](img/投资监测分析平台(1).png)
+![Financial Comparison](img/投资监测分析平台(2).png)
+![Financial Trend Comparison](img/投资监测分析平台(3).png)
+![Market Cap and PS Ratio](img/投资监测分析平台(4).png)
+![Data Refresh Pipeline](img/投资监测分析平台(5).png)
+
+
 
 ## Key Features
 
