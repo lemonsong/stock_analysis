@@ -445,8 +445,12 @@ available_metrics = [col for col in df.columns if
                      col not in ['symbol', 'company', 'fiscal_year', 'ORG_TYPE', 'industry']]
 
 st.markdown("### 📈 财务指标对比")
-metric_category = st.selectbox("选择指标类别", options=list(financial_metrics.keys()) + ['自定义'], index=0,
+metric_category = st.segmented_control("选择指标类别", options=list(financial_metrics.keys()) + ['自定义'],
+                                       selection_mode='single',
+                                       default=list(financial_metrics.keys())[0],
                                key="metric_category_select")
+# metric_category = st.selectbox("选择指标类别", options=list(financial_metrics.keys()) + ['自定义'], index=0,
+#                                key="metric_category_select")
 if metric_category == '自定义':
     selected_metrics = st.multiselect("选择指标", options=available_metrics, default=FUNDAMENTAL_KEY_COLS,
                                       key="metric_multiselect")
