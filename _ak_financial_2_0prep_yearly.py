@@ -1,5 +1,5 @@
 '''
-concatenate quarterly data into yearly data and TTM
+Split data into yearly data and TTM data then concatenate
 '''
 import sys
 import logging
@@ -51,6 +51,20 @@ def get_stock_symbols():
     ]
     return list(set(stock_symbol_li_containing_duplicates))
 
+def check_missing_sheets(stock_symbol_li):
+    """Check if any stock is missing one of the 3 required sheets."""
+    fundamental_types = ['balance', 'profit', 'cash_flow']
+    missing_symbols = []
+
+    for stock_symbol in stock_symbol_li:
+        for sheet in fundamental_types:
+            file_path = f'{SINGLE_FILE_PATH}/{stock_symbol}_{sheet}.csv'
+            if not os.path.exists(file_path):
+                logging.warning(f"Missing {sheet} sheet for {stock_symbol}")
+                missing_symbols.append(stock_symbol)
+                break
+
+    return list(set(missing_symbols))
 
 def fetch_missing_data(missing_symbols):
     """Call _ak_financial_0extract_by_report.py to fetch missing data."""
@@ -61,6 +75,7 @@ def fetch_missing_data(missing_symbols):
 
     script_path = f"{PROJECT_PATH}/_ak_financial_0extract_by_report.py"
 
+    # We need to pass dummy arguments for the required args that we don't use when text_stock_list is provided
     cmd = [
         sys.executable, script_path,
         "--boards_regex", "",
@@ -88,6 +103,7 @@ def process_single_stock(stock_symbol):
         for sheet in fundamental_types:
             file_path = f'{SINGLE_FILE_PATH}/{stock_symbol}_{sheet}.csv'
             if not os.path.exists(file_path):
+                # If still missing after fetch attempt, return None or empty DF
                 logging.warning(f"Still missing {sheet} for {stock_symbol}, skipping.")
                 return None, None
 
@@ -173,9 +189,18 @@ def main():
     stock_symbol_li = get_stock_symbols()
     logging.info(f"Found {len(stock_symbol_li)} unique stocks.")
 
+    # 1. Check for missing sheets and fetch if necessary
+    missing_symbols = check_missing_sheets(stock_symbol_li)
+    if missing_symbols:
+        fetch_missing_data(missing_symbols)
+        # Re-get the list? No, the list of symbols shouldn't change, just the files availability.
+
+    # 2. Process stocks in parallel
     fundamental_dfs_yearly = []
     fundamental_dfs_ttm = []
 
+    # Use ProcessPoolExecutor for CPU/IO bound tasks
+    # Adjust max_workers based on your machine
     with ProcessPoolExecutor() as executor:
         futures = {executor.submit(process_single_stock, sym): sym for sym in stock_symbol_li}
 
@@ -194,6 +219,7 @@ def main():
         logging.error("No data processed.")
         sys.exit(1)
 
+    # 3. Concatenate all results
     logging.info("Concatenating all stock data...")
     df_yearly_all = pd.concat(fundamental_dfs_yearly, axis=0, ignore_index=True) if fundamental_dfs_yearly else pd.DataFrame()
     df_ttm_all = pd.concat(fundamental_dfs_ttm, axis=0, ignore_index=True) if fundamental_dfs_ttm else pd.DataFrame()
@@ -223,8 +249,30 @@ def main():
     else:
         fundamental_df = pd.concat([df_yearly_all, df_ttm_all], ignore_index=True)
 
-    fundamental_df.to_csv(f'{PROGRAM_PATH}/financial_yearly_concat.csv', index=False, encoding='utf-8')
+    fundamental_df.to_csv(f'{PROGRAM_PATH}/financial_yearly.csv', index=False, encoding='utf-8')
     logging.info(f"Saved financial_yearly_concat.csv with shape: {fundamental_df.shape}")
+
+    # 4. Clean columns (Remove sparse columns)
+    logging.info("Cleaning sparse columns...")
+
+    # Columns to definitely keep
+    keep_cols = ['BOND_PAYABLE', 'DEFER_INCOME_1YEAR','FE_INTEREST_EXPENSE', "FA_IR_DEPR", "OILGAS_BIOLOGY_DEPR", "IR_DEPR"
+                            , "IA_AMORTIZE", "LPE_AMORTIZE", "DEFER_INCOME_AMORTIZE", 'LOAN_ADVANCE', 'ACCEPT_DEPOSIT','CREDIT_IMPAIRMENT_LOSS',
+                 'SHORT_LOAN','LONG_LOAN','NOTE_PAYABLE']
+
+    check_cols = [i for i in fundamental_df.columns if i not in keep_cols]
+
+    # Threshold: 50% of rows must have data
+    col_threshold = int(len(fundamental_df) * 0.5)
+
+    financial_yearly_concat = pd.concat([
+        fundamental_df[check_cols].dropna(axis=1, thresh=col_threshold),
+        fundamental_df[keep_cols]
+    ], axis=1)
+
+    logging.info(f"Saved fundamental_cleaned.csv with shape: {financial_yearly_concat.shape}")
+    financial_yearly_concat.to_csv(f'{PROGRAM_PATH}/financial_yearly_concat.csv', index=False, encoding='utf-8')
+
 
 if __name__ == "__main__":
     main()

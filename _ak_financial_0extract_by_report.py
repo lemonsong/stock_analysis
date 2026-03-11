@@ -65,13 +65,27 @@ if len(sys.argv) > 1:
 
 else:
     logging.info(f"Fetching data via manual input")
+    # decision_df = pd.read_csv(f'{PROJECT_PATH}/data/dwa/kline_analysis.csv')
+    # critical_df = decision_df.loc[decision_df.overall_signal_count == 0].copy()
+    # stock_li = critical_df.symbol.tolist()
 
-    stock_li = [  "SH688233","SH688012","SH688126","SH688019","SZ300316","SH600206","SH688981","SH600667","SH688396","SZ002129","SH688037"]
+    # OR
+
+    # decision_df = pd.read_csv(f'{PROJECT_PATH}/data/dwa/kline_analysis.csv')
+    # critical_df = decision_df.iloc[400:450,:].copy()
+    # stock_li = critical_df.symbol.tolist()
+
+    # stock list to fetch fundamentals data_all_list
+    stock_li = ["SH600968"]
 logging.info(f"{stock_li=}")
 
 
 PROGRAM_PATH = f'{PROJECT_PATH}/data/ak_financial/single_file/'
 os.makedirs(PROGRAM_PATH, exist_ok=True)
+
+###########################
+# Get file name all files in the path. only fetch and write data_all_list if the symbol_xx_sheet not existed.
+# TODO level 2(in 2026): get file name all files in the path. if symbol existed, only update the files if the report date is 2 year from April of current year(TBD) .
 
 for index, stock_symbol in enumerate(stock_li):
     random_sleep_time = random.randint(11, 30)

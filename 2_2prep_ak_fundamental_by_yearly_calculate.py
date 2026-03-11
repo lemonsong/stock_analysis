@@ -39,7 +39,7 @@ fundamental_df_cleaned = fundamental_df_cleaned.sort_values(
     ['symbol','fiscal_year'], ascending=True
 )
 average_cols = ['TOTAL_ASSETS',  'TOTAL_CURRENT_ASSETS', 'INVENTORY', 'ACCOUNTS_RECE', 'PREPAYMENT','NOTE_RECE',
-                'TOTAL_CURRENT_LIAB', 'ACCOUNTS_PAYABLE','ADVANCE_RECEIVABLES','STAFF_SALARY_PAYABLE','TAX_PAYABLE','OTHER_PAYABLE',
+                'TOTAL_CURRENT_LIAB', 'ACCOUNTS_PAYABLE','ADVANCE_RECEIVABLES','STAFF_SALARY_PAYABLE','TAX_PAYABLE','TOTAL_OTHER_PAYABLE',
                  'PARENT_EQUITY_BALANCE', 'TOTAL_PARENT_EQUITY',
                 # 银行新增
                 'LOAN_ADVANCE', 'ACCEPT_DEPOSIT']
@@ -141,8 +141,8 @@ fundamental_df_cleaned = (fundamental_df_cleaned
     ## CWC ##
     change_in_non_cash_current_asset = lambda x: x['INVENTORY']+x['ACCOUNTS_RECE']+x['PREPAYMENT']+x['NOTE_RECE']
                                                  - (x['INVENTORY_ly']+x['ACCOUNTS_RECE_ly']+x['PREPAYMENT_ly']+x['NOTE_RECE_ly']),
-    change_in_non_interest_current_liability = lambda x: x['ACCOUNTS_PAYABLE']+x['ADVANCE_RECEIVABLES']+x['STAFF_SALARY_PAYABLE']+x['TAX_PAYABLE']+x['OTHER_PAYABLE']
-                                                         - (x['ACCOUNTS_PAYABLE_ly']+x['ADVANCE_RECEIVABLES_ly']+x['STAFF_SALARY_PAYABLE_ly']+x['TAX_PAYABLE_ly']+x['OTHER_PAYABLE_ly']),
+    change_in_non_interest_current_liability = lambda x: x['ACCOUNTS_PAYABLE']+x['ADVANCE_RECEIVABLES']+x['STAFF_SALARY_PAYABLE']+x['TAX_PAYABLE']+x['TOTAL_OTHER_PAYABLE']
+                                                         - (x['ACCOUNTS_PAYABLE_ly']+x['ADVANCE_RECEIVABLES_ly']+x['STAFF_SALARY_PAYABLE_ly']+x['TAX_PAYABLE_ly']+x['TOTAL_OTHER_PAYABLE_ly']),
     change_in_working_capital = lambda x: x['change_in_non_cash_current_asset']-x['change_in_non_interest_current_liability'],
 
     # ev_over_ebitda
