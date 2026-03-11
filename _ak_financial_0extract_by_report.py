@@ -66,7 +66,7 @@ if len(sys.argv) > 1:
 else:
     logging.info(f"Fetching data via manual input")
     # decision_df = pd.read_csv(f'{PROJECT_PATH}/data/dwa/kline_analysis.csv')
-    # critical_df = decision_df.loc[decision_df.overall_signal_count == 0].copy()
+    # critical_df = decision_df.loc[decision_df.overall_signal_count == 2].copy()
     # stock_li = critical_df.symbol.tolist()
 
     # OR
@@ -76,7 +76,9 @@ else:
     # stock_li = critical_df.symbol.tolist()
 
     # stock list to fetch fundamentals data_all_list
-    stock_li = ["SH600968"]
+    # stock_li = ["SH688798",'SH688484','SZ000528','SZ300746','SH601949']
+    stock_li = ['SH603259', 'SZ300759', 'SZ300347', 'SH603127', 'SZ002821', 'SH688621', 'SH603456']
+
 logging.info(f"{stock_li=}")
 
 

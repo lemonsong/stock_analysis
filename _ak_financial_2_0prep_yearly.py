@@ -250,6 +250,7 @@ def main():
     else:
         fundamental_df = pd.concat([df_yearly_all, df_ttm_all], ignore_index=True)
 
+    # fundamental_df = fundamental_df.sort(by=['symbol','REPORT_DATE_NAME'], ascending=[True, True])
     fundamental_df.to_csv(f'{PROGRAM_PATH}/financial_yearly.csv', index=False, encoding='utf-8')
     logging.info(f"Saved financial_yearly_concat.csv with shape: {fundamental_df.shape}")
 
