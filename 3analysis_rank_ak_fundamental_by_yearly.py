@@ -15,12 +15,12 @@ import os
 from utils.constants import PROJECT_PATH, FUNDAMENTAL_KEY_COLS
 
 
-def rank_fundamental():
+def rank_financial():
     # Define paths
-    input_path = f'{PROJECT_PATH}/data/ak_financial/fundamental_calculated.csv'
+    input_path = f'{PROJECT_PATH}/data/ak_financial/financial_calculated.csv'
     industry_path = f'{PROJECT_PATH}/data/basic/stock_name_industry.csv'
-    output_pred_path = f'{PROJECT_PATH}/data/ak_financial/fundamental_rank_prediction.csv'
-    output_model_path = f'{PROJECT_PATH}/data/ak_financial/fundamental_rank_model.pkl'
+    output_pred_path = f'{PROJECT_PATH}/data/ak_financial/financial_rank_prediction.csv'
+    output_model_path = f'{PROJECT_PATH}/data/ak_financial/financial_rank_model.pkl'
 
     # Load data
     if not os.path.exists(input_path):
@@ -118,4 +118,4 @@ def rank_fundamental():
 
 
 if __name__ == "__main__":
-    rank_fundamental()
+    rank_financial()

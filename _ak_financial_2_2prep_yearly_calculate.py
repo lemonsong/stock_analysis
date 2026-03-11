@@ -154,7 +154,7 @@ financial_df_cleaned = (financial_df_cleaned
     )
 )
 
-financial_df_cleaned.to_csv(f'{PROGRAM_PATH}/fundamental_calculated.csv', encoding='utf-8', index=False)
+financial_df_cleaned.to_csv(f'{PROGRAM_PATH}/financial_calculated.csv', encoding='utf-8', index=False)
 
 # 定义要展示的指标列
 # 1. Liquidity Ratios： current_ratio, quick_ratio, cash_ratio,
@@ -173,4 +173,4 @@ metrics_to_show_cols =[
     'market_cap'
 ]
 must_cols = ['symbol', 'SECURITY_NAME_ABBR', 'fiscal_year', 'ORG_TYPE', 'type']
-financial_df_cleaned[must_cols + metrics_to_show_cols].to_csv(f'{PROGRAM_PATH}/fundamental_calculated_metrics.csv', encoding='utf-8', index=False)
+financial_df_cleaned[must_cols + metrics_to_show_cols].to_csv(f'{PROGRAM_PATH}/financial_calculated_metrics.csv', encoding='utf-8', index=False)
