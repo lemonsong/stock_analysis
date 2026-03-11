@@ -29,8 +29,8 @@ if len(sys.argv) > 1:
     logging.info(f"Fetching data via sys argument parser: {start_date} to {end_date}")
     # TODO:add end_date validation step or automate start & end data input to avoid mistakes
 else:
-    start_date = "2026-03-09"  # TODO
-    end_date = '2026-03-09'  # TODO
+    start_date = "2026-03-10"  # TODO
+    end_date = '2026-03-10'  # TODO
     logging.info(f"Fetching data via manual input: {start_date} to {end_date}")
 
 

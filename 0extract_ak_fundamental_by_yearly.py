@@ -61,7 +61,8 @@ if len(sys.argv) > 1:
         stock_li = stock_filtered_df.symbol.tolist()
     else:
         logging.info(f"Fetching data via customized stock list")
-        stock_li = [item.strip() for item in args.text_stock_list.split(',')]
+        stock_li = [s.strip() for s in args.text_stock_list.replace('，', ',').split(',') if s.strip()]
+
 else:
     logging.info(f"Fetching data via manual input")
 
