@@ -20,12 +20,12 @@ app_decision_df = app_decision_df.merge(stock_cash_dividend_yield_by_periods_df,
 
 
 # Join fundamental ranking to fundamental metrics and join the latest year fundamental ranking to decision df
-rank_path = os.path.join(PROJECT_PATH, 'data/ak_fundamental', 'fundamental_rank_prediction.csv')
+rank_path = os.path.join(PROJECT_PATH, 'data/ak_financial', 'fundamental_rank_prediction.csv')
 if os.path.exists(rank_path):
     rank_df = pd.read_csv(rank_path)
     
     # 1. Update fundamental_calculated_metrics.csv
-    fundamental_path = os.path.join(PROJECT_PATH, 'data/ak_fundamental', 'fundamental_calculated_metrics.csv')
+    fundamental_path = os.path.join(PROJECT_PATH, 'data/ak_financial', 'fundamental_calculated_metrics.csv')
     if os.path.exists(fundamental_path):
         fundamental_df = pd.read_csv(fundamental_path)
         # Drop existing columns to avoid duplicates

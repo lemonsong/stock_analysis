@@ -40,7 +40,7 @@ SEQUENTIAL_COLOR ='PuBu' #'YlGnBu' #'GnBu'
 # discrete color: https://plotly.com/python/discrete-color/
 DISCRETE_COLOR = px.colors.qualitative.Light24
 # ak_fundamental_by_yearly
-AK_FUNDAMENTAL_KEEP_COMMON_COLS = ['SECURITY_NAME_ABBR', 'ORG_TYPE', 'REPORT_DATE_NAME']
+AK_FUNDAMENTAL_KEEP_COMMON_COLS = ['SECURITY_NAME_ABBR', 'ORG_TYPE', 'REPORT_DATE_NAME','REPORT_DATE','REPORT_TYPE']
 
 
 # buy_sell_signal_column_type
