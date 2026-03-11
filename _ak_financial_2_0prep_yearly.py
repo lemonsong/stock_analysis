@@ -176,6 +176,7 @@ def process_single_stock(stock_symbol):
             stock_df_ttm = reduce(lambda left, right: pd.merge(left, right, on=AK_FUNDAMENTAL_KEEP_COMMON_COLS, how='inner'), dfs_ttm)
             stock_df_ttm.insert(0, 'symbol', stock_symbol)
             stock_df_ttm['type'] = 'TTM'
+            stock_df_ttm['REPORT_DATE_NAME'] = stock_df_ttm.REPORT_DATE.dt.year.astype(str)+"年报"
         else:
             stock_df_ttm = pd.DataFrame()
 
