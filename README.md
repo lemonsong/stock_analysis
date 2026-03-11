@@ -18,7 +18,7 @@ This project is a comprehensive platform for analyzing Chinese A-shares, monitor
     *   **Period Analysis**: `pages/4_Period_Buy_Signals.py` allows analyzing signals over a specific date range to catch trends.
 *   **Fundamental Analysis**:
     *   `pages/3_Fundamental_Analysis.py` for deep dives into financial metrics.
-    *   `3analysis_rank_ak_fundamental_by_yearly.py` ranks stocks based on key fundamental indicators (ROE, Net Cash, Debt/Asset, etc.).
+    *   `3analysis_rank_ak_fundamental_by_yearly.py` ranks stocks based on key fundamental indicators grouped into Profitability, Cash Quality, Efficiency, Growth, Valuation, and Risk. It uses an Industry-Relative Scoring (Z-score approach) to evaluate and rank metrics across different industries objectively.
 *   **Backtesting**: Integration with Zipline for backtesting strategies (see `pages/8_Backtest_Overview.py`).
 *   **Portfolio Monitoring**: `pages/6_My_Holdings.py` to track your personal portfolio performance against generated signals.
 
