@@ -76,8 +76,12 @@ else:
     # stock_li = critical_df.symbol.tolist()
 
     # stock list to fetch fundamentals data_all_list
-    stock_li = ["SH688798",'SH688484','SZ000528','SZ300746','SH601949']
-    # stock_li = ['SH603259', 'SZ300759', 'SZ300347', 'SH603127', 'SZ002821', 'SH688621', 'SH603456']
+    # stock_li = ["SH688798",'SH688484','SZ000528','SZ300746','SH601949']
+    stock_li = ['SH603055','SZ002516','SZ300806','SZ300741',
+    'SH601198','SH601375','SH601099','SH600918','SZ000783','SH601456','SH601108',
+    'SH688768','SH688327','SZ301171','SZ300097','SZ301071','SH688038','SZ300077',
+                'SH603520','SZ300016','SH600276','SZ002365','SZ000513','SH688352','SH603538',
+                'SH600711','SH603993','SH601899','SZ000960','SZ000630','SH600497','SZ002466']
 
 logging.info(f"{stock_li=}")
 
