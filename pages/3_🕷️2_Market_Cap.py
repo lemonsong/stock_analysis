@@ -16,7 +16,7 @@ setup_page_config()
 st.title("📊 股价走势与市值分析")
 
 # 数据文件路径
-fundamental_file = Path(PROJECT_PATH) / 'data/ak_financial' / 'fundamental_calculated_metrics.csv'
+fundamental_file = Path(PROJECT_PATH) / 'data/ak_financial' / 'financial_calculated_metrics.csv'
 industry_file = Path(PROJECT_PATH) / 'data/dwa' / 'app_decision.csv'
 
 if not fundamental_file.exists():
