@@ -16,7 +16,7 @@ setup_page_config()
 st.title("📊 股价走势与市值分析")
 
 # 数据文件路径
-fundamental_file = Path(PROJECT_PATH) / 'data/ak_fundamental' / 'fundamental_calculated_metrics.csv'
+fundamental_file = Path(PROJECT_PATH) / 'data/ak_financial' / 'financial_calculated_metrics.csv'
 industry_file = Path(PROJECT_PATH) / 'data/dwa' / 'app_decision.csv'
 
 if not fundamental_file.exists():
@@ -64,7 +64,7 @@ def load_kline_data(symbol):
 
 @st.cache_data
 def load_all_market_caps():
-    mc_path = Path(PROJECT_PATH) / 'data' / 'ak_fundamental' / 'daily_market_cap.csv'
+    mc_path = Path(PROJECT_PATH) / 'data' / 'ak_financial' / 'daily_market_cap.csv'
     if mc_path.exists():
         mc_df = pd.read_csv(mc_path)
         mc_df['date'] = pd.to_datetime(mc_df['date'])

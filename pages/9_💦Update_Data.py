@@ -42,7 +42,7 @@ st.header("Daily Kline Pipeline", divider=True)
 # 1. Date Input Boxes
 col_daily_kline_start, col_daily_kline_end = st.columns(2)
 with col_daily_kline_start:
-    daily_kline_start_date = st.date_input("Start Date", value=datetime(2026, 1, 1))
+    daily_kline_start_date = st.date_input("Start Date", value=datetime.now())
 with col_daily_kline_end:
     daily_kline_end_date = st.date_input("End Date", value=datetime.now())
 
@@ -159,11 +159,11 @@ st.write(f"Customized Stock List: {text_stock_list}")
 log_placeholder = st.empty()
 if st.button("Run CN Stock - Fundamental Pipeline", icon="📊", type="primary"):
     scripts = [
-        {"file": "0extract_ak_fundamental_by_yearly.py", "desc": "Fetch fundamental data stock by stock"},
-        {"file": "2_0prep_ak_fundamental_by_yearly_concat.py", "desc": "Concatenate fundamentals of stocks into one file; remove columns with sparse value"},
-        {"file": "2_1prep_ak_fundamental_market_value.py", "desc": "Calculate yearly latest market value"},
-        {"file": "2_2prep_ak_fundamental_by_yearly_calculate.py", "desc": "Calculate fundamental metrics"},
-        {"file": "3analysis_rank_ak_fundamental_by_yearly.py", "desc": "Rank key fundamental metrics"},
+        {"file": "_ak_financial_0extract_by_report.py", "desc": "Fetch fundamental data stock by stock"},
+        {"file": "_ak_financial_2_0prep_yearly.py", "desc": "Concatenate fundamentals of stocks into one file; remove columns with sparse value"},
+        {"file": "_ak_financial_2_1prep_market_value.py.py", "desc": "Calculate yearly latest market value"},
+        {"file": "_ak_financial_2_2prep_yearly_calculate.py.py", "desc": "Calculate fundamental metrics"},
+        {"file": "_ak_financial_3_0analysis_rank_by_yearly.py", "desc": "Rank key fundamental metrics"},
         {"file": "4app_data.py", "desc": "Format data for App"}
 
     ]
@@ -179,7 +179,7 @@ if st.button("Run CN Stock - Fundamental Pipeline", icon="📊", type="primary")
             # We pass dates to A.py as arguments.
             # If B and C also need dates, add them to the list below.
             cmd = [sys.executable, script['file']]
-            if script['file'] == "0extract_ak_fundamental_by_yearly.py":
+            if script['file'] == "_ak_financial_0extract_by_report.py":
                 cmd.extend(["--boards_regex", boards_regex,
                             "--choice_overall_signal_count", choice_overall_signal_count,
                             "--choice_industry_category_name", choice_industry_category_name,

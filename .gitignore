@@ -40,3 +40,17 @@ __pycache__/
 *$py.class
 /lab/ts_leading_metric_impact_on_sectors-Copy1.ipynb
 /data/basic/realtime_price.csv
+/data/ak_financial/single_file/
+/data/ak_financial/0latest_stock_price_by_yearly.csv
+/data/ak_financial/daily_market_cap.csv
+/data/ak_financial/financial_calculated.csv
+/data/ak_financial/financial_calculated_metrics.csv
+/data/ak_financial/financial_rank_model.pkl
+/data/ak_financial/financial_rank_prediction.csv
+/data/ak_financial/financial_all.csv
+/data/ak_financial/financial_dense.csv
+/data/ak_financial/scoring_model/
+/data/ak_financial/scoring_model/
+/data/ak_financial/financial_dense.csv
+/data/ak_financial/financial_all.csv
+/data/ak_fundamental/

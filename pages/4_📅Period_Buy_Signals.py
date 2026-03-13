@@ -309,6 +309,10 @@ def main():
             f"period_signals_{start_date}_{end_date}.csv",
             "text/csv"
         )
+        # Display in a code block with the copy button
+        symbol_string = ",".join(filtered_df["symbol"].astype(str).tolist())
+        st.write("Click the icon on the right to copy filtered symbols:")
+        st.code(symbol_string, language=None)
 
 if __name__ == "__main__":
     main()

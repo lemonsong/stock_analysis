@@ -12,7 +12,6 @@ logging.basicConfig(
 import pdfplumber
 import pandas as pd
 import requests
-from io import BytesIO
 from utils.common import format_stock_symbol, format_df_column_name
 from utils.constants import PROJECT_PATH
 

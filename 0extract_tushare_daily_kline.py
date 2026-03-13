@@ -39,6 +39,7 @@ if start_date > end_date:
 
 logging.info(f"Fetching data: {start_date} to {end_date}")
 
+logging.info(f"Fetching data: {start_date} to {end_date}")
 
 PROGRAM_PATH = f'{PROJECT_PATH}/data/tushare_kline'
 kline_file_path = f'{PROGRAM_PATH}/kline_download/0kline_{start_date}_to_{end_date}.csv'
