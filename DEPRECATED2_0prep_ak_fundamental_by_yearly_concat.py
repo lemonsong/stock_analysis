@@ -67,14 +67,14 @@ def check_missing_sheets(stock_symbol_li):
     return list(set(missing_symbols))
 
 def fetch_missing_data(missing_symbols):
-    """Call 0extract_ak_fundamental_by_yearly.py to fetch missing data."""
+    """Call DEPRECATED0extract_ak_fundamental_by_yearly.py to fetch missing data."""
     if not missing_symbols:
         return
 
     logging.info(f"Fetching missing data for {len(missing_symbols)} stocks: {missing_symbols}")
 
     # Construct the command
-    script_path = f"{PROJECT_PATH}/0extract_ak_fundamental_by_yearly.py"
+    script_path = f"{PROJECT_PATH}/DEPRECATED0extract_ak_fundamental_by_yearly.py"
 
     # We need to pass dummy arguments for the required args that we don't use when text_stock_list is provided
     cmd = [

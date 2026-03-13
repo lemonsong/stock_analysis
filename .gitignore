@@ -47,7 +47,9 @@ __pycache__/
 /data/ak_financial/financial_calculated_metrics.csv
 /data/ak_financial/financial_rank_model.pkl
 /data/ak_financial/financial_rank_prediction.csv
-/data/ak_financial/financial_yearly.csv
-/data/ak_financial/financial_yearly_concat.csv
+/data/ak_financial/financial_all.csv
+/data/ak_financial/financial_dense.csv
 /data/ak_financial/scoring_model/
 /data/ak_financial/scoring_model/
+/data/ak_financial/financial_dense.csv
+/data/ak_financial/financial_all.csv

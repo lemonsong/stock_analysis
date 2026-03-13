@@ -20,7 +20,7 @@ PROGRAM_PATH = f'{PROJECT_PATH}/data/ak_financial'
 import os
 
 # Try to load SHARE_CAPITAL from financial data to calculate daily market cap
-financial_file = f'{PROGRAM_PATH}/financial_yearly_concat.csv'
+financial_file = f'{PROGRAM_PATH}/financial_dense.csv'
 if os.path.exists(financial_file):
     financial_df = pd.read_csv(financial_file)
     # Extract fiscal_year from REPORT_DATE

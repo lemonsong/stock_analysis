@@ -251,8 +251,8 @@ def main():
         fundamental_df = pd.concat([df_yearly_all, df_ttm_all], ignore_index=True)
 
     # fundamental_df = fundamental_df.sort(by=['symbol','REPORT_DATE_NAME'], ascending=[True, True])
-    fundamental_df.to_csv(f'{PROGRAM_PATH}/financial_yearly.csv', index=False, encoding='utf-8')
-    logging.info(f"Saved financial_yearly_concat.csv with shape: {fundamental_df.shape}")
+    fundamental_df.to_csv(f'{PROGRAM_PATH}/financial_all.csv', index=False, encoding='utf-8')
+    logging.info(f"Saved financial_dense.csv with shape: {fundamental_df.shape}")
 
     # 4. Clean columns (Remove sparse columns)
     logging.info("Cleaning sparse columns...")
@@ -267,13 +267,13 @@ def main():
     # Threshold: 50% of rows must have data
     col_threshold = int(len(fundamental_df) * 0.5)
 
-    financial_yearly_concat = pd.concat([
+    financial_dense = pd.concat([
         fundamental_df[check_cols].dropna(axis=1, thresh=col_threshold),
         fundamental_df[keep_cols]
     ], axis=1)
 
-    logging.info(f"Saved fundamental_cleaned.csv with shape: {financial_yearly_concat.shape}")
-    financial_yearly_concat.to_csv(f'{PROGRAM_PATH}/financial_yearly_concat.csv', index=False, encoding='utf-8')
+    logging.info(f"Saved fundamental_cleaned.csv with shape: {financial_dense.shape}")
+    financial_dense.to_csv(f'{PROGRAM_PATH}/financial_dense.csv', index=False, encoding='utf-8')
 
 
 if __name__ == "__main__":

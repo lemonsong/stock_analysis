@@ -12,7 +12,7 @@ from utils.constants import PROJECT_PATH
 
 # ref: https://www.tidy-finance.org/python/financial-statement-analysis.html#combining-financial-ratios
 PROGRAM_PATH = f'{PROJECT_PATH}/data/ak_financial'
-financial_df_cleaned = pd.read_csv(f'{PROGRAM_PATH}/financial_yearly_concat.csv')
+financial_df_cleaned = pd.read_csv(f'{PROGRAM_PATH}/financial_dense.csv')
 industry_df = pd.read_csv(f'{PROJECT_PATH}/data/basic/stock_name_industry.csv')[['symbol','industry_category_name']]
 financial_df_cleaned = financial_df_cleaned.merge(industry_df, 'left', 'symbol')
 
