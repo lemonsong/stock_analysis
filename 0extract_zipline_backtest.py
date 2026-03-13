@@ -232,7 +232,7 @@ def run_strategies(stocks, start_date, end_date, bundle_name, output_dir):
     for stock in stocks:
         processed_count += 1
         print(f"Processing {stock}... ({processed_count}/{total_stocks}). Left: {total_stocks - processed_count}")
-        stock_summary = {'Symbol': stock}
+        stock_summary = {'symbol': stock}
 
         for strategy_name, StrategyClass in STRATEGIES.items():
             print(f"  Running {strategy_name}...")
@@ -315,7 +315,7 @@ if __name__ == "__main__":
             if os.path.exists(exist_summary_path):
                 # exist_zipline_df = pd.read_csv(exist_summary_path).drop_duplicates()
                 # exist_zipline_df.to_csv(exist_summary_path, encoding='utf-8', index=False)
-                exist_symbol = pd.read_csv(exist_summary_path)['Symbol'].tolist()
+                exist_symbol = pd.read_csv(exist_summary_path)['symbol'].tolist()
                 stocks = [i for i in stocks if i not in exist_symbol]
             # the above is similar to the following code
             # file_list = get_file_paths_pathlib(f'{PROGRAM_PATH}/{daily_folder}')
