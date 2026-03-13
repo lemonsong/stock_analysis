@@ -29,10 +29,11 @@ def load_decision_data():
     try:
         df = pd.read_csv(decision_file)
 
-        # Merge Feishu quarterly fundamental score
-        feishu_df = load_feishu_quarterly_eval_data()
-        if not feishu_df.empty:
-            df = df.merge(feishu_df, on='symbol', how='left')
+        # 2026-03-13: remove feishu data as financial_score_data has scoring from Feishu
+        # # Merge Feishu quarterly fundamental score
+        # feishu_df = load_feishu_quarterly_eval_data()
+        # if not feishu_df.empty:
+        #     df = df.merge(feishu_df, on='symbol', how='left')
 
         realtime_df = pd.read_csv(realtime_price_file)[['symbol','最新价','涨跌幅']]
         if not realtime_df.empty:
@@ -135,17 +136,17 @@ def setup_sidebar(df):
                     key=f"filter_{col}"
                 )
         fundamental_rank_range = None
-        if 'fundamental_rank' in df.columns:
-            fundamental_rank_min = float(df['fundamental_rank'].min())
-            fundamental_rank_max = float(df['fundamental_rank'].max())
+        if 'latest_financial_score' in df.columns:
+            fundamental_rank_min = float(df['latest_financial_score'].min())
+            fundamental_rank_max = float(df['latest_financial_score'].max())
             if fundamental_rank_min == fundamental_rank_max:
                 fundamental_rank_max = fundamental_rank_min + 1.0
             fundamental_rank_range = st.slider(
-                "基本面排名",
+                "最新基本面评分",
                 min_value=fundamental_rank_min,
                 max_value=fundamental_rank_max,
                 value=(fundamental_rank_min, fundamental_rank_max),
-                key="filter_fundamental_rank"
+                key="filter_latest_financial_score"
             )
 
         quarterly_financial_score_range = None
@@ -230,14 +231,14 @@ def setup_sidebar(df):
     if fundamental_rank_range:
         if include_null_value:
             filtered_df = filtered_df[
-                ((filtered_df['fundamental_rank'] >= fundamental_rank_range[0]) &
-                (filtered_df['fundamental_rank'] <= fundamental_rank_range[1])) |
-                filtered_df['fundamental_rank'].isna()
+                ((filtered_df['latest_financial_score'] >= fundamental_rank_range[0]) &
+                (filtered_df['latest_financial_score'] <= fundamental_rank_range[1])) |
+                filtered_df['latest_financial_score'].isna()
             ]
         else:
             filtered_df = filtered_df[
-                (filtered_df['fundamental_rank'] >= fundamental_rank_range[0]) &
-                (filtered_df['fundamental_rank'] <= fundamental_rank_range[1])
+                (filtered_df['latest_financial_score'] >= fundamental_rank_range[0]) &
+                (filtered_df['latest_financial_score'] <= fundamental_rank_range[1])
             ]
 
     if quarterly_financial_score_range:
@@ -534,7 +535,7 @@ def display_detailed_data(filtered_df):
         "分红率(%)": [col for col in filtered_df.columns if 'total_dividend_yield' in col],
         "股价增长(%)": [col for col in filtered_df.columns if 'growth_' in col],
         "基本面指标": FUNDAMENTAL_KEY_COLS,
-        "基本面排名": [col for col in filtered_df.columns if 'fundamental' in col.lower()],
+        "基本面排名": [col for col in filtered_df.columns if 'fundamental' in col.lower() or 'latest_financial_score' in col],
         "技术指标": [col for col in filtered_df.columns if col.endswith('_buy') or col.endswith('_sell')],
         "净流入":[col for col in filtered_df.columns if 'inflow' in col],
     }
@@ -757,10 +758,10 @@ def display_detailed_data(filtered_df):
             format="%.0f",
             width="small"
         ),
-        "fundamental_rank": st.column_config.NumberColumn(
-            "基本面排名",
-            help="基于综合评分的年度排名（越小越好）",
-            format="%d"
+        "latest_financial_score": st.column_config.NumberColumn(
+            "最新基本面评分",
+            help="预测的最新基本面评分",
+            format="%.2f"
         ),
         "fundamental_fiscal_year": st.column_config.NumberColumn(
             "财报年份",

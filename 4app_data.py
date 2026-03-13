@@ -20,7 +20,7 @@ app_decision_df = app_decision_df.merge(stock_cash_dividend_yield_by_periods_df,
 
 
 # Join fundamental ranking to fundamental metrics and join the latest year fundamental ranking to decision df
-rank_path = os.path.join(PROJECT_PATH, 'data/ak_financial', 'financial_rank_prediction.csv')
+rank_path = os.path.join(PROJECT_PATH, 'data/ak_financial/scoring_model', 'financial_score_data.csv')
 if os.path.exists(rank_path):
     rank_df = pd.read_csv(rank_path)
     
@@ -29,24 +29,33 @@ if os.path.exists(rank_path):
     if os.path.exists(fundamental_path):
         fundamental_df = pd.read_csv(fundamental_path)
         # Drop existing columns to avoid duplicates
-        cols_to_use = ['fundamental_score', 'fundamental_rank']
-        fundamental_df = fundamental_df.drop(columns=[c for c in cols_to_use if c in fundamental_df.columns], errors='ignore')
+        cols_to_drop = ['fundamental_rank', 'latest_financial_score']
+        fundamental_df = fundamental_df.drop(columns=[c for c in cols_to_drop if c in fundamental_df.columns], errors='ignore')
         
-        fundamental_df = fundamental_df.merge(rank_df[['symbol', 'fiscal_year'] + cols_to_use], 
-                                      on=['symbol', 'fiscal_year'], how='left')
+        if 'latest_financial_score' in rank_df.columns:
+            fundamental_df = fundamental_df.merge(rank_df[['symbol', 'latest_financial_score']],
+                                          on=['symbol'], how='left')
         fundamental_df.to_csv(fundamental_path, index=False)
         print(f"Updated {fundamental_path}")
 
     # 2. Join latest year key fundamental metrics and fundamental rank metrics to app_decision_df
     # Get latest year data for each symbol
     # Use fundamental_df have both fundamental metrics and fundamental rank metrics
-    latest_rank_df = fundamental_df.sort_values('fiscal_year').groupby('symbol').tail(1)
-    
-    # Rename columns to indicate they are fundamental info
-    latest_rank_df = latest_rank_df[['symbol', 'fundamental_rank','market_cap']+FUNDAMENTAL_KEY_COLS]
-    latest_rank_df = latest_rank_df.rename(columns={'fiscal_year': 'fundamental_fiscal_year'})
-    
-    app_decision_df = app_decision_df.merge(latest_rank_df, on='symbol', how='left')
+    if os.path.exists(fundamental_path):
+        latest_rank_df = fundamental_df.sort_values('fiscal_year').groupby('symbol').tail(1)
+
+        # Rename columns to indicate they are fundamental info
+        cols_to_keep = ['symbol', 'market_cap'] + FUNDAMENTAL_KEY_COLS
+        if 'latest_financial_score' in latest_rank_df.columns:
+            cols_to_keep.append('latest_financial_score')
+
+        if 'fiscal_year' in latest_rank_df.columns:
+            cols_to_keep.append('fundamental_fiscal_year')
+            latest_rank_df = latest_rank_df.rename(columns={'fiscal_year': 'fundamental_fiscal_year'})
+
+        latest_rank_df = latest_rank_df[[c for c in cols_to_keep if c in latest_rank_df.columns]]
+
+        app_decision_df = app_decision_df.merge(latest_rank_df, on='symbol', how='left')
 
 # add big money net inflow
 stock_individual_fund_flow_rank_df = pd.read_csv(f'{PROJECT_PATH}/data/basic/stock_individual_fund_flow_rank.csv')
