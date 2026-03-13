@@ -6,7 +6,7 @@ import pandas as pd
 import tushare as ts
 from utils.constants import TUSHARE_API_KEY, PROJECT_PATH
 import os
-from utils.common import format_stock_symbol, get_file_paths_pathlib, extract_stock_symbol_from_path
+from utils.common import format_stock_symbol, get_file_paths_pathlib, extract_stock_symbol_from_path, get_today_date_string
 from utils.tushare_helper import format_tushare_kline_to_dolt_style
 from datetime import datetime
 import logging
@@ -19,19 +19,25 @@ logging.basicConfig(
 import exchange_calendars as xcals
 import argparse
 
-if len(sys.argv) > 1:
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--start', type=str, required=True)
-    parser.add_argument('--end', type=str, required=True)
-    args = parser.parse_args()
-    start_date = args.start
-    end_date = args.end
-    logging.info(f"Fetching data via sys argument parser: {start_date} to {end_date}")
-    # TODO:add end_date validation step or automate start & end data input to avoid mistakes
-else:
-    start_date = "2026-03-09"  # TODO
-    end_date = '2026-03-09'  # TODO
-    logging.info(f"Fetching data via manual input: {start_date} to {end_date}")
+def valid_date(s):
+    try:
+        return datetime.strptime(s, "%Y-%m-%d").strftime("%Y-%m-%d")
+    except ValueError:
+        msg = f"not a valid date: {s!r}"
+        raise argparse.ArgumentTypeError(msg)
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--start', type=valid_date, default=get_today_date_string(), help="Start date in YYYY-MM-DD format")
+parser.add_argument('--end', type=valid_date, default=get_today_date_string(), help="End date in YYYY-MM-DD format")
+args = parser.parse_args()
+
+start_date = args.start
+end_date = args.end
+
+if start_date > end_date:
+    parser.error(f"start_date {start_date} cannot be after end_date {end_date}")
+
+logging.info(f"Fetching data: {start_date} to {end_date}")
 
 
 PROGRAM_PATH = f'{PROJECT_PATH}/data/tushare_kline'
