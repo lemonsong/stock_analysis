@@ -332,28 +332,16 @@ def render_trends_tab(df, selected_symbols, selected_metrics, stock_names):
             # 1. 趋势图
             plot_df = df[['display_name', 'fiscal_year', metric]].dropna(subset=[metric])
             if not plot_df.empty:
-                if metric in ['roe', 'roa']:
-                    fig = px.bar(
-                        plot_df,
-                        x='fiscal_year',
-                        y=metric,
-                        color='display_name',
-                        color_discrete_sequence=DISCRETE_COLOR,
-                        barmode='group',
-                        labels={'fiscal_year': '年份', metric: metric, 'display_name': '股票'},
-                        title=f"{metric} 对比"
-                    )
-                else:
-                    fig = px.line(
-                        plot_df,
-                        x='fiscal_year',
-                        y=metric,
-                        color='display_name',
-                        color_discrete_sequence=DISCRETE_COLOR,
-                        markers=True,
-                        labels={'fiscal_year': '年份', metric: metric, 'display_name': '股票'},
-                        title=f"{metric} 趋势"
-                    )
+                fig = px.line(
+                    plot_df,
+                    x='fiscal_year',
+                    y=metric,
+                    color='display_name',
+                    color_discrete_sequence=DISCRETE_COLOR,
+                    markers=True,
+                    labels={'fiscal_year': '年份', metric: metric, 'display_name': '股票'},
+                    title=f"{metric} 趋势"
+                )
                 st.plotly_chart(fig, use_container_width=True)
 
             # 2. 对比表 (紧接在图表下方)
@@ -371,7 +359,7 @@ def render_trends_tab(df, selected_symbols, selected_metrics, stock_names):
             options=selected_symbols,
             format_func=lambda x: f"{x} - {stock_names.get(x, x)}"
         )
-
+        # TODO: Specify which metrics on right/left when "多指标单股票" is selected in Financial_Aalysis.py page.
         # 图表
         fig = go.Figure()
 
@@ -407,7 +395,7 @@ if df is None or df.empty:
     st.stop()
 
 # 侧边栏设置
-filtered_df_sidebar = render_filter_sidebar(df, default_filter_mode=0, default_stock_input_list='SZ300726,SH688138,SZ002180,SZ300458,SZ000725,SH600707', default_stock_search_list=['SH600054-黄山旅游'])
+filtered_df_sidebar = render_filter_sidebar(df, default_filter_mode=0, default_stock_input_list='SZ301611,SH688386', default_stock_search_list=['SH600054-黄山旅游'])
 selected_symbols = filtered_df_sidebar['symbol'].unique().tolist()
 # 缓存管理
 with st.sidebar.expander("缓存管理", expanded=False):
@@ -452,7 +440,7 @@ financial_metrics = {
     'Leverage Ratios（杠杆比率）': ['total_debt', 'net_debt', 'debt_to_equity', 'debt_to_asset', 'interest_coverage'],
     'Efficiency Ratios（效率比率）': ['revenue', 'gross_profit', 'net_profit', 'asset_turnover', 'inventory_turnover',
                                     'receivables_turnover'],
-    'Profitability Ratios（盈利能力比率）': ['gross_margin', 'operating_margin', 'profit_margin', 'roe', 'roa'],
+    'Profitability Ratios（盈利能力比率）': ['gross_margin', 'operating_margin', 'profit_margin', 'roe', 'roa', 'equity_multiplier'],
     'Cash Flow & Valuation Metrics（现金流和估值指标）': ['netcash_operate_over_net_profit',
                                                         'free_cash_flow_conversion_rate', 'change_in_working_capital',
                                                         'net_debt_over_ebitda', 'ev_over_ebitda']
