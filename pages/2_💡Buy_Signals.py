@@ -29,10 +29,11 @@ def load_decision_data():
     try:
         df = pd.read_csv(decision_file)
 
-        # Merge Feishu quarterly fundamental score
-        feishu_df = load_feishu_quarterly_eval_data()
-        if not feishu_df.empty:
-            df = df.merge(feishu_df, on='symbol', how='left')
+        # 2026-03-13: remove feishu data as financial_score_data has scoring from Feishu
+        # # Merge Feishu quarterly fundamental score
+        # feishu_df = load_feishu_quarterly_eval_data()
+        # if not feishu_df.empty:
+        #     df = df.merge(feishu_df, on='symbol', how='left')
 
         realtime_df = pd.read_csv(realtime_price_file)[['symbol','最新价','涨跌幅']]
         if not realtime_df.empty:

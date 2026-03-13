@@ -179,7 +179,7 @@ def main():
 
     pred_df['latest_financial_score'] = pred_df[['dt_pred', 'rf_pred', 'svr_pred']].mean(axis=1)
 
-    df_out = pred_df.merge(feishu_df[['symbol', 'quarterly_financial_score']], on='symbol', how='left')
+    df_out = pred_df[['symbol', 'quarterly_financial_score','latest_financial_score']]
 
     # save prediction
     output_dir = Path(PROJECT_PATH) / 'data' / 'ak_financial' / 'scoring_model'
