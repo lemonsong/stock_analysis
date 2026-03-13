@@ -42,7 +42,7 @@ st.header("Daily Kline Pipeline", divider=True)
 # 1. Date Input Boxes
 col_daily_kline_start, col_daily_kline_end = st.columns(2)
 with col_daily_kline_start:
-    daily_kline_start_date = st.date_input("Start Date", value=datetime(2026, 1, 1))
+    daily_kline_start_date = st.date_input("Start Date", value=datetime.now())
 with col_daily_kline_end:
     daily_kline_end_date = st.date_input("End Date", value=datetime.now())
 
