@@ -103,6 +103,7 @@ financial_df_cleaned = (financial_df_cleaned
     #  PARENT_EQUITY needs to be the average value
     roe=lambda x: x['PARENT_NETPROFIT'] / x['TOTAL_PARENT_EQUITY_avg'].replace(0, np.nan),
     roa = lambda x: x['net_profit'] / x['TOTAL_ASSETS_avg'].replace(0, np.nan),
+    equity_multiplier = lambda x: x['roe'] / x['roa'],
 
     ### Cash Flow & Valuation Metrics ###
     depreciation_and_amortization = lambda x: x["FA_IR_DEPR"] + x["OILGAS_BIOLOGY_DEPR"] + x["IR_DEPR"]
@@ -167,7 +168,7 @@ metrics_to_show_cols =[
     'current_ratio', 'quick_ratio', 'cash_ratio',
     'total_debt','net_debt', 'debt_to_equity', 'debt_to_asset', 'interest_coverage',
     'revenue','gross_profit','net_profit', 'asset_turnover', 'inventory_turnover', 'receivables_turnover',
-    'gross_margin', 'operating_margin', 'profit_margin', 'roe', 'roa',
+    'gross_margin', 'operating_margin', 'profit_margin', 'roe', 'roa', 'equity_multiplier',
     'netcash_operate_over_net_profit', 'free_cash_flow_conversion_rate','change_in_working_capital',
     'net_debt_over_ebitda', 'ev_over_ebitda',
     'market_cap'

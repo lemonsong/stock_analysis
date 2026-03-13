@@ -359,20 +359,24 @@ def render_trends_tab(df, selected_symbols, selected_metrics, stock_names):
             options=selected_symbols,
             format_func=lambda x: f"{x} - {stock_names.get(x, x)}"
         )
-
+        # TODO: Specify which metrics on right/left when "多指标单股票" is selected in Financial_Aalysis.py page.
         # 图表
-        n_metrics = len(selected_metrics)
-        fig = make_subplots(rows=n_metrics, cols=1, subplot_titles=selected_metrics, vertical_spacing=0.05)
+        fig = go.Figure()
 
-        for i, metric in enumerate(selected_metrics, 1):
+        for metric in selected_metrics:
             if metric not in df.columns: continue
             stock_data = df[(df['symbol'] == selected_stock) & (df[metric].notna())]
             if not stock_data.empty:
                 fig.add_trace(
-                    go.Scatter(x=stock_data['fiscal_year'], y=stock_data[metric], name=metric, mode='lines+markers'),
-                    row=i, col=1
+                    go.Scatter(x=stock_data['fiscal_year'], y=stock_data[metric], name=metric, mode='lines+markers')
                 )
-        fig.update_layout(height=300 * n_metrics, showlegend=False)
+        fig.update_layout(
+            title=f"{stock_names.get(selected_stock, selected_stock)} 多指标趋势",
+            xaxis_title="年份",
+            yaxis_title="指标值",
+            height=500,
+            showlegend=True
+        )
         st.plotly_chart(fig, use_container_width=True)
 
         # 表格 (显示该股票的所有选中指标)
@@ -391,7 +395,7 @@ if df is None or df.empty:
     st.stop()
 
 # 侧边栏设置
-filtered_df_sidebar = render_filter_sidebar(df, default_filter_mode=0, default_stock_input_list='SZ300726,SH688138,SZ002180,SZ300458,SZ000725,SH600707', default_stock_search_list=['SH600054-黄山旅游'])
+filtered_df_sidebar = render_filter_sidebar(df, default_filter_mode=0, default_stock_input_list='SZ301611,SH688386', default_stock_search_list=['SH600054-黄山旅游'])
 selected_symbols = filtered_df_sidebar['symbol'].unique().tolist()
 # 缓存管理
 with st.sidebar.expander("缓存管理", expanded=False):
@@ -436,7 +440,7 @@ financial_metrics = {
     'Leverage Ratios（杠杆比率）': ['total_debt', 'net_debt', 'debt_to_equity', 'debt_to_asset', 'interest_coverage'],
     'Efficiency Ratios（效率比率）': ['revenue', 'gross_profit', 'net_profit', 'asset_turnover', 'inventory_turnover',
                                     'receivables_turnover'],
-    'Profitability Ratios（盈利能力比率）': ['gross_margin', 'operating_margin', 'profit_margin', 'roe', 'roa'],
+    'Profitability Ratios（盈利能力比率）': ['gross_margin', 'operating_margin', 'profit_margin', 'roe', 'roa', 'equity_multiplier'],
     'Cash Flow & Valuation Metrics（现金流和估值指标）': ['netcash_operate_over_net_profit',
                                                         'free_cash_flow_conversion_rate', 'change_in_working_capital',
                                                         'net_debt_over_ebitda', 'ev_over_ebitda']
