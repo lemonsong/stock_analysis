@@ -2,6 +2,7 @@
 import os
 import sys
 import argparse
+import subprocess
 import pandas as pd
 import numpy as np
 import matplotlib
@@ -224,7 +225,7 @@ def run_strategies(stocks, start_date, end_date, bundle_name, output_dir):
         load(bundle_name)
     except Exception as e:
         print(f"Bundle {bundle_name} not found or load failed: {e}. Attempting ingest...")
-        os.system(f"zipline ingest -b {bundle_name}")
+        subprocess.run(["zipline", "ingest", "-b", bundle_name], check=True)
 
     processed_count = 0
     total_stocks = len(stocks)
