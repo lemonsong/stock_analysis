@@ -18,6 +18,7 @@ logging.basicConfig(
 )
 import exchange_calendars as xcals
 import argparse
+import concurrent.futures
 
 def valid_date(s):
     try:
@@ -90,25 +91,46 @@ else:
     write_log_df = pd.DataFrame()
 # get list of single stock data_all_list
 file_list = get_file_paths_pathlib(f'{PROGRAM_PATH}/{daily_folder}')
-for file_path in file_list:
-    logging.info(file_path)
-    stock_symbol = extract_stock_symbol_from_path(file_path, from_format='MARKETnumber',to_format='MARKETnumber') # use MARKETnumber for data_dolt, number_MARKET for zipline_data folder
-    stock_df = pd.read_csv(file_path)
-    kline_df_sub = kline_df.loc[kline_df.symbol == stock_symbol, ['date', 'high', 'low', 'open', 'close', 'adjclose', 'volume', 'amount']].copy()
-    write_log_df_sub = pd.DataFrame({
-        'folder': daily_folder,
-        'symbol': [stock_symbol],
-        'old_data_max_date': [stock_df['date'].max()],
-        'new_date_min_date': [kline_df['date'].min()],
-        'update_time': datetime.now(),
-        'method': 'append'
-    })
-    # append new kline data_all_list to single stock file
-    stock_df = pd.concat([stock_df, kline_df_sub], axis=0, ignore_index=True)
-    stock_df.to_csv(file_path, index=False, encoding='utf-8')
-    # append wrote stock symbol to write_log_df_sub for reference
-    write_log_df = pd.concat([write_log_df, write_log_df_sub], axis=0, ignore_index=True)
+
+def process_stock_file(file_path):
+    try:
+        stock_symbol = extract_stock_symbol_from_path(file_path, from_format='MARKETnumber',to_format='MARKETnumber') # use MARKETnumber for data_dolt, number_MARKET for zipline_data folder
+        stock_df = pd.read_csv(file_path)
+        kline_df_sub = kline_df.loc[kline_df.symbol == stock_symbol, ['date', 'high', 'low', 'open', 'close', 'adjclose', 'volume', 'amount']].copy()
+
+        if kline_df_sub.empty:
+            return None
+
+        write_log_df_sub = pd.DataFrame({
+            'folder': daily_folder,
+            'symbol': [stock_symbol],
+            'old_data_max_date': [stock_df['date'].max()],
+            'new_date_min_date': [kline_df['date'].min()],
+            'update_time': datetime.now(),
+            'method': 'append'
+        })
+        # append new kline data_all_list to single stock file
+        stock_df = pd.concat([stock_df, kline_df_sub], axis=0, ignore_index=True)
+        stock_df.to_csv(file_path, index=False, encoding='utf-8')
+        return write_log_df_sub
+    except Exception as e:
+        logging.error(f"Error processing {file_path}: {e}")
+        return None
+
+logging.info(f"Processing {len(file_list)} files with ThreadPoolExecutor...")
+write_logs = []
+with concurrent.futures.ThreadPoolExecutor(max_workers=os.cpu_count() or 4) as executor:
+    # Use list() to consume the generator and wait for all tasks to complete
+    results = list(executor.map(process_stock_file, file_list))
+
+for log_sub in results:
+    if log_sub is not None:
+        write_logs.append(log_sub)
+
+if write_logs:
+    write_log_df = pd.concat([write_log_df] + write_logs, axis=0, ignore_index=True)
     write_log_df.to_csv(write_log_file_path, index=False, encoding='utf-8')
+
 logging.info(f"""{daily_folder} folder updated. Check {write_log_file_path} for written log. Pay attention to the stock with different new/old date """)
 
 

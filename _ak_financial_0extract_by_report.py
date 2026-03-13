@@ -9,6 +9,7 @@ logging.basicConfig(
 import pandas as pd
 import akshare as ak
 from utils.constants import PROJECT_PATH
+from utils.feishu_helper import append_feishu_quarterly_eval_data, update_feishu_quarterly_eval_author
 
 import argparse, sys
 
@@ -61,9 +62,15 @@ if len(sys.argv) > 1:
         target_symbols_companies = stock_filtered_df[['symbol', 'company']].to_dict('records')
         collected_symbols = set()
 
+        # Keep track of ranges added to Feishu to update them later
+        feishu_ranges = {}
+
         for item in target_symbols_companies:
             symbol = item['symbol']
             company = item['company']
+
+            current_symbol_relative_stocks = set()
+
             prompt = (f"""
             ### 任务步骤
             1. **业务溯源**：请先搜索并分析股票代码 {symbol} 的主营业务、核心产品及其在产业链中的具体位置。
@@ -88,18 +95,28 @@ if len(sys.argv) > 1:
                     symbols_found = re.findall(r'[A-Z]{2}[0-9]{6}', rel_symbols)
                     if symbols_found:
                         for s in symbols_found:
+                            current_symbol_relative_stocks.add(s)
                             collected_symbols.add(s)
                     time.sleep(1)
                 else:
+                    current_symbol_relative_stocks.add(symbol)
                     collected_symbols.add(symbol)
                     # collected_symbols.add('SH688433')
                     # collected_symbols.add('SZ000969')
             except Exception as e:
                 logging.error(f"Error calling Gemini for {symbol}: {e}")
 
+            # Write original symbol and relevant stocks to Feishu before fetching financial statements
+            relevant_stocks_str = ",".join(list(current_symbol_relative_stocks))
+            feishu_range = append_feishu_quarterly_eval_data(symbol, relevant_stocks_str)
+            if feishu_range:
+                for s in current_symbol_relative_stocks:
+                    if s not in feishu_ranges:
+                        feishu_ranges[s] = []
+                    feishu_ranges[s].append(feishu_range)
+
         stock_li = list(collected_symbols)
 
-        # TODO：improve prompt；write list to Feishu，write done after financial sheet fetched
     elif len(args.text_stock_list) == 0:
         logging.info(f"Fetching data via field&value filter")
         stock_filtered_df = pd.read_csv(f"{PROJECT_PATH}/data/dwa/app_decision.csv")
@@ -196,3 +213,11 @@ for index, stock_symbol in enumerate(stock_li):
                                                   index=False)
         logging.info(f"Cash flow sheet of {stock_symbol} saved. Sleep for {random_sleep_time}s ...")
         time.sleep(random_sleep_time)
+
+    # After fetched statements, update Feishu Author column to 'AI' if applicable
+    if args.fetch_relevant_symbols == 'True':
+        if 'feishu_ranges' in locals() and stock_symbol in feishu_ranges:
+            for frange in feishu_ranges[stock_symbol]:
+                update_feishu_quarterly_eval_author(frange, "AI")
+            # Clear it so we don't update multiple times unnecessarily if another stock maps to the same range
+            del feishu_ranges[stock_symbol]

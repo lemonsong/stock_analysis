@@ -209,50 +209,47 @@ tab1, tab2 = st.tabs(["🧩 Symbol Analysis", "🏭 Industry Comparison"])
 with tab1:
     st.subheader("Symbol Strategy Comparison")
 
-    # Get list of unique symbols in filtered data
-    display_symbols = filtered_df['symbol'].unique()
+    # Filter columns to only what's needed for summary
+    display_df = filtered_df[['symbol', 'company', 'Strategy', 'Metric', 'Value']]
 
-    if len(display_symbols) > 20 and not selected_symbols:
-        st.warning(f"Showing first 20 symbols out of {len(display_symbols)}. Please use filters to narrow down.")
-        display_symbols = display_symbols[:20]
+    # User selects which metric to view
+    selected_metric = st.selectbox("Select Metric to View", METRICS, index=0)
 
-    for sym in display_symbols:
-        st.markdown(f"### {sym}-{filtered_df.loc[filtered_df['symbol'] == sym,['company']].values[0][0]}")
-        sym_data = filtered_df[filtered_df['symbol'] == sym]
+    # Pivot the data for the data editor
+    pivot_df = display_df[display_df['Metric'] == selected_metric].pivot_table(
+        index=['symbol', 'company'],
+        columns='Strategy',
+        values='Value',
+        aggfunc='first'
+    ).reset_index()
 
-        # Grid Layout: Columns = Metrics
-        # We have 5 metrics.
-        # We can use st.columns(len(METRICS))
-        cols = st.columns(len(METRICS))
+    st.markdown(f"**{selected_metric} by Strategy**")
 
-        for idx, metric in enumerate(METRICS):
-            metric_data = sym_data[sym_data['Metric'] == metric]
+    # Configure styling for the dataframe depending on the metric
+    # Only format columns that actually exist in the pivot_df
+    available_strats = [col for col in pivot_df.columns if col not in ['symbol', 'company']]
+    if "Return" in selected_metric or "Ratio" in selected_metric:
+        # Higher is better
+        styled_df = pivot_df.style.background_gradient(cmap='Greens', subset=available_strats, vmin=0)
+    else:
+        # Lower is better (e.g. Drawdown, Volatility)
+        styled_df = pivot_df.style.background_gradient(cmap='Reds', subset=available_strats)
 
-            with cols[idx]:
-                # Chart
-                # X = Strategy, Y = Value
-                fig = px.bar(
-                    metric_data,
-                    x='Strategy',
-                    y='Value',
-                    title=metric,
-                    text_auto='.2f',
-                    color='Strategy' # Optional: color by strategy
-                )
-                fig.update_layout(
-                    showlegend=False,
-                    xaxis_title=None,
-                    yaxis_title=None,
-                    height=250,
-                    margin=dict(l=0, r=0, t=30, b=0)
-                )
-                # Hide x-axis labels if too crowded? No, they are needed.
-                # Maybe rotate them
-                fig.update_xaxes(tickangle=45)
+    st.dataframe(styled_df, use_container_width=True, hide_index=True)
 
-                st.plotly_chart(fig, use_container_width=True, key=f"{sym}_{metric}")
-
-        st.divider()
+    # Aggregate Chart
+    st.markdown("### Aggregated View")
+    agg_df = display_df[display_df['Metric'] == selected_metric].groupby('Strategy')['Value'].mean().reset_index()
+    fig = px.bar(
+        agg_df,
+        x='Strategy',
+        y='Value',
+        title=f"Average {selected_metric} across all selected symbols",
+        text_auto='.2f',
+        color='Strategy'
+    )
+    fig.update_layout(showlegend=False)
+    st.plotly_chart(fig, use_container_width=True)
 
 with tab2:
     st.subheader("Industry Comparison")
@@ -274,34 +271,34 @@ with tab2:
         # We aggregate by [Industry, Strategy, Metric]
         df_agg = filtered_df.groupby([ind_col, 'Strategy', 'Metric'])['Value'].agg(agg_func).reset_index()
 
-        # Get unique industries
-        industries = df_agg[ind_col].dropna().unique()
+        selected_metric_ind = st.selectbox("Select Metric to View (Industry)", METRICS, index=0)
 
-        for ind_val in industries:
-            st.markdown(f"#### {ind_val}")
-            ind_data = df_agg[df_agg[ind_col] == ind_val]
+        pivot_agg_df = df_agg[df_agg['Metric'] == selected_metric_ind].pivot_table(
+            index=ind_col,
+            columns='Strategy',
+            values='Value',
+            aggfunc='first'
+        ).reset_index()
 
-            cols = st.columns(len(METRICS))
+        st.markdown(f"**{agg_method} {selected_metric_ind} by Industry and Strategy**")
 
-            for idx, metric in enumerate(METRICS):
-                metric_data = ind_data[ind_data['Metric'] == metric]
+        # Configure styling
+        available_strats_ind = [col for col in pivot_agg_df.columns if col != ind_col]
+        if "Return" in selected_metric_ind or "Ratio" in selected_metric_ind:
+            styled_agg = pivot_agg_df.style.background_gradient(cmap='Greens', subset=available_strats_ind, vmin=0)
+        else:
+            styled_agg = pivot_agg_df.style.background_gradient(cmap='Reds', subset=available_strats_ind)
 
-                with cols[idx]:
-                    fig = px.bar(
-                        metric_data,
-                        x='Strategy',
-                        y='Value',
-                        title=metric,
-                        text_auto='.2f',
-                        color='Strategy'
-                    )
-                    fig.update_layout(
-                        showlegend=False,
-                        xaxis_title=None,
-                        yaxis_title=None,
-                        height=250,
-                        margin=dict(l=0, r=0, t=30, b=0)
-                    )
-                    fig.update_xaxes(tickangle=45)
-                    st.plotly_chart(fig, use_container_width=True, key=f"{ind_val}_{metric}")
-            st.divider()
+        st.dataframe(styled_agg, use_container_width=True, hide_index=True)
+
+        # Draw a single chart grouping all industries for the selected metric
+        st.markdown("### Visualization")
+        fig2 = px.bar(
+            df_agg[df_agg['Metric'] == selected_metric_ind],
+            x=ind_col,
+            y='Value',
+            color='Strategy',
+            barmode='group',
+            title=f"{selected_metric_ind} Comparison by Industry",
+        )
+        st.plotly_chart(fig2, use_container_width=True)
