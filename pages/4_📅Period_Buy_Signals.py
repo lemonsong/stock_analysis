@@ -76,11 +76,23 @@ def filter_data(df, min_signal_count, industry_filter):
     if 'overall_signal_count' in filtered.columns:
         filtered = filtered[filtered['overall_signal_count'] >= min_signal_count]
 
-    # Deduplicate: sort by date descending (to get latest update date), then drop duplicates keeping first (latest)
+    # Deduplicate: sort by overall_signal_count descending (to get highest signal), then by date descending (latest)
+    sort_cols = []
+    sort_ascending = []
+
+    if 'overall_signal_count' in filtered.columns:
+        sort_cols.append('overall_signal_count')
+        sort_ascending.append(False)
+
     if 'date' in filtered.columns:
-        filtered = filtered.sort_values('date', ascending=False)
+        sort_cols.append('date')
+        sort_ascending.append(False)
     elif 'update_date' in filtered.columns:
-        filtered = filtered.sort_values('update_date', ascending=False)
+        sort_cols.append('update_date')
+        sort_ascending.append(False)
+
+    if sort_cols:
+        filtered = filtered.sort_values(sort_cols, ascending=sort_ascending)
 
     filtered = filtered.drop_duplicates(subset=['symbol'], keep='first')
 
@@ -148,6 +160,13 @@ def main():
         app_df = app_df.drop(columns=cols_to_drop)
         result_df = pd.merge(result_df, app_df, on='symbol', how='left')
 
+    realtime_price_file = Path(PROJECT_PATH) / 'data/basic/realtime_price.csv'
+    if realtime_price_file.exists():
+        realtime_df = pd.read_csv(realtime_price_file)[['symbol', '最新价', '涨跌幅']]
+        result_df = result_df.merge(realtime_df, how='left', on='symbol')
+
+    if '最新价' in result_df.columns and 'close' in result_df.columns:
+        result_df['历史对比涨跌幅'] = (result_df['最新价'] - result_df['close']) / result_df['close']
 
     # --- Display ---
     st.markdown(f"### 🔍 筛选结果 ({start_date} 至 {end_date})")
@@ -163,7 +182,7 @@ def main():
         display_df = filtered_df.copy()
         # 列分组定义
         col_groups = {
-            "基本信息": ['symbol_url', 'company', 'close', 'market_cap'],
+            "基本信息": ['symbol_url', 'company', 'close', '最新价', '涨跌幅', '历史对比涨跌幅', 'market_cap'],
             "行业信息": ['industry_category_name', 'industry_sub_category_name', 'industry_type_name'],
             "信号指标": [col for col in filtered_df.columns if 'signal' in col.lower()],
             "分红指标": [col for col in filtered_df.columns if 'total_dividend' in col and 'yield' not in col],
@@ -190,6 +209,8 @@ def main():
             display_df['roe'] = display_df['roe'] * 100
         if 'debt_to_asset' in display_df.columns:
             display_df['debt_to_asset'] = display_df['debt_to_asset'] * 100
+        if '历史对比涨跌幅' in display_df.columns:
+            display_df['历史对比涨跌幅'] = display_df['历史对比涨跌幅'] * 100
 
         col_col_selection_mode, col_sort_by, col_ascending = st.columns(3)
         with col_col_selection_mode:
@@ -253,17 +274,28 @@ def main():
                 col_min = display_df_final[col].min()
                 col_max = display_df_final[col].max()
                 if col_max != col_min:
-                    styled_display = styled_display.background_gradient(
-                        subset=[col],
-                        cmap=SEQUENTIAL_COLOR,
-                        vmin=col_min,
-                        vmax=col_max
-                    )
+                    if col not in ['涨跌幅', '历史对比涨跌幅']:
+                        styled_display = styled_display.background_gradient(
+                            subset=[col],
+                            cmap=SEQUENTIAL_COLOR,
+                            vmin=col_min,
+                            vmax=col_max
+                        )
+                    else:
+                        styled_display = styled_display.background_gradient(
+                            subset=[col],
+                            cmap='RdYlGn_r',
+                            vmin=-5 if col == '涨跌幅' else -20,
+                            vmax=5 if col == '涨跌幅' else 20,
+                        )
 
         column_config = {
             "symbol_url": st.column_config.LinkColumn("股票代码", help="点击查看雪球详情", display_text=r"https://xueqiu\.com/S/(.*)", width="small"),
             "company": st.column_config.Column("名称", help="company"),
-            "close": st.column_config.NumberColumn("收盘价", help="close", format="¥%.2f"),
+            "close": st.column_config.NumberColumn("历史收盘价", help="close", format="¥%.2f"),
+            "最新价": st.column_config.NumberColumn("最新价", help="最新价", format="¥%.2f"),
+            "涨跌幅": st.column_config.NumberColumn("涨跌幅", help="当日涨跌", format="%.2f%%"),
+            "历史对比涨跌幅": st.column_config.NumberColumn("历史对比涨跌幅", help="最新价相比历史信号最高点收盘价的涨跌幅", format="%.2f%%"),
             "market_cap": st.column_config.NumberColumn("市值", help="最近一年年报发布日的总股本*最近股价", format="¥%.0e"),
             "industry_category_name": st.column_config.Column("门类", help="industry_category_name", width="small"),
             "industry_sub_category_name": st.column_config.Column("次类", help="industry_sub_category_name", width="small"),

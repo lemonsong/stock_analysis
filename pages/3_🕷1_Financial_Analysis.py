@@ -332,16 +332,28 @@ def render_trends_tab(df, selected_symbols, selected_metrics, stock_names):
             # 1. 趋势图
             plot_df = df[['display_name', 'fiscal_year', metric]].dropna(subset=[metric])
             if not plot_df.empty:
-                fig = px.line(
-                    plot_df,
-                    x='fiscal_year',
-                    y=metric,
-                    color='display_name',
-                    color_discrete_sequence=DISCRETE_COLOR,
-                    markers=True,
-                    labels={'fiscal_year': '年份', metric: metric, 'display_name': '股票'},
-                    title=f"{metric} 趋势"
-                )
+                if metric in ['roe', 'roa']:
+                    fig = px.bar(
+                        plot_df,
+                        x='fiscal_year',
+                        y=metric,
+                        color='display_name',
+                        color_discrete_sequence=DISCRETE_COLOR,
+                        barmode='group',
+                        labels={'fiscal_year': '年份', metric: metric, 'display_name': '股票'},
+                        title=f"{metric} 对比"
+                    )
+                else:
+                    fig = px.line(
+                        plot_df,
+                        x='fiscal_year',
+                        y=metric,
+                        color='display_name',
+                        color_discrete_sequence=DISCRETE_COLOR,
+                        markers=True,
+                        labels={'fiscal_year': '年份', metric: metric, 'display_name': '股票'},
+                        title=f"{metric} 趋势"
+                    )
                 st.plotly_chart(fig, use_container_width=True)
 
             # 2. 对比表 (紧接在图表下方)
@@ -361,18 +373,22 @@ def render_trends_tab(df, selected_symbols, selected_metrics, stock_names):
         )
 
         # 图表
-        n_metrics = len(selected_metrics)
-        fig = make_subplots(rows=n_metrics, cols=1, subplot_titles=selected_metrics, vertical_spacing=0.05)
+        fig = go.Figure()
 
-        for i, metric in enumerate(selected_metrics, 1):
+        for metric in selected_metrics:
             if metric not in df.columns: continue
             stock_data = df[(df['symbol'] == selected_stock) & (df[metric].notna())]
             if not stock_data.empty:
                 fig.add_trace(
-                    go.Scatter(x=stock_data['fiscal_year'], y=stock_data[metric], name=metric, mode='lines+markers'),
-                    row=i, col=1
+                    go.Scatter(x=stock_data['fiscal_year'], y=stock_data[metric], name=metric, mode='lines+markers')
                 )
-        fig.update_layout(height=300 * n_metrics, showlegend=False)
+        fig.update_layout(
+            title=f"{stock_names.get(selected_stock, selected_stock)} 多指标趋势",
+            xaxis_title="年份",
+            yaxis_title="指标值",
+            height=500,
+            showlegend=True
+        )
         st.plotly_chart(fig, use_container_width=True)
 
         # 表格 (显示该股票的所有选中指标)

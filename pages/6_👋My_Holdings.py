@@ -3,6 +3,7 @@ import pandas as pd
 from pathlib import Path
 from utils.constants import PROJECT_PATH, SEQUENTIAL_COLOR
 from utils.streamlit_helper import setup_page_config
+from utils.feishu_helper import load_feishu_invest_data
 
 setup_page_config()
 
@@ -81,6 +82,7 @@ def calculate_growth(symbol, periods):
 # --- Main ---
 df_holdings = load_holdings()
 df_decision = load_decision_data()
+df_invest = load_feishu_invest_data()
 
 if df_holdings is None or df_holdings.empty:
     st.warning("No holdings found or file is empty.")
@@ -96,6 +98,11 @@ if df_decision is not None:
     merged_df = pd.merge(df_holdings, df_decision, on='symbol', how='left')
 else:
     merged_df = df_holdings.copy()
+
+# Merge invest data
+if df_invest is not None and not df_invest.empty:
+    df_invest['symbol'] = df_invest['symbol'].astype(str)
+    merged_df = pd.merge(merged_df, df_invest, on='symbol', how='left')
 
 # Calculate Growth
 # Map offset days to Labels
@@ -131,7 +138,7 @@ st.markdown("### 📊 Holdings Overview")
 
 # Define columns to show
 # Fundamentals to show: roe, fundamental_score
-cols = ['symbol', 'company', 'close', 'overall_signal_count', 'roe', 'fundamental_score'] + \
+cols = ['symbol', 'company', 'close', 'target_buy', 'overall_signal_count', 'roe', 'fundamental_score'] + \
        [f"growth_{d}" for d in periods_days]
 
 # Filter existing columns
@@ -155,6 +162,7 @@ col_config = {
     "symbol": st.column_config.TextColumn("Symbol"),
     "company": st.column_config.TextColumn("Company"),
     "close": st.column_config.NumberColumn("Price", format="%.2f"),
+    "target_buy": st.column_config.TextColumn("Target Buy"),
     "overall_signal_count": st.column_config.NumberColumn("Signal Score"),
     "roe": st.column_config.NumberColumn("ROE", format="%.2f%%"),
     "fundamental_score": st.column_config.ProgressColumn("Fund. Score", min_value=0, max_value=100, format="%d"),
