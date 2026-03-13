@@ -23,9 +23,11 @@ if len(sys.argv) > 1:
     parser.add_argument('--choice_industry_type_name', type=str, required=True)
     parser.add_argument('--choice_row_range', type=str, required=True)
     parser.add_argument('--text_stock_list', type=str, required=True)
+    parser.add_argument('--fetch_relevant_symbols', type=str, required=False, default='False')
 
     args = parser.parse_args()
     logging.info(f"Get data for:")
+    logging.info(f"Fetch relevant symbols: {args.fetch_relevant_symbols}")
     logging.info(f"Boards regex: {args.boards_regex}")
     logging.info(f"Buy/Sell Signal Count: {args.choice_overall_signal_count}")
     logging.info(f"Industry Category: {args.choice_industry_category_name}")
@@ -34,7 +36,55 @@ if len(sys.argv) > 1:
     logging.info(f"Row Range: {args.choice_row_range}")
     logging.info(f"Customized Stock List: {args.text_stock_list}")
     # filter data based on arguments
-    if len(args.text_stock_list) == 0:
+
+    if args.fetch_relevant_symbols == 'True':
+        logging.info("Fetching relevant symbols via Gemini...")
+        import google.generativeai as genai
+        api_key = os.environ.get("GEMINI_API_KEY")
+        if not api_key:
+            logging.warning("GEMINI_API_KEY is not set. Generating mock data.")
+        else:
+            genai.configure(api_key=api_key)
+            model = genai.GenerativeModel('gemini-2.5-flash')
+
+        stock_filtered_df = pd.read_csv(f"{PROJECT_PATH}/data/dwa/app_decision.csv")
+        # filter for overall_signal_count == 2
+        stock_filtered_df = stock_filtered_df[stock_filtered_df['overall_signal_count'] == 2]
+
+        if 'latest_financial_score' in stock_filtered_df.columns:
+            stock_filtered_df = stock_filtered_df.sort_values(by='latest_financial_score', ascending=False)
+
+        if args.choice_row_range != 'All':
+            row_range = [int(item) for item in args.choice_row_range.split('-')]
+            stock_filtered_df = stock_filtered_df.iloc[row_range[0]:row_range[1],:]
+
+        target_symbols_companies = stock_filtered_df[['symbol', 'company']].to_dict('records')
+        collected_symbols = set()
+
+        for item in target_symbols_companies:
+            symbol = item['symbol']
+            company = item['company']
+            prompt = f"{symbol}({company})类似业务的公司（已上市，未退市）有哪些?请将它们整理成SH601077,SH600908,SH601825,SH600928,SH601963,SZ002958的格式，我提到的公司放在第一个。 仅仅返回股票代码列表"
+
+            try:
+                if api_key:
+                    response = model.generate_content(prompt)
+                    rel_symbols = response.text.strip()
+                    import re
+                    symbols_found = re.findall(r'[A-Z]{2}[0-9]{6}', rel_symbols)
+                    if symbols_found:
+                        for s in symbols_found:
+                            collected_symbols.add(s)
+                    time.sleep(1)
+                else:
+                    collected_symbols.add(symbol)
+                    collected_symbols.add('SH688433')
+                    collected_symbols.add('SZ000969')
+            except Exception as e:
+                logging.error(f"Error calling Gemini for {symbol}: {e}")
+
+        stock_li = list(collected_symbols)
+    elif len(args.text_stock_list) == 0:
         logging.info(f"Fetching data via field&value filter")
         stock_filtered_df = pd.read_csv(f"{PROJECT_PATH}/data/dwa/app_decision.csv")
         if args.boards_regex and args.boards_regex.strip():

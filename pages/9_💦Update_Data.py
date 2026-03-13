@@ -146,7 +146,9 @@ choice_row_range = st.segmented_control('Pick stock range',
                                         default='All'
                                                    )
 text_stock_list = st.text_input("Enter list of stocks separated by comma", "")
+fetch_relevant_symbols = st.checkbox("Fetch financial metrics for relevant symbols via Gemini", value=False)
 st.write(f"Get data for:")
+st.write(f"Fetch Relevant Symbols: {fetch_relevant_symbols}")
 st.write(f"Board Regex: {boards_regex}")
 st.write(f"Buy/Sell Signal Count: {choice_overall_signal_count}")
 st.write(f"Industry Category: {choice_industry_category_name}")
@@ -186,7 +188,8 @@ if st.button("Run CN Stock - Fundamental Pipeline", icon="📊", type="primary")
                             "--choice_industry_sub_category_name", choice_industry_sub_category_name,
                             "--choice_industry_type_name", choice_industry_type_name,
                             "--choice_row_range", choice_row_range,
-                            "--text_stock_list", text_stock_list])
+                            "--text_stock_list", text_stock_list,
+                            "--fetch_relevant_symbols", str(fetch_relevant_symbols)])
 
             # Run the script and wait for it to finish
             # process = subprocess.Popen(
