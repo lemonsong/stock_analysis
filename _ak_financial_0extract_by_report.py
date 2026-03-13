@@ -64,7 +64,21 @@ if len(sys.argv) > 1:
         for item in target_symbols_companies:
             symbol = item['symbol']
             company = item['company']
-            prompt = f"{symbol}({company})类似业务的公司（已上市，未退市）有哪些?请将它们整理成SH601077,SH600908,SH601825,SH600928,SH601963,SZ002958的格式，我提到的公司放在第一个。 仅仅返回股票代码列表"
+            prompt = (f"""
+            ### 任务步骤
+            1. **业务溯源**：请先搜索并分析股票代码 {symbol} 的主营业务、核心产品及其在产业链中的具体位置。
+            2. **对标分析**：基于上述分析，找出 A 股上市且未退市的类似业务公司。
+            
+            ### 对标颗粒度准则（关键）
+            - **同质性优先**：优先寻找与 {symbol} 在“产品用途、生产工艺、目标客户”上高度重合的公司。
+            - **产业链对齐**：如果该行业具有明显的上中下游，请确保对标公司处于同一环节（例如：同为设备商或同为材料商）。
+            - **剔除干扰**：排除仅有少量边缘业务重合、但主营业务完全不同的公司。
+        
+            ### 输出格式要求
+            - **仅输出代码清单**（用于程序解析）：
+               {symbol},代码2,代码3,代码4,代码5,代码6,代码7 (请找齐 6-8 个标的，我提供的代码放第一个)
+
+            """)
 
             try:
                 if api_key:
@@ -78,12 +92,14 @@ if len(sys.argv) > 1:
                     time.sleep(1)
                 else:
                     collected_symbols.add(symbol)
-                    collected_symbols.add('SH688433')
-                    collected_symbols.add('SZ000969')
+                    # collected_symbols.add('SH688433')
+                    # collected_symbols.add('SZ000969')
             except Exception as e:
                 logging.error(f"Error calling Gemini for {symbol}: {e}")
 
         stock_li = list(collected_symbols)
+
+        # TODO：improve prompt；write list to Feishu，write done after financial sheet fetched
     elif len(args.text_stock_list) == 0:
         logging.info(f"Fetching data via field&value filter")
         stock_filtered_df = pd.read_csv(f"{PROJECT_PATH}/data/dwa/app_decision.csv")
