@@ -159,7 +159,7 @@ st.write(f"Customized Stock List: {text_stock_list}")
 log_placeholder = st.empty()
 if st.button("Run CN Stock - Fundamental Pipeline", icon="📊", type="primary"):
     scripts = [
-        {"file": "_ak_financial_0extract_by_report.py.py", "desc": "Fetch fundamental data stock by stock"},
+        {"file": "_ak_financial_0extract_by_report.py", "desc": "Fetch fundamental data stock by stock"},
         {"file": "_ak_financial_2_0prep_yearly.py", "desc": "Concatenate fundamentals of stocks into one file; remove columns with sparse value"},
         {"file": "_ak_financial_2_1prep_market_value.py.py", "desc": "Calculate yearly latest market value"},
         {"file": "_ak_financial_2_2prep_yearly_calculate.py.py", "desc": "Calculate fundamental metrics"},
