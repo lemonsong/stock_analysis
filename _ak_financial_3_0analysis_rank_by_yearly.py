@@ -23,136 +23,125 @@ logging.basicConfig(
 )
 
 def get_feature_directions():
+    # TODO: add metrics used in dashboard
+    # add metrics in Xueqiu dashboard
+    # calculate YOY as features
+    # examine calculation
     return {
-        'TOTAL_OPERATE_INCOME_YOY': True,
-        'NETPROFIT_YOY': True,
-        'TOTAL_ASSETS_YOY': True,
-        'ROE': True,
-        'NETCASH_OVER_NETPROFIT': True,
-        'TOTAL_ASSETS': True,
-        'TOTAL_LIABILITIES': False,
-        'ACCOUNTS_RECE_YOY': False,
-        'INVENTORY_YOY': False,
-        'DEBT_TO_ASSET': False,
+        # 关键指标
+        "TOTAL_OPERATE_INCOME": True,  # 营业收入
+        "TOTAL_OPERATE_INCOME_YOY": True,  # 营业收入同比增长
+        "NETPROFIT": True,  # 净利润
+        "NETPROFIT_YOY": True,  # 净利润同比增长
+        "DEDUCT_PARENT_NETPROFIT": True,  # 扣非净利润
+        "DEDUCT_PARENT_NETPROFIT_YOY": True,  # 扣非净利润同比增长
+        # 每股指标
+        "BASIC_EPS": True,  # 每股收益
+        # 每股净资产
+        # 每股资本公积金
+        # 每股未分配利润
+        # 每股经营现金流
+
+        # 盈利能力
+        "roe": True,  # 净资产收益率
+        # 净资产收益率 - 摊薄
+        "roa": True,  # 总资产报酬率
+        # 人力投入回报率
+        "gross_margin": True,  # 销售毛利率
+        "profit_margin": True,  # 销售净利率
+
+        # 财务风险
+        "debt_to_asset": False,  # 资产负债率 (通常越低财务风险越小)
+        "current_ratio": True,  # 流动比率
+        "quick_ratio": True,  # 速动比率
+        # 权益乘数
+        "debt_to_equity": False,  # 产权比率 (越低代表长期偿债能力越强)
+        # 股东权益比率
+        # 现金流量比率
+
+        # 运营能力
+        # 现金循环周期
+        # 营业周期
+        "asset_turnover": True,  # 总资产周转率
+        "inventory_turnover": True,  # 存货周转率
+        "receivables_turnover": True,  # 应收账款周转率
+        # 应付账款周转率
+        # 流动资产周转率
+        # 固定资产周转率
+
+        # My features
+    #     "free_cash_flow_conversion_rate": True,
+    # "netcash_operate_over_net_profit": True,
+    # "net_debt_over_ebitda": True,
+
+        #
+        # 'TOTAL_OPERATE_INCOME_YOY': True,
+        # 'NETPROFIT_YOY': True,
+        # 'TOTAL_ASSETS_YOY': True,
+        # 'ROE': True,
+        # 'NETCASH_OVER_NETPROFIT': True,
+        # 'TOTAL_ASSETS': True,
+        # 'TOTAL_LIABILITIES': False,
+        # 'ACCOUNTS_RECE_YOY': False,
+        # 'INVENTORY_YOY': False,
+        # 'DEBT_TO_ASSET': False,
     }
 
-def standardize_symbol(sym):
-    return sym
 
 def main():
-    single_file_dir = Path(PROJECT_PATH) / 'data' / 'ak_financial' / 'single_file'
+    financial_path = Path(PROJECT_PATH) / 'data' / 'ak_financial' / 'financial_calculated.csv'
     industry_path = Path(PROJECT_PATH) / 'data' / 'basic' / 'stock_name_industry.csv'
+    report_date_for_pred_str = '2025-09-30'
+    feature_direction_dict = get_feature_directions()
+    numeric_feature_li = list(feature_direction_dict.keys())
 
-    if not single_file_dir.exists():
-        logging.error(f"Single file directory not found: {single_file_dir}")
-        return
+    # create dataset
+    financial_df = pd.read_csv(financial_path)
+    col_financial_df = financial_df.columns.tolist()
+    col_financial_df_non_financial_metrics = ['symbol', 'SECURITY_NAME_ABBR', 'fiscal_year', 'ORG_TYPE', 'REPORT_DATE',
+                                              'REPORT_TYPE', 'REPORT_DATE_NAME', 'industry_type_name']
+    col_industry = 'industry_type_name'
+    financial_df['REPORT_DATE'] = pd.to_datetime(financial_df['REPORT_DATE'])
 
-    logging.info("Loading Feishu labels...")
-    feishu_df = load_feishu_quarterly_eval_data()
+    logging.info("Loading and merging industry data...")
+    industry_df = pd.read_csv(industry_path)
+    financial_df = financial_df.merge(industry_df[['symbol', col_industry]], on='symbol', how='left')
+
+    logging.info("Loading and merging Feishu labels...")
+    feishu_df = load_feishu_quarterly_eval_data(col_li=['symbol', 'quarterly_financial_score','REPORT_DATE'])
     if feishu_df.empty:
         logging.error("Failed to load Feishu labels or it is empty.")
         return
+    financial_df = financial_df.merge(feishu_df, on=['symbol','REPORT_DATE'],how='left')
 
-    feishu_df['symbol'] = feishu_df['symbol'].astype(str).apply(standardize_symbol)
-
-    logging.info("Processing single financial files...")
-    stock_files = {}
-    for f in single_file_dir.glob('*.csv'):
-        filename = f.name
-        if filename.endswith('_balance.csv'):
-            sym = filename.replace('_balance.csv', '')
-            stock_files.setdefault(sym, {})['balance'] = f
-        elif filename.endswith('_profit.csv'):
-            sym = filename.replace('_profit.csv', '')
-            stock_files.setdefault(sym, {})['profit'] = f
-        elif filename.endswith('_cash_flow.csv'):
-            sym = filename.replace('_cash_flow.csv', '')
-            stock_files.setdefault(sym, {})['cash_flow'] = f
-
-    data_rows = []
-
-    for sym, fpaths in stock_files.items():
-        row = {'symbol_raw': sym}
-        symbol = standardize_symbol(sym)
-        row['symbol'] = symbol
-
-        valid = True
-        if 'balance' in fpaths:
-            df_bal = pd.read_csv(fpaths['balance'])
-            df_bal = df_bal[df_bal['REPORT_DATE'].str.startswith('2025-09-30')]
-            if not df_bal.empty:
-                for col in ['TOTAL_ASSETS', 'TOTAL_LIABILITIES', 'TOTAL_EQUITY', 'TOTAL_ASSETS_YOY']:
-                    row[col] = df_bal.iloc[0].get(col, np.nan)
-            else:
-                valid = False
-        else:
-            valid = False
-
-        if 'profit' in fpaths:
-            df_prof = pd.read_csv(fpaths['profit'])
-            df_prof = df_prof[df_prof['REPORT_DATE'].str.startswith('2025-09-30')]
-            if not df_prof.empty:
-                for col in ['TOTAL_OPERATE_INCOME', 'NETPROFIT', 'TOTAL_OPERATE_INCOME_YOY', 'NETPROFIT_YOY']:
-                    row[col] = df_prof.iloc[0].get(col, np.nan)
-            else:
-                valid = False
-        else:
-            valid = False
-
-        if 'cash_flow' in fpaths:
-            df_cf = pd.read_csv(fpaths['cash_flow'])
-            df_cf = df_cf[df_cf['REPORT_DATE'].str.startswith('2025-09-30')]
-            if not df_cf.empty:
-                for col in ['NETCASH_OPERATE']:
-                    row[col] = df_cf.iloc[0].get(col, np.nan)
-            else:
-                valid = False
-        else:
-            valid = False
-
-        if valid:
-            data_rows.append(row)
-
-    df_financial = pd.DataFrame(data_rows)
-    if df_financial.empty:
-        logging.error("No valid financial data for 2025-09-30 found.")
-        return
-
-    logging.info("Merging industry data...")
-    industry_df = pd.read_csv(industry_path)
-
-    industry_df['symbol'] = industry_df['symbol'].astype(str).apply(standardize_symbol)
-    df_financial = df_financial.merge(industry_df[['symbol', 'industry_type_name']], on='symbol', how='left')
-
-    # Fill NaN for industry
-    df_financial['industry_type_name'] = df_financial['industry_type_name'].fillna('unknown')
-
-    df_financial['ROE'] = df_financial['NETPROFIT'] / df_financial['TOTAL_EQUITY']
-    df_financial['DEBT_TO_ASSET'] = df_financial['TOTAL_LIABILITIES'] / df_financial['TOTAL_ASSETS']
-    df_financial['NETCASH_OVER_NETPROFIT'] = df_financial['NETCASH_OPERATE'] / df_financial['NETPROFIT']
-
-    numeric_features = [
-        'TOTAL_ASSETS_YOY', 'TOTAL_OPERATE_INCOME_YOY', 'NETPROFIT_YOY',
-        'ROE', 'DEBT_TO_ASSET', 'NETCASH_OVER_NETPROFIT'
+    # filter to certain rows
+    financial_df = financial_df.loc[
+        (~pd.isna(financial_df.quarterly_financial_score))
+        |
+        (financial_df['REPORT_DATE'] == pd.to_datetime(report_date_for_pred_str)),
+        ['symbol', 'REPORT_DATE', 'quarterly_financial_score', col_industry]+numeric_feature_li
     ]
 
-    directions = get_feature_directions()
-    for feature in numeric_features:
-        if feature in directions and not directions[feature]:
-            df_financial[feature] = -df_financial[feature]
+    logging.info("Preprocessing ...")
+    # Fill NaN for industry
+    # financial_df[col_industry] = financial_df[col_industry].fillna('unknown')
+    # Format numeric feature columns
 
-    # Future warning handled by not using replace inplace for inf
-    for col in numeric_features:
-        df_financial[col] = df_financial[col].replace([np.inf, -np.inf], np.nan)
+    # for feature in numeric_feature_li:
+    #     financial_df[feature] = financial_df[feature].replace([np.inf, -np.inf], np.nan)
+    #     # Deal with features which have high value means worse financial status
+    #     if feature in feature_direction_dict and not feature_direction_dict[feature]:
+    #         financial_df[feature] = -financial_df[feature]
 
-    df_train = df_financial.merge(feishu_df, on='symbol', how='inner')
-    logging.info(f"Training data size after merging labels: {len(df_train)}")
+    logging.info("Generating train and test data...")
+    train_df = financial_df.loc[~pd.isna(financial_df.quarterly_financial_score)].copy()
+    pred_df = financial_df.loc[financial_df['REPORT_DATE'] == pd.to_datetime(report_date_for_pred_str)].copy()
+    X_train = train_df[numeric_feature_li + [col_industry]].copy()
+    y_train = train_df['quarterly_financial_score']
+    X_pred = pred_df[numeric_feature_li + [col_industry]].copy()
 
-    X_train = df_train[numeric_features + ['industry_type_name']]
-    y_train = df_train['quarterly_financial_score']
-
-    if len(df_train) == 0:
-        logging.error("No training data available. Make sure Feishu data and single file symbols match.")
+    if pred_df.empty:
+        logging.error(f"No valid pred data for {report_date_for_pred_str} found.")
         return
 
     logging.info("Training models...")
@@ -168,8 +157,8 @@ def main():
 
     preprocessor = ColumnTransformer(
         transformers=[
-            ('num', numeric_transformer, numeric_features),
-            ('cat', categorical_transformer, ['industry_type_name'])
+            ('num', numeric_transformer, numeric_feature_li),
+            ('cat', categorical_transformer, [col_industry])
         ])
 
     dt_model = Pipeline(steps=[('preprocessor', preprocessor),
@@ -184,15 +173,15 @@ def main():
                                 ('regressor', SVR())])
     svr_model.fit(X_train, y_train)
 
-    X_all = df_financial[numeric_features + ['industry_type_name']]
-    df_financial['dt_pred'] = dt_model.predict(X_all)
-    df_financial['rf_pred'] = rf_model.predict(X_all)
-    df_financial['svr_pred'] = svr_model.predict(X_all)
+    pred_df['dt_pred'] = dt_model.predict(X_pred)
+    pred_df['rf_pred'] = rf_model.predict(X_pred)
+    pred_df['svr_pred'] = svr_model.predict(X_pred)
 
-    df_financial['latest_financial_score'] = df_financial[['dt_pred', 'rf_pred', 'svr_pred']].mean(axis=1)
+    pred_df['latest_financial_score'] = pred_df[['dt_pred', 'rf_pred', 'svr_pred']].mean(axis=1)
 
-    df_out = df_financial.merge(feishu_df[['symbol', 'quarterly_financial_score']], on='symbol', how='left')
+    df_out = pred_df.merge(feishu_df[['symbol', 'quarterly_financial_score']], on='symbol', how='left')
 
+    # save prediction
     output_dir = Path(PROJECT_PATH) / 'data' / 'ak_financial' / 'scoring_model'
     output_dir.mkdir(parents=True, exist_ok=True)
 
