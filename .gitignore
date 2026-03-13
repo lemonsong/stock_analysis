@@ -53,3 +53,4 @@ __pycache__/
 /data/ak_financial/scoring_model/
 /data/ak_financial/financial_dense.csv
 /data/ak_financial/financial_all.csv
+/data/ak_fundamental/
