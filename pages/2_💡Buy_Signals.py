@@ -21,7 +21,7 @@ def load_decision_data():
     """加载决策数据"""
     decision_file = Path(PROJECT_PATH) / 'data/dwa/app_decision.csv'
     realtime_price_file = Path(PROJECT_PATH) / 'data/basic/realtime_price.csv'
-
+    relative_stock_file = Path(PROJECT_PATH) / 'data/basic/relative_stock.csv'
     if not decision_file.exists():
         st.error(f"未找到数据文件: {decision_file}")
         return None
@@ -38,6 +38,10 @@ def load_decision_data():
         realtime_df = pd.read_csv(realtime_price_file)[['symbol','最新价','涨跌幅']]
         if not realtime_df.empty:
             df = df.merge(realtime_df, how='left', on='symbol')
+
+        relative_stock_df = pd.read_csv(relative_stock_file)
+        if not relative_stock_df.empty:
+            df = df.merge(relative_stock_df, how='left', on='symbol')
         return df
     except Exception as e:
         st.error(f"读取数据文件失败: {e}")
@@ -528,7 +532,7 @@ def display_detailed_data(filtered_df):
     display_df = filtered_df.copy()
     # 列分组定义
     col_groups = {
-        "基本信息": ['symbol_url', 'company', 'close', '最新价', '涨跌幅', 'quarterly_financial_score', 'market_cap'], # 使用symbol_url替代symbol
+        "基本信息": ['symbol_url', 'company', 'close', '最新价', '涨跌幅', 'quarterly_financial_score', 'market_cap','relative_stock'], # 使用symbol_url替代symbol
         "行业信息": ['industry_category_name', 'industry_sub_category_name', 'industry_type_name'],
         "信号指标": [col for col in filtered_df.columns if 'signal' in col.lower()],
         "分红指标": [col for col in filtered_df.columns if 'total_dividend' in col and 'yield' not in col],
@@ -685,6 +689,11 @@ def display_detailed_data(filtered_df):
             "市值",
             help="最近一年年报发布日的总股本*最近股价",
             format="¥%.0e"
+        ),
+        "relative_stock": st.column_config.Column(
+            "相关股票",
+            help="relative_stock",
+            width="small"
         ),
         "industry_category_name": st.column_config.Column(
             "门类",

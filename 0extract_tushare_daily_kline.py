@@ -34,6 +34,8 @@ args = parser.parse_args()
 
 start_date = args.start
 end_date = args.end
+# start_date = '2026-03-13'
+# end_date = '2026-03-13'
 
 if start_date > end_date:
     parser.error(f"start_date {start_date} cannot be after end_date {end_date}")
