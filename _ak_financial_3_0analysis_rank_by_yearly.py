@@ -113,7 +113,7 @@ def main():
         logging.error("Failed to load Feishu labels or it is empty.")
         return
     financial_df = financial_df.merge(feishu_df, on=['symbol','REPORT_DATE'],how='left')
-
+    logging.info(f"Is in financial_df:{len(financial_df[financial_df.symbol=='SZ000050'])}")
     # filter to certain rows
     financial_df = financial_df.loc[
         (~pd.isna(financial_df.quarterly_financial_score))
@@ -134,11 +134,18 @@ def main():
     #         financial_df[feature] = -financial_df[feature]
 
     logging.info("Generating train and test data...")
+    # TODO: the training data should use the 2025-09-30 report and calculation in ak_financial_2_2. As then went by,less and less data in 'financial_calculated.csv' having report_date=2025-09-30
     train_df = financial_df.loc[~pd.isna(financial_df.quarterly_financial_score)].copy()
-    pred_df = financial_df.loc[financial_df['REPORT_DATE'] == pd.to_datetime(report_date_for_pred_str)].copy()
+    logging.info(f"Length of train_df:{len(train_df)}")
+
+    max_report_date_idx = financial_df.groupby('symbol')['REPORT_DATE'].idxmax()
+    pred_df = financial_df.loc[max_report_date_idx].copy()
+    logging.info(f"Is in pred_df:{len(pred_df[pred_df.symbol=='SZ000050'])}")
+
     X_train = train_df[numeric_feature_li + [col_industry]].copy()
     y_train = train_df['quarterly_financial_score']
     X_pred = pred_df[numeric_feature_li + [col_industry]].copy()
+
 
     if pred_df.empty:
         logging.error(f"No valid pred data for {report_date_for_pred_str} found.")

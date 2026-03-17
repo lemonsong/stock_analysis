@@ -277,7 +277,7 @@ def render_comprehensive_tab(df, selected_symbols, stock_names):
                         symbol_data = baseline_data[baseline_data['symbol'] == symbol]
                         if not symbol_data.empty:
                             row = symbol_data.iloc[0]
-                            key_metrics = ['fundamental_rank', 'fundamental_score', 'roe',
+                            key_metrics = ['latest_financial_score',  'roe',
                                            'netcash_operate_over_net_profit', 'debt_to_asset', 'inventory_turnover',
                                            'ev_over_ebitda']
                             for metric in key_metrics:
