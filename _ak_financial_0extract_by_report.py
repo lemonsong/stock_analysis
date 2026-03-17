@@ -71,17 +71,26 @@ if len(sys.argv) > 1:
         logging.info(f"Fetching data via customized stock list")
         stock_li = [s.strip() for s in args.text_stock_list.replace('，', ',').split(',') if s.strip()]
 
-    # # check whether fetch relevant stock
-    # if args.fetch_relevant_symbols == 'True':
-    #     relevant_stock_df = pd.read_csv(f'{PROJECT_PATH}/data/basic/relevant_stock.csv')
-    #     collected_symbols = []
-    #     if stock_filtered_df: #TODO:fix bug
-    #         stock_filtered_df = pd.read_csv(f"{PROJECT_PATH}/data/dwa/app_decision.csv")
-    #     top_df = stock_filtered_df.loc[stock_filtered_df.symbol.isin(stock_li) & stock_filtered_df.latest_financial_score >= 4]
-    #     for symbol in top_df['symbol'].tolist():
-    #         relevant_stock_li = [s.strip() for s in relevant_stock_df.loc[relevant_stock_df.symbol==symbol]['relevant_stock'].values[0].split(',') if s.strip()]
-    #         collected_symbols = collected_symbols + relevant_stock_li
-    #     stock_li = collected_symbols
+    # check whether fetch relevant stock
+    if args.fetch_relevant_symbols == 'True':
+        relevant_stock_df = pd.read_csv(f'{PROJECT_PATH}/data/basic/relevant_stock.csv')
+        collected_symbols = []
+        if 'stock_filtered_df' not in locals():
+            stock_filtered_df = pd.read_csv(f"{PROJECT_PATH}/data/dwa/app_decision.csv")
+
+        try:
+            threshold = float(args.fetch_relevant_symbols_financial_threshold)
+        except ValueError:
+            threshold = 4.0
+
+        top_df = stock_filtered_df.loc[stock_filtered_df.symbol.isin(stock_li) & (stock_filtered_df.latest_financial_score >= threshold)]
+        for symbol in top_df['symbol'].tolist():
+            symbol_matches = relevant_stock_df.loc[relevant_stock_df.symbol==symbol]['relevant_stock']
+            if not symbol_matches.empty:
+                relevant_stock_li = [s.strip() for s in str(symbol_matches.values[0]).split(',') if s.strip()]
+                collected_symbols = collected_symbols + relevant_stock_li
+        # Add original stock_li and remove duplicates while preserving order to some extent
+        stock_li = list(dict.fromkeys(stock_li + collected_symbols))
 else:
     logging.info(f"Fetching data via manual input")
     decision_df = pd.read_csv(f'{PROJECT_PATH}/data/dwa/kline_analysis.csv')
@@ -117,7 +126,8 @@ else:
     # stock_li = ['SH603659','SZ002709','SH601857','SZ002245','SZ000725','SZ002938','SZ002250','SZ301035','SH601077','SH688019','SZ300628','SH600210','SH688293',
     #             'SH600031','SH603259','SZ002284','SZ002821','SH603238','SZ002516','SH688019','SZ300073']
 
-logging.info(f"{stock_li=}")
+logging.info(f"Total number of stock to fetch financial statement: {len(stock_li)}")
+logging.info(f"Stocks to fetch financial statement: {stock_li}")
 
 
 PROGRAM_PATH = f'{PROJECT_PATH}/data/ak_financial/single_file/'
@@ -130,7 +140,7 @@ os.makedirs(PROGRAM_PATH, exist_ok=True)
 for index, stock_symbol in enumerate(stock_li):
     random_sleep_time = random.randint(11, 30)
     # balance sheet
-    logging.info(f"Fetching balance sheet of {index}: {stock_symbol}")
+    logging.info(f"Progress {index+1}/{len(stock_li)}: Fetching balance sheet of {stock_symbol}")
     path_to_balance = f'{PROGRAM_PATH}/{stock_symbol}_balance.csv'
     if os.path.isfile(path_to_balance):
         logging.info(f"Balance sheet of {stock_symbol} existed")
