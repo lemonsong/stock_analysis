@@ -135,6 +135,8 @@ def main():
 
     # Load Data
     df_history = load_history_data(start_date, end_date)
+    # TODO: load symbol, close, overall_signal,sell_signal, buy_signal from historical files; load other columns from the app_decision.csv file
+    # TODO: for historical files, only save the company, pred_date,
     if df_history is None:
         st.stop()
 
@@ -146,6 +148,17 @@ def main():
         industry_options += sorted(cats)
 
     industry_selected = st.sidebar.selectbox("行业筛选 (门类)", options=industry_options)
+
+    st.divider()  # 👈 Draws a horizontal rule
+    # 缓存管理
+    with st.sidebar.expander("缓存管理", expanded=False):
+        if st.button("🔄 清理过期缓存", use_container_width=True):
+            clean_expired_cache()
+            st.sidebar.success("已清理过期缓存")
+
+        if st.button("🗑️ 清除所有缓存", use_container_width=True):
+            clear_cache()
+            st.sidebar.success("已清除所有缓存")
     # --- Process Data ---
     result_df = filter_data(df_history, min_signal, industry_selected)
 
@@ -156,17 +169,19 @@ def main():
         # Drop columns that already exist in result_df to avoid conflicts (except symbol for merging)
         # We only keep 'date' and maybe 'overall_signal_count' etc from history, but let's actually
         # keep the history values for signals, and merge the rest from app_decision.
+        app_df = app_df.rename(columns={'close': '最新收盘价'})
         cols_to_drop = [c for c in app_df.columns if c in result_df.columns and c != 'symbol']
         app_df = app_df.drop(columns=cols_to_drop)
         result_df = pd.merge(result_df, app_df, on='symbol', how='left')
 
-    realtime_price_file = Path(PROJECT_PATH) / 'data/basic/realtime_price.csv'
-    if realtime_price_file.exists():
-        realtime_df = pd.read_csv(realtime_price_file)[['symbol', '最新价', '涨跌幅']]
-        result_df = result_df.merge(realtime_df, how='left', on='symbol')
+    # realtime_price_file = Path(PROJECT_PATH) / 'data/basic/realtime_price.csv'
+    # if realtime_price_file.exists():
+    #     realtime_df = pd.read_csv(realtime_price_file)[['symbol', '最新价', '涨跌幅']]
+    #     result_df = result_df.merge(realtime_df, how='left', on='symbol')
 
-    if '最新价' in result_df.columns and 'close' in result_df.columns:
-        result_df['历史对比涨跌幅'] = (result_df['最新价'] - result_df['close']) / result_df['close']
+
+    if '最新收盘价' in result_df.columns and 'close' in result_df.columns:
+        result_df['历史对比涨跌幅'] = (result_df['最新收盘价'] - result_df['close']) / result_df['close']
 
     # --- Display ---
     st.markdown(f"### 🔍 筛选结果 ({start_date} 至 {end_date})")
@@ -182,14 +197,17 @@ def main():
         display_df = filtered_df.copy()
         # 列分组定义
         col_groups = {
-            "基本信息": ['symbol_url', 'company', 'close', '最新价', '涨跌幅', '历史对比涨跌幅', 'market_cap'],
+            "基本信息": ['symbol_url', 'company', 'close', '最新收盘价',
+                         # '涨跌幅',
+                         '历史对比涨跌幅', 'market_cap'],
             "行业信息": ['industry_category_name', 'industry_sub_category_name', 'industry_type_name'],
             "信号指标": [col for col in filtered_df.columns if 'signal' in col.lower()],
             "分红指标": [col for col in filtered_df.columns if 'total_dividend' in col and 'yield' not in col],
             "分红率(%)": [col for col in filtered_df.columns if 'total_dividend_yield' in col],
             "股价增长(%)": [col for col in filtered_df.columns if 'growth_' in col],
             "基本面指标": FUNDAMENTAL_KEY_COLS,
-            "基本面排名": [col for col in filtered_df.columns if 'fundamental' in col.lower()],
+            "基本面排名": [col for col in filtered_df.columns if
+                           'fundamental' in col.lower() or 'latest_financial_score' in col],
             "技术指标": [col for col in filtered_df.columns if col.endswith('_buy') or col.endswith('_sell')],
             "净流入":[col for col in filtered_df.columns if 'inflow' in col],
         }
@@ -293,9 +311,14 @@ def main():
             "symbol_url": st.column_config.LinkColumn("股票代码", help="点击查看雪球详情", display_text=r"https://xueqiu\.com/S/(.*)", width="small"),
             "company": st.column_config.Column("名称", help="company"),
             "close": st.column_config.NumberColumn("历史收盘价", help="close", format="¥%.2f"),
-            "最新价": st.column_config.NumberColumn("最新价", help="最新价", format="¥%.2f"),
-            "涨跌幅": st.column_config.NumberColumn("涨跌幅", help="当日涨跌", format="%.2f%%"),
+            "最新收盘价": st.column_config.NumberColumn("最新价", help="最新价", format="¥%.2f"),
+            # "涨跌幅": st.column_config.NumberColumn("涨跌幅", help="当日涨跌", format="%.2f%%"),
             "历史对比涨跌幅": st.column_config.NumberColumn("历史对比涨跌幅", help="最新价相比历史信号最高点收盘价的涨跌幅", format="%.2f%%"),
+            "latest_financial_score": st.column_config.NumberColumn(
+                "最新基本面评分",
+                help="预测的最新基本面评分",
+                format="%.2f"
+            ),
             "market_cap": st.column_config.NumberColumn("市值", help="最近一年年报发布日的总股本*最近股价", format="¥%.0e"),
             "industry_category_name": st.column_config.Column("门类", help="industry_category_name", width="small"),
             "industry_sub_category_name": st.column_config.Column("次类", help="industry_sub_category_name", width="small"),
