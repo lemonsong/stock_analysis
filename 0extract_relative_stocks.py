@@ -18,7 +18,7 @@ credentials = pydata_google_auth.get_user_credentials(
 )
 
 sql = """
-SELECT symbol, relative_stock 
+SELECT symbol, relative_stock  as relevant_stock
 FROM `shiji-475703.invest.relative-stocks`
 """
 
@@ -27,4 +27,4 @@ df = pd.read_gbq(sql, project_id='shiji-475703',
     credentials=credentials)
 
 # 将结果保存回 BigQuery 另一个表（或本地 CSV）
-df.to_csv('data/basic/relative_stock.csv', encoding='utf-8', index=False)
+df.to_csv('data/basic/relevant_stock.csv', encoding='utf-8', index=False)

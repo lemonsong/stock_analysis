@@ -231,9 +231,9 @@ def get_feishu_token_and_obj_token(wiki_token="FokmwwNLbigzF7km6mEcq3Smnjb"):
         print(f"Error getting token: {e}")
         return None, None
 
-def append_feishu_quarterly_eval_data(symbol, relative_stocks):
+def append_feishu_quarterly_eval_data(symbol, relevant_stocks):
     """
-    Append a row to the Quarterly Eval sheet with symbol in column B and relative_stocks in column F.
+    Append a row to the Quarterly Eval sheet with symbol in column B and relevant_stocks in column F.
     Returns the updated range (e.g., VnQJUP!B10:F10) or None if failed.
     """
     wiki_token = "FokmwwNLbigzF7km6mEcq3Smnjb"
@@ -247,14 +247,14 @@ def append_feishu_quarterly_eval_data(symbol, relative_stocks):
         "Content-Type": "application/json"
     }
 
-    # Prepare data for append. Columns: A, B(symbol), C, D, E, F(relative_stocks)
+    # Prepare data for append. Columns: A, B(symbol), C, D, E, F(relevant_stocks)
     row_data = [
         "",  # A
         symbol,  # B
         "",  # C
         "",  # D
         "",  # E
-        relative_stocks  # F
+        relevant_stocks  # F
     ]
 
     append_url = f"https://open.feishu.cn/open-apis/sheets/v2/spreadsheets/{obj_token}/values/{sheet_id}!A:Z/append"

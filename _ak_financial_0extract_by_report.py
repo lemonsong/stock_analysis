@@ -71,16 +71,16 @@ if len(sys.argv) > 1:
         logging.info(f"Fetching data via customized stock list")
         stock_li = [s.strip() for s in args.text_stock_list.replace('，', ',').split(',') if s.strip()]
 
-    # # check whether fetch relative stock
+    # # check whether fetch relevant stock
     # if args.fetch_relevant_symbols == 'True':
-    #     relative_stock_df = pd.read_csv(f'{PROJECT_PATH}/data/basic/relative_stock.csv')
+    #     relevant_stock_df = pd.read_csv(f'{PROJECT_PATH}/data/basic/relevant_stock.csv')
     #     collected_symbols = []
     #     if stock_filtered_df: #TODO:fix bug
     #         stock_filtered_df = pd.read_csv(f"{PROJECT_PATH}/data/dwa/app_decision.csv")
     #     top_df = stock_filtered_df.loc[stock_filtered_df.symbol.isin(stock_li) & stock_filtered_df.latest_financial_score >= 4]
     #     for symbol in top_df['symbol'].tolist():
-    #         relative_stock_li = [s.strip() for s in relative_stock_df.loc[relative_stock_df.symbol==symbol]['relative_stock'].values[0].split(',') if s.strip()]
-    #         collected_symbols = collected_symbols + relative_stock_li
+    #         relevant_stock_li = [s.strip() for s in relevant_stock_df.loc[relevant_stock_df.symbol==symbol]['relevant_stock'].values[0].split(',') if s.strip()]
+    #         collected_symbols = collected_symbols + relevant_stock_li
     #     stock_li = collected_symbols
 else:
     logging.info(f"Fetching data via manual input")
