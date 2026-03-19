@@ -3,7 +3,7 @@ import os
 import pandas as pd
 from datetime import datetime, timedelta
 import streamlit as st
-from utils.constants import FEISHU_APP_ID, FEISHU_APP_KEY
+from utils.constants import FEISHU_APP_ID, FEISHU_APP_KEY, FEISHU_WIKI_TOKEN
 
 # TODO: change back to ttl=3600
 @st.cache_data(ttl=60)  # Cache for 1 hour to avoid hitting API too often
@@ -13,8 +13,8 @@ def load_feishu_quarterly_eval_data(col_li=['symbol', 'quarterly_financial_score
     containing 'symbol' and 'quarterly_financial_score'.
     """
 
-    if not FEISHU_APP_ID or not FEISHU_APP_KEY:
-        print("Feishu credentials not found in environment variables.")
+    if not FEISHU_APP_ID or not FEISHU_APP_KEY or not FEISHU_WIKI_TOKEN:
+        print("Feishu credentials or wiki token not found in environment variables.")
         return pd.DataFrame()
 
     url = "https://open.feishu.cn/open-apis/auth/v3/tenant_access_token/internal"
@@ -34,7 +34,7 @@ def load_feishu_quarterly_eval_data(col_li=['symbol', 'quarterly_financial_score
             print("Feishu tenant_access_token is empty.")
             return pd.DataFrame()
 
-        wiki_token = "FokmwwNLbigzF7km6mEcq3Smnjb"
+        wiki_token = FEISHU_WIKI_TOKEN
         sheet_id = "VnQJUP"
 
         headers = {
@@ -106,8 +106,8 @@ def load_feishu_invest_data(col_li=['symbol', 'target_buy']):
     containing 'symbol' and 'target_buy'.
     """
 
-    if not FEISHU_APP_ID or not FEISHU_APP_KEY:
-        print("Feishu credentials not found in environment variables.")
+    if not FEISHU_APP_ID or not FEISHU_APP_KEY or not FEISHU_WIKI_TOKEN:
+        print("Feishu credentials or wiki token not found in environment variables.")
         return pd.DataFrame()
 
     url = "https://open.feishu.cn/open-apis/auth/v3/tenant_access_token/internal"
@@ -127,7 +127,7 @@ def load_feishu_invest_data(col_li=['symbol', 'target_buy']):
             print("Feishu tenant_access_token is empty.")
             return pd.DataFrame()
 
-        wiki_token = "FokmwwNLbigzF7km6mEcq3Smnjb"
+        wiki_token = FEISHU_WIKI_TOKEN
         sheet_id = "n3m1ol"
 
         headers = {
@@ -187,10 +187,12 @@ def load_feishu_invest_data(col_li=['symbol', 'target_buy']):
         print(f"Error fetching Feishu data: {e}")
         return pd.DataFrame()
 
-def get_feishu_token_and_obj_token(wiki_token="FokmwwNLbigzF7km6mEcq3Smnjb"):
+def get_feishu_token_and_obj_token(wiki_token=None):
     """Helper to get tenant_access_token and obj_token for Feishu."""
-    if not FEISHU_APP_ID or not FEISHU_APP_KEY:
-        print("Feishu credentials not found in environment variables.")
+    if wiki_token is None:
+        wiki_token = FEISHU_WIKI_TOKEN
+    if not FEISHU_APP_ID or not FEISHU_APP_KEY or not wiki_token:
+        print("Feishu credentials or wiki token not found.")
         return None, None
 
     url = "https://open.feishu.cn/open-apis/auth/v3/tenant_access_token/internal"
@@ -236,7 +238,7 @@ def append_feishu_quarterly_eval_data(symbol, relevant_stocks):
     Append a row to the Quarterly Eval sheet with symbol in column B and relevant_stocks in column F.
     Returns the updated range (e.g., VnQJUP!B10:F10) or None if failed.
     """
-    wiki_token = "FokmwwNLbigzF7km6mEcq3Smnjb"
+    wiki_token = FEISHU_WIKI_TOKEN
     sheet_id = "VnQJUP"
     token, obj_token = get_feishu_token_and_obj_token(wiki_token)
     if not token or not obj_token:
@@ -306,7 +308,7 @@ def update_feishu_quarterly_eval_author(range_str, author="AI"):
         print(f"Error parsing range {range_str}: {e}")
         return
 
-    wiki_token = "FokmwwNLbigzF7km6mEcq3Smnjb"
+    wiki_token = FEISHU_WIKI_TOKEN
     token, obj_token = get_feishu_token_and_obj_token(wiki_token)
     if not token or not obj_token:
         return

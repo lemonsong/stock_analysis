@@ -33,6 +33,7 @@ ALPHAVANTAGE_API_KEY = os.getenv("ALPHAVANTAGE_API_KEY")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 FEISHU_APP_ID = os.getenv("FEISHU_APP_ID")
 FEISHU_APP_KEY = os.getenv("FEISHU_APP_KEY")
+FEISHU_WIKI_TOKEN = os.getenv("FEISHU_WIKI_TOKEN")
 
 
 # plotly chart: https://plotly.com/python/builtin-colorscales/
