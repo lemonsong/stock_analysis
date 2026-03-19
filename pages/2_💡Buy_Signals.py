@@ -141,17 +141,20 @@ def setup_sidebar(df):
                 )
         fundamental_rank_range = None
         if 'latest_financial_score' in df.columns:
-            fundamental_rank_min = float(df['latest_financial_score'].min())
-            fundamental_rank_max = float(df['latest_financial_score'].max())
-            if fundamental_rank_min == fundamental_rank_max:
-                fundamental_rank_max = fundamental_rank_min + 1.0
-            fundamental_rank_range = st.slider(
-                "最新基本面评分",
-                min_value=fundamental_rank_min,
-                max_value=fundamental_rank_max,
-                value=(fundamental_rank_min, fundamental_rank_max),
-                key="filter_latest_financial_score"
-            )
+            fundamental_rank_min = df['latest_financial_score'].replace([np.inf, -np.inf], np.nan).min()
+            fundamental_rank_max = df['latest_financial_score'].replace([np.inf, -np.inf], np.nan).max()
+            if not pd.isna(fundamental_rank_min) and not pd.isna(fundamental_rank_max):
+                fundamental_rank_min = float(fundamental_rank_min)
+                fundamental_rank_max = float(fundamental_rank_max)
+                if fundamental_rank_min == fundamental_rank_max:
+                    fundamental_rank_max = fundamental_rank_min + 1.0
+                fundamental_rank_range = st.slider(
+                    "最新基本面评分",
+                    min_value=fundamental_rank_min,
+                    max_value=fundamental_rank_max,
+                    value=(fundamental_rank_min, fundamental_rank_max),
+                    key="filter_latest_financial_score"
+                )
 
         quarterly_financial_score_range = None
         if 'quarterly_financial_score' in df.columns:
