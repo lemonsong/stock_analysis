@@ -12,7 +12,7 @@ import random
 import time
 
 import os
-from utils.common import format_stock_symbol, get_file_paths_pathlib, extract_stock_symbol_from_path
+from utils.common import format_stock_symbol, get_file_paths_pathlib, extract_stock_symbol_from_path, get_today_date_string
 from utils.dolt_helper import clean_daily_by_dates
 from datetime import datetime
 import logging
@@ -38,12 +38,16 @@ def get_end_date():
     # Or else the kline after this date will be removed in the clean_daily_by_dates() step
     if len(sys.argv) > 1:
         parser = argparse.ArgumentParser()
-        parser.add_argument('--end', type=str, required=True)
-        args = parser.parse_args()
+        parser.add_argument('--end', type=str, default=get_today_date_string(),
+                            help="End date in YYYY-MM-DD format (default: today)")
+
+        args, _ = parser.parse_known_args()
         end_date_str = args.end
-        logging.info(f"Fetching data via sys argument parser: {end_date_str}")
+
+        if '--end' in sys.argv:
+            logging.info(f"Fetching data via sys argument parser: {end_date_str}")
     else:
-        end_date_str = '2026-03-13' # TODO:
+        end_date_str = '2026-03-13'
         logging.info(f"Fetching data via manual input: {end_date_str}")
     return datetime.strptime(end_date_str, '%Y-%m-%d').date()
 
