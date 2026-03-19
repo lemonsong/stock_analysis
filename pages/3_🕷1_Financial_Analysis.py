@@ -409,10 +409,8 @@ with st.sidebar.expander("缓存管理", expanded=False):
 
 # 创建stock_map
 # SECURITY_NAME_ABBR
-stock_map = {
-    row['symbol']: f"{row['symbol']} - {row['company']}"
-    for _, row in df[['symbol', 'company']].drop_duplicates().iterrows()
-}
+_df_unique = df[['symbol', 'company']].drop_duplicates()
+stock_map = dict(zip(_df_unique['symbol'], _df_unique['symbol'] + " - " + _df_unique['company']))
 
 # 数据质量检查
 st.sidebar.markdown("#### 📊 数据质量")
@@ -431,8 +429,8 @@ if not selected_symbols:
 # 筛选数据
 filtered_df = df[df['symbol'].isin(selected_symbols)].copy()
 filtered_df['display_name'] = filtered_df['symbol'] + ' - ' + filtered_df['company']
-stock_names = {row['symbol']: row['company'] for _, row in
-               filtered_df[['symbol', 'company']].drop_duplicates().iterrows()}
+_filtered_unique = filtered_df[['symbol', 'company']].drop_duplicates()
+stock_names = dict(zip(_filtered_unique['symbol'], _filtered_unique['company']))
 
 # 指标选择
 financial_metrics = {
