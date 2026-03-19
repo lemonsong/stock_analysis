@@ -10,10 +10,6 @@ from plotly.subplots import make_subplots
 from pathlib import Path
 from utils.streamlit_helper import setup_page_config, render_filter_sidebar
 from utils.constants import FUNDAMENTAL_KEY_COLS, SEQUENTIAL_COLOR, PROJECT_PATH
-import io, os
-import sys
-# 添加根目录到sys.path以便导入utils
-# sys.path.append(str(Path(__file__).parent.parent))
 
 setup_page_config()
 
