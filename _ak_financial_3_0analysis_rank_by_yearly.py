@@ -91,7 +91,7 @@ def get_feature_directions():
 def main():
     financial_path = Path(PROJECT_PATH) / 'data' / 'ak_financial' / 'financial_calculated.csv'
     industry_path = Path(PROJECT_PATH) / 'data' / 'basic' / 'stock_name_industry.csv'
-    report_date_for_pred_str = '2025-09-30'
+    # report_date_for_pred_str = '2025-12-31'
     feature_direction_dict = get_feature_directions()
     numeric_feature_li = list(feature_direction_dict.keys())
 
@@ -114,13 +114,13 @@ def main():
         return
     financial_df = financial_df.merge(feishu_df, on=['symbol','REPORT_DATE'],how='left')
     logging.info(f"Is in financial_df:{len(financial_df[financial_df.symbol=='SZ000050'])}")
-    # filter to certain rows
-    financial_df = financial_df.loc[
-        (~pd.isna(financial_df.quarterly_financial_score))
-        |
-        (financial_df['REPORT_DATE'] == pd.to_datetime(report_date_for_pred_str)),
-        ['symbol', 'REPORT_DATE', 'quarterly_financial_score', col_industry]+numeric_feature_li
-    ]
+    # # filter to certain rows
+    # financial_df = financial_df.loc[
+    #     (~pd.isna(financial_df.quarterly_financial_score))
+    #     |
+    #     (financial_df['REPORT_DATE'] == pd.to_datetime(report_date_for_pred_str)),
+    #     ['symbol', 'REPORT_DATE', 'quarterly_financial_score', col_industry]+numeric_feature_li
+    # ]
 
     logging.info("Preprocessing ...")
     # Fill NaN for industry
@@ -134,7 +134,7 @@ def main():
     #         financial_df[feature] = -financial_df[feature]
 
     logging.info("Generating train and test data...")
-    # TODO: the training data should use the 2025-09-30 report and calculation in ak_financial_2_2. As then went by,less and less data in 'financial_calculated.csv' having report_date=2025-09-30
+    # 【done】TODO: the training data should use the 2025-09-30 report and calculation in ak_financial_2_2. As then went by,less and less data in 'financial_calculated.csv' having report_date=2025-09-30
     train_df = financial_df.loc[~pd.isna(financial_df.quarterly_financial_score)].copy()
     logging.info(f"Length of train_df:{len(train_df)}")
 
