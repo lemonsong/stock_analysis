@@ -30,6 +30,7 @@ from utils.alltick_helper import (calculate_ndays, get_single_stock_price_hist,
 # path_to_stock_csv = f'{PROJECT_PATH}/data/dolt/daily'
 path_to_stock_csv = f'{PROJECT_PATH}/data/tushare_kline/daily'
 dwa_path = f'{PROJECT_PATH}/data/dwa'
+# TODO: add sys argument for this script, and adjsut the default argument in the refresh pipeline page
 if len(sys.argv) > 1:
     logging.info(f"Fetching data via streamlit input")
     fetch_historical = False
