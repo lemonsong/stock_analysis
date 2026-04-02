@@ -139,6 +139,7 @@ def process_single_stock(stock_symbol):
                     df_ttm_part = df[df['REPORT_DATE'] == latest_report_date].copy()
                     dfs_ttm.append(df_ttm_part)
                 else:
+                    # TODO: as there is no row for Q4, we need to use the recent quarterly report plus the latest yearly minus the same quarter in last year.
                     # Profit and Cash Flow: sum last 4 non-yearly reports?
                     # In Chinese financial reporting, it's typically Q1, H1, Q3, Annual.
                     # Wait, the prompt says: "use the sum last 4 records for report_type!='年报' as TTM value of current year."
