@@ -9,7 +9,6 @@ from plotly.subplots import make_subplots
 from pathlib import Path
 from utils.streamlit_helper import setup_page_config, render_filter_sidebar, clear_cache, clean_expired_cache
 from utils.constants import PROJECT_PATH
-import sys
 
 setup_page_config()
 
