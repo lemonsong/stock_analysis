@@ -361,22 +361,45 @@ def render_trends_tab(df, selected_symbols, selected_metrics, stock_names):
         )
         # TODO: Specify which metrics on right/left when "多指标单股票" is selected in Financial_Aalysis.py page.
         # 图表
-        fig = go.Figure()
+        fig = make_subplots(specs=[[{"secondary_y": True}]])
+
+        y1_metrics = []
+        y2_metrics = []
+        for metric in selected_metrics:
+            if metric not in df.columns: continue
+            stock_data = df[(df['symbol'] == selected_stock) & (df[metric].notna())]
+            if stock_data.empty: continue
+
+            mean_val = stock_data[metric].abs().mean()
+            if mean_val > 100:
+                y1_metrics.append(metric)
+            else:
+                y2_metrics.append(metric)
+
+        if not y1_metrics or not y2_metrics:
+            y1_metrics = y1_metrics + y2_metrics
+            y2_metrics = []
 
         for metric in selected_metrics:
             if metric not in df.columns: continue
             stock_data = df[(df['symbol'] == selected_stock) & (df[metric].notna())]
             if not stock_data.empty:
+                is_secondary = metric in y2_metrics
                 fig.add_trace(
-                    go.Scatter(x=stock_data['fiscal_year'], y=stock_data[metric], name=metric, mode='lines+markers')
+                    go.Scatter(x=stock_data['fiscal_year'], y=stock_data[metric], name=metric, mode='lines+markers'),
+                    secondary_y=is_secondary
                 )
+
         fig.update_layout(
             title=f"{stock_names.get(selected_stock, selected_stock)} 多指标趋势",
             xaxis_title="年份",
-            yaxis_title="指标值",
             height=500,
             showlegend=True
         )
+        if y1_metrics:
+            fig.update_yaxes(title_text="主轴 (数值较大)", secondary_y=False)
+        if y2_metrics:
+            fig.update_yaxes(title_text="副轴 (比率/较小数值)", secondary_y=True)
         st.plotly_chart(fig, use_container_width=True)
 
         # 表格 (显示该股票的所有选中指标)
