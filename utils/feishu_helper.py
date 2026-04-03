@@ -5,8 +5,7 @@ from datetime import datetime, timedelta
 import streamlit as st
 from utils.constants import FEISHU_APP_ID, FEISHU_APP_KEY, FEISHU_WIKI_TOKEN
 
-# TODO: change back to ttl=3600
-@st.cache_data(ttl=60)  # Cache for 1 hour to avoid hitting API too often
+@st.cache_data(ttl=3600)  # Cache for 1 hour to avoid hitting API too often
 def load_feishu_quarterly_eval_data(col_li=['symbol', 'quarterly_financial_score']):
     """
     Fetch the Quarterly Eval sheet from Feishu and return a DataFrame
