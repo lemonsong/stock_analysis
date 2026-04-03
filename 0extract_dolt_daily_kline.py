@@ -10,14 +10,22 @@ import shutil
 import os
 import mysql.connector
 import pandas as pd
-from utils.constants import PROJECT_PATH
+from utils.constants import (
+    PROJECT_PATH,
+    DATABASE_HOST,
+    DATABASE_USER,
+    DATABASE_PW,
+    DATABASE_DB,
+    DATABASE_PORT
+)
 from utils.dolt_helper import clean_daily_by_dates
 
 mydb = mysql.connector.connect(
-    host="localhost",  # Or the IP address/hostname of your MySQL server
-    user="root",
-    password="",
-    database="investment_data"  # Optional: specify a database to connect to initially
+    host=DATABASE_HOST,
+    user=DATABASE_USER,
+    password=DATABASE_PW,
+    database=DATABASE_DB,
+    port=DATABASE_PORT
 )
 # get all symbol to fetch data_all_list one by one. This is the list of symbol that we care about.
 recent_symbol_q = """
