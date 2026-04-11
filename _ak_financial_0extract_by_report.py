@@ -135,46 +135,91 @@ PROGRAM_PATH = f'{PROJECT_PATH}/data/ak_financial/single_file/'
 os.makedirs(PROGRAM_PATH, exist_ok=True)
 
 ###########################
-# Get file name all files in the path. only fetch and write data_all_list if the symbol_xx_sheet not existed.
-# TODO level 2(in 2026): get file name all files in the path. if symbol existed, only update the files if the report date is 2 year from April of current year(TBD) .
+# Load latest report dates
+latest_report_dates_path = f"{PROJECT_PATH}/data/ak_financial/latest_report_dates.csv"
+latest_report_df = pd.DataFrame()
+if os.path.isfile(latest_report_dates_path):
+    latest_report_df = pd.read_csv(latest_report_dates_path, dtype={'symbol': str})
+    # Convert actual_disclosure_date to datetime for comparison
+    latest_report_df['actual_disclosure_date'] = pd.to_datetime(latest_report_df['actual_disclosure_date'])
+    # Sort by REPORT_PERIOD descending to grab the most recent reporting period safely
+    latest_report_df = latest_report_df.sort_values(by='REPORT_PERIOD', ascending=False)
+else:
+    logging.warning(f"Report dates file not found at {latest_report_dates_path}. Continuing without update check.")
 
 for index, stock_symbol in enumerate(stock_li):
     random_sleep_time = random.randint(11, 30)
-    # balance sheet
-    logging.info(f"Progress {index+1}/{len(stock_li)}: Fetching balance sheet of {stock_symbol}")
+
+    # Check if we already have local files and if they need updating
+    symbol_code = stock_symbol[2:] # Strip SH/SZ/BJ
+
+    needs_update = False
+    max_local_report_date = None
+
     path_to_balance = f'{PROGRAM_PATH}/{stock_symbol}_balance.csv'
-    if os.path.isfile(path_to_balance):
-        logging.info(f"Balance sheet of {stock_symbol} existed")
-    else:
-        stock_balance_sheet_by_report_em_df = ak.stock_balance_sheet_by_report_em(symbol=stock_symbol)
-        stock_balance_sheet_by_report_em_df.to_csv(path_to_balance,
-                                                   encoding='utf-8',
-                                                   index=False)
-        logging.info(f"Balance sheet of {stock_symbol} saved. Sleep for {random_sleep_time}s ...")
-        time.sleep(random_sleep_time)
-
-    # profit sheet
-    logging.info(f"Fetching profit sheet of {index}: {stock_symbol}")
     path_to_profit = f'{PROGRAM_PATH}/{stock_symbol}_profit.csv'
-    if os.path.isfile(path_to_profit):
-        logging.info(f"Profit sheet of {stock_symbol} existed")
-    else:
-        stock_profit_sheet_by_report_em = ak.stock_profit_sheet_by_report_em(symbol=stock_symbol)
-        stock_profit_sheet_by_report_em.to_csv(path_to_profit,
-                                               encoding='utf-8',
-                                               index=False)
-        logging.info(f"Profit sheet of {stock_symbol} saved. Sleep for {random_sleep_time}s ...")
-        time.sleep(random_sleep_time)
-
-    # cash flow sheet
-    logging.info(f"Fetching cash flow sheet of {index}: {stock_symbol}")
     path_to_cash_flow = f'{PROGRAM_PATH}/{stock_symbol}_cash_flow.csv'
-    if os.path.isfile(path_to_cash_flow):
-        logging.info(f"Cash flow sheet of {stock_symbol} existed")
+
+    files_exist = os.path.isfile(path_to_balance) and os.path.isfile(path_to_profit) and os.path.isfile(path_to_cash_flow)
+
+    if files_exist and not latest_report_df.empty:
+        try:
+            local_df = pd.read_csv(path_to_balance)
+            if 'REPORT_DATE' in local_df.columns:
+                local_df['REPORT_DATE'] = pd.to_datetime(local_df['REPORT_DATE'])
+                max_local_report_date = local_df['REPORT_DATE'].max()
+
+                # Check against latest report dates
+                stock_reports = latest_report_df[latest_report_df['symbol'].astype(str) == symbol_code]
+                if not stock_reports.empty:
+                    latest_disclosure = stock_reports.iloc[0]
+                    # We compare the actual disclosure date. Note that actual disclosure dates are later than REPORT_DATE.
+                    # A better way is to see if the REPORT_PERIOD (e.g. 20251231 -> 2025-12-31) is > max_local_report_date
+                    report_period_str = str(latest_disclosure['REPORT_PERIOD'])
+                    if len(report_period_str) == 8:
+                        latest_period_date = pd.to_datetime(report_period_str, format='%Y%m%d')
+                        if max_local_report_date is pd.NaT or latest_period_date > max_local_report_date:
+                            needs_update = True
+                            logging.info(f"{stock_symbol} needs update: local max={max_local_report_date}, latest period={latest_period_date}")
+        except Exception as e:
+            logging.warning(f"Error checking local files for {stock_symbol}: {e}")
+            needs_update = True # Fallback to fetch if error reading
+
+    # fetch balance sheet
+    logging.info(f"Progress {index+1}/{len(stock_li)}: Fetching balance sheet of {stock_symbol}")
+    if os.path.isfile(path_to_balance) and not needs_update:
+        logging.info(f"Balance sheet of {stock_symbol} existed and is up to date")
     else:
-        stock_cash_flow_sheet_by_report_em = ak.stock_cash_flow_sheet_by_report_em(symbol=stock_symbol)
-        stock_cash_flow_sheet_by_report_em.to_csv(path_to_cash_flow,
-                                                  encoding='utf-8',
-                                                  index=False)
-        logging.info(f"Cash flow sheet of {stock_symbol} saved. Sleep for {random_sleep_time}s ...")
-        time.sleep(random_sleep_time)
+        try:
+            stock_balance_sheet_by_report_em_df = ak.stock_balance_sheet_by_report_em(symbol=stock_symbol)
+            stock_balance_sheet_by_report_em_df.to_csv(path_to_balance, encoding='utf-8', index=False)
+            logging.info(f"Balance sheet of {stock_symbol} saved. Sleep for {random_sleep_time}s ...")
+            time.sleep(random_sleep_time)
+        except Exception as e:
+            logging.error(f"Error fetching balance sheet for {stock_symbol}: {e}")
+
+    # fetch profit sheet
+    logging.info(f"Fetching profit sheet of {index+1}: {stock_symbol}")
+    if os.path.isfile(path_to_profit) and not needs_update:
+        logging.info(f"Profit sheet of {stock_symbol} existed and is up to date")
+    else:
+        try:
+            stock_profit_sheet_by_report_em = ak.stock_profit_sheet_by_report_em(symbol=stock_symbol)
+            stock_profit_sheet_by_report_em.to_csv(path_to_profit, encoding='utf-8', index=False)
+            logging.info(f"Profit sheet of {stock_symbol} saved. Sleep for {random_sleep_time}s ...")
+            time.sleep(random_sleep_time)
+        except Exception as e:
+            logging.error(f"Error fetching profit sheet for {stock_symbol}: {e}")
+
+    # fetch cash flow sheet
+    logging.info(f"Fetching cash flow sheet of {index+1}: {stock_symbol}")
+    if os.path.isfile(path_to_cash_flow) and not needs_update:
+        logging.info(f"Cash flow sheet of {stock_symbol} existed and is up to date")
+    else:
+        try:
+            stock_cash_flow_sheet_by_report_em = ak.stock_cash_flow_sheet_by_report_em(symbol=stock_symbol)
+            stock_cash_flow_sheet_by_report_em.to_csv(path_to_cash_flow, encoding='utf-8', index=False)
+            logging.info(f"Cash flow sheet of {stock_symbol} saved. Sleep for {random_sleep_time}s ...")
+            time.sleep(random_sleep_time)
+        except Exception as e:
+            logging.error(f"Error fetching cash flow sheet for {stock_symbol}: {e}")

@@ -55,3 +55,4 @@ __pycache__/
 /data/ak_financial/financial_all.csv
 /data/ak_fundamental/
 /data/zipline_backtest/
+data/ak_financial/latest_report_dates.csv
