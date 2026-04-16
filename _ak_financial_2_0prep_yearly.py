@@ -139,28 +139,32 @@ def process_single_stock(stock_symbol):
                     df_ttm_part = df[df['REPORT_DATE'] == latest_report_date].copy()
                     dfs_ttm.append(df_ttm_part)
                 else:
-                    # TODO: as there is no row for Q4, we need to use the recent quarterly report plus the latest yearly minus the same quarter in last year.
-                    # Profit and Cash Flow: sum last 4 non-yearly reports?
-                    # In Chinese financial reporting, it's typically Q1, H1, Q3, Annual.
-                    # Wait, the prompt says: "use the sum last 4 records for report_type!='年报' as TTM value of current year."
-                    # Let's filter df to only non-yearly
-                    df_non_yearly = df[df['REPORT_TYPE'] != '年报'].copy()
+                    # Profit and Cash Flow: TTM = latest record + latest yearly report - row with same report_type before the latest yearly report
+                    df_yearly_history = df[df['REPORT_TYPE'] == '年报']
 
-                    if len(df_non_yearly) >= 4:
-                        last_4 = df_non_yearly.tail(4).copy()
+                    if not df_yearly_history.empty:
+                        latest_yearly = df_yearly_history.iloc[-1]
 
-                        numeric_cols = last_4.select_dtypes(include='number').columns
-                        summed = last_4[numeric_cols].sum()
+                        # Find the same reporting period from the prior year (or before the latest yearly)
+                        same_period_history = df[(df['REPORT_TYPE'] == latest_record['REPORT_TYPE']) &
+                                                 (df['REPORT_DATE'] <= latest_yearly['REPORT_DATE'])]
 
-                        # Use the latest record for metadata
-                        ttm_record = latest_record.copy()
-                        for col in numeric_cols:
-                            ttm_record[col] = summed[col]
+                        if not same_period_history.empty:
+                            prev_period = same_period_history.iloc[-1]
 
-                        df_ttm_part = pd.DataFrame([ttm_record])
-                        dfs_ttm.append(df_ttm_part)
+                            numeric_cols = df.select_dtypes(include='number').columns
+                            ttm_record = latest_record.copy()
+
+                            for col in numeric_cols:
+                                ttm_record[col] = latest_record[col] + latest_yearly[col] - prev_period[col]
+
+                            df_ttm_part = pd.DataFrame([ttm_record])
+                            dfs_ttm.append(df_ttm_part)
+                        else:
+                            # Not enough history to calculate TTM, return empty or fallback
+                            dfs_ttm.append(pd.DataFrame(columns=df.columns))
                     else:
-                        # Not enough data for TTM, we might just append nothing or just the available.
+                        # No yearly report available to calculate TTM
                         dfs_ttm.append(pd.DataFrame(columns=df.columns))
 
         # Merge yearly
