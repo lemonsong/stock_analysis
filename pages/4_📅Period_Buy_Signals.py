@@ -131,7 +131,7 @@ def main():
         st.stop()
 
     # Signal Count Threshold
-    min_signal = st.sidebar.slider("最小综合信号值 (Overall Signal >=)", min_value=1, max_value=10, value=1)
+    min_signal = st.sidebar.slider("最小综合信号值 (Overall Signal >=)", min_value=1, max_value=10, value=2)
 
     # Load Data
     df_history = load_history_data(start_date, end_date)

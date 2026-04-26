@@ -19,6 +19,7 @@ if len(sys.argv) > 1:
     # CMD for testing: python _ak_financial_0extract_by_report.py --choice_overall_signal_count 2 --fetch_relevant_symbols True --choice_row_range All --choice_industry_category_name All  --choice_industry_sub_category_name All --choice_industry_type_name All --text_stock_list '' --fetch_relevant_symbols_financial_threshold 4
     # python _ak_financial_0extract_by_report.py --choice_overall_signal_count 2 --fetch_relevant_symbols False --choice_row_range All --choice_industry_category_name All  --choice_industry_sub_category_name All --choice_industry_type_name All --text_stock_list ''
     # python _ak_financial_0extract_by_report.py --choice_overall_signal_count 1 --fetch_relevant_symbols False --choice_row_range '0-100' --choice_industry_category_name All  --choice_industry_sub_category_name All --choice_industry_type_name All --text_stock_list ''
+    # python _ak_financial_0extract_by_report.py --choice_overall_signal_count All --fetch_relevant_symbols False --choice_row_range All --choice_industry_category_name All  --choice_industry_sub_category_name All --choice_industry_type_name All --fetch_relevant_symbols_financial_threshold 4 --fetch_relevant_symbols True --text_stock_list ''
     parser = argparse.ArgumentParser()
     parser.add_argument('--boards_regex', type=str, required=False)
     parser.add_argument('--choice_overall_signal_count', type=str, required=True)

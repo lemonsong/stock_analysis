@@ -34,10 +34,10 @@ def load_decision_data():
         # feishu_df = load_feishu_quarterly_eval_data()
         # if not feishu_df.empty:
         #     df = df.merge(feishu_df, on='symbol', how='left')
-
-        realtime_df = pd.read_csv(realtime_price_file)[['symbol','最新价','涨跌幅']]
-        if not realtime_df.empty:
-            df = df.merge(realtime_df, how='left', on='symbol')
+        #
+        # realtime_df = pd.read_csv(realtime_price_file)[['symbol','最新价','涨跌幅']]
+        # if not realtime_df.empty:
+        #     df = df.merge(realtime_df, how='left', on='symbol')
 
         relevant_stock_df = pd.read_csv(relevant_stock_file)
         if not relevant_stock_df.empty:
@@ -532,7 +532,7 @@ def display_detailed_data(filtered_df):
     display_df = filtered_df.copy()
     # 列分组定义
     col_groups = {
-        "基本信息": ['symbol_url', 'company', 'close', '最新价', '涨跌幅', 'quarterly_financial_score', 'market_cap','relevant_stock'], # 使用symbol_url替代symbol
+        "基本信息": ['symbol_url', 'company', 'close', 'quarterly_financial_score', 'market_cap','relevant_stock'], # 使用symbol_url替代symbol
         "行业信息": ['industry_category_name', 'industry_sub_category_name', 'industry_type_name'],
         "信号指标": [col for col in filtered_df.columns if 'signal' in col.lower()],
         "分红指标": [col for col in filtered_df.columns if 'total_dividend' in col and 'yield' not in col],
@@ -674,16 +674,6 @@ def display_detailed_data(filtered_df):
             "收盘价",
             help="close",
             format="¥%.2f"
-        ),
-        "最新价": st.column_config.NumberColumn(
-            "最新价",
-            help="最新价",
-            format="¥%.2f"
-        ),
-        "涨跌幅": st.column_config.NumberColumn(
-            "涨跌幅",
-            help="当日涨跌",
-            format="%.2f%%"
         ),
         "market_cap": st.column_config.NumberColumn(
             "市值",
