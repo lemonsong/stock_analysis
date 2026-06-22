@@ -47,7 +47,7 @@ def get_end_date():
         if '--end' in sys.argv:
             logging.info(f"Fetching data via sys argument parser: {end_date_str}")
     else:
-        end_date_str = '2026-03-13'
+        end_date_str = '2026-05-25'
         logging.info(f"Fetching data via manual input: {end_date_str}")
     return datetime.strptime(end_date_str, '%Y-%m-%d').date()
 

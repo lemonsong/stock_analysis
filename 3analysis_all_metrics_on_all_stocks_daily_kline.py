@@ -43,7 +43,7 @@ else:
     fetch_historical = False
     update_date = None
     # fetch_historical = True
-    # update_date = pd.to_datetime('2026-04-20')
+    # update_date = pd.to_datetime('2026-06-19')
 # validation step
 if (fetch_historical and isinstance(update_date, pd.Timestamp)) or (fetch_historical == False and update_date is None):
     logging.info(f"Correct inputs")
