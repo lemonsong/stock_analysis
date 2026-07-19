@@ -108,7 +108,7 @@ def main():
     financial_df = financial_df.merge(industry_df[['symbol', col_industry]], on='symbol', how='left')
 
     logging.info("Loading and merging Feishu labels...")
-    feishu_df = load_feishu_quarterly_eval_data(col_li=['symbol', 'quarterly_financial_score','REPORT_DATE'])
+    feishu_df = load_feishu_quarterly_eval_data(col_li=['symbol', 'train_financial_score','REPORT_DATE'])
     if feishu_df.empty:
         logging.error("Failed to load Feishu labels or it is empty.")
         return
@@ -116,10 +116,10 @@ def main():
     logging.info(f"Is in financial_df:{len(financial_df[financial_df.symbol=='SZ000050'])}")
     # # filter to certain rows
     # financial_df = financial_df.loc[
-    #     (~pd.isna(financial_df.quarterly_financial_score))
+    #     (~pd.isna(financial_df.train_financial_score))
     #     |
     #     (financial_df['REPORT_DATE'] == pd.to_datetime(report_date_for_pred_str)),
-    #     ['symbol', 'REPORT_DATE', 'quarterly_financial_score', col_industry]+numeric_feature_li
+    #     ['symbol', 'REPORT_DATE', 'train_financial_score', col_industry]+numeric_feature_li
     # ]
 
     logging.info("Preprocessing ...")
@@ -143,7 +143,7 @@ def main():
     logging.info(f"Is in pred_df:{len(pred_df[pred_df.symbol=='SZ000050'])}")
 
     X_train = train_df[numeric_feature_li + [col_industry]].copy()
-    y_train = train_df['quarterly_financial_score']
+    y_train = train_df['train_financial_score']
     X_pred = pred_df[numeric_feature_li + [col_industry]].copy()
 
 

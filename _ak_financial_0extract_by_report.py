@@ -68,7 +68,7 @@ if len(sys.argv) > 1:
         if args.choice_row_range != 'All':
             row_range = [int(item) for item in args.choice_row_range.split('-')]
             stock_filtered_df = stock_filtered_df.iloc[row_range[0]:row_range[1],:]
-        stock_li = stock_filtered_df.sort_values(by='latest_financial_score',ascending=False).symbol.tolist()
+        stock_li = stock_filtered_df.sort_values(by='model_financial_score',ascending=False).symbol.tolist()
     else:
         logging.info(f"Fetching data via customized stock list")
         stock_li = [s.strip() for s in args.text_stock_list.replace('，', ',').split(',') if s.strip()]
@@ -85,7 +85,7 @@ if len(sys.argv) > 1:
         except ValueError:
             threshold = 4.0
 
-        top_df = stock_filtered_df.loc[stock_filtered_df.symbol.isin(stock_li) & (stock_filtered_df.latest_financial_score >= threshold)]
+        top_df = stock_filtered_df.loc[stock_filtered_df.symbol.isin(stock_li) & (stock_filtered_df.model_financial_score >= threshold)]
         for symbol in top_df['symbol'].tolist():
             symbol_matches = relevant_stock_df.loc[relevant_stock_df.symbol==symbol]['relevant_stock']
             if not symbol_matches.empty:
