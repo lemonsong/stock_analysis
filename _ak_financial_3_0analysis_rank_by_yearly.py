@@ -108,7 +108,7 @@ def main():
     financial_df = financial_df.merge(industry_df[['symbol', col_industry]], on='symbol', how='left')
 
     logging.info("Loading and merging Feishu labels...")
-    feishu_df = load_feishu_quarterly_eval_data(col_li=['symbol', 'quarterly_financial_score','REPORT_DATE'])
+    feishu_df = load_feishu_quarterly_eval_data(col_li=['symbol', 'train_financial_score','REPORT_DATE'])
     if feishu_df.empty:
         logging.error("Failed to load Feishu labels or it is empty.")
         return
@@ -116,10 +116,10 @@ def main():
     logging.info(f"Is in financial_df:{len(financial_df[financial_df.symbol=='SZ000050'])}")
     # # filter to certain rows
     # financial_df = financial_df.loc[
-    #     (~pd.isna(financial_df.quarterly_financial_score))
+    #     (~pd.isna(financial_df.train_financial_score))
     #     |
     #     (financial_df['REPORT_DATE'] == pd.to_datetime(report_date_for_pred_str)),
-    #     ['symbol', 'REPORT_DATE', 'quarterly_financial_score', col_industry]+numeric_feature_li
+    #     ['symbol', 'REPORT_DATE', 'train_financial_score', col_industry]+numeric_feature_li
     # ]
 
     logging.info("Preprocessing ...")
@@ -138,17 +138,17 @@ def main():
     train_df = financial_df.loc[~pd.isna(financial_df.quarterly_financial_score)].copy()
     logging.info(f"Length of train_df:{len(train_df)}")
 
-    max_report_date_idx = financial_df.groupby('symbol')['REPORT_DATE'].idxmax()
-    pred_df = financial_df.loc[max_report_date_idx].copy()
+    # Predict for all quarters starting from 2025-12-31
+    pred_df = financial_df[financial_df['REPORT_DATE'] >= pd.to_datetime('2025-12-31')].copy()
     logging.info(f"Is in pred_df:{len(pred_df[pred_df.symbol=='SZ000050'])}")
 
     X_train = train_df[numeric_feature_li + [col_industry]].copy()
-    y_train = train_df['quarterly_financial_score']
+    y_train = train_df['train_financial_score']
     X_pred = pred_df[numeric_feature_li + [col_industry]].copy()
 
 
     if pred_df.empty:
-        logging.error(f"No valid pred data for {report_date_for_pred_str} found.")
+        logging.error(f"No valid pred data found.")
         return
 
     logging.info("Training models...")
@@ -184,9 +184,16 @@ def main():
     pred_df['rf_pred'] = rf_model.predict(X_pred)
     pred_df['svr_pred'] = svr_model.predict(X_pred)
 
-    pred_df['latest_financial_score'] = pred_df[['dt_pred', 'rf_pred', 'svr_pred']].mean(axis=1)
+    pred_df['model_financial_score'] = pred_df[['dt_pred', 'rf_pred', 'svr_pred']].mean(axis=1)
+    pred_df['model_financial_score'] = pred_df['model_financial_score'].clip(0, 5)
 
-    df_out = pred_df[['symbol', 'quarterly_financial_score','latest_financial_score']]
+    # Calculate is_latest
+    max_dates = pred_df.groupby('symbol')['REPORT_DATE'].transform('max')
+    pred_df['is_latest'] = pred_df['REPORT_DATE'] == max_dates
+
+    # Rename variables and format output
+    pred_df.rename(columns={'quarterly_financial_score': 'train_financial_score', 'REPORT_DATE': 'report_date'}, inplace=True)
+    df_out = pred_df[['symbol', 'report_date', 'model_financial_score', 'train_financial_score', 'is_latest']]
 
     # save prediction
     output_dir = Path(PROJECT_PATH) / 'data' / 'ak_financial' / 'scoring_model'

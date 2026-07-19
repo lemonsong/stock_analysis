@@ -23,7 +23,8 @@ app_decision_df = app_decision_df.merge(stock_cash_dividend_yield_by_periods_df,
 rank_path = os.path.join(PROJECT_PATH, 'data/ak_financial/scoring_model', 'financial_score_data.csv')
 if os.path.exists(rank_path):
     rank_df = pd.read_csv(rank_path)
-    
+    # rank_df = rank_df.loc[rank_df.is_latest].copy()
+    rank_df=rank_df.rename(columns={'model_financial_score':'latest_financial_score'})
     # 1. Update financial_calculated_metrics.csv
     fundamental_path = os.path.join(PROJECT_PATH, 'data/ak_financial', 'financial_calculated_metrics.csv')
     if os.path.exists(fundamental_path):
